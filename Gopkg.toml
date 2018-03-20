@@ -1,0 +1,27 @@
+[[constraint]]
+  name = "github.com/DATA-DOG/go-sqlmock"
+  version = "1.3.0"
+
+[[constraint]]
+  name = "github.com/go-sql-driver/mysql"
+  version = "1.3.0"
+
+[[constraint]]
+  name = "github.com/gorilla/mux"
+  version = "1.5.0"
+
+[[constraint]]
+  name = "github.com/spf13/viper"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "golang.org/x/crypto"
+  branch = "master"
+
+[[metadata.heroku]]
+  root-package = "github.com/sdaros/workflow-db-connector"
+  install = [ "./..." ]
+
+[[constraint]]
+  name = "github.com/urfave/negroni"
+  version = "0.2.0"

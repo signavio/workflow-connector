@@ -1,0 +1,166 @@
+{
+  "key": "maintenanceConnector",
+  "name": "Maintenace Scheduling Connector",
+  "description": "Signavio Workflow Accelerator integration with our internal databases to help us automate maintenance checks for our equipment",
+  "typeDescriptors": [
+    {
+      "key" : "equipment",
+      "name" : "Equipment",
+      "tableName": "equipment",
+      "columnAsOptionName": "name",
+      "fields" : [
+        {
+          "key" : "name",
+          "name" : "Name",
+          "fromColumn" : "name",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "cost",
+          "name" : "Acquisition Cost",
+          "type" : {
+            "name" : "money",
+            "amount": {
+                "fromColumn": "acquisition_cost"
+            },
+            "currency": {
+                "value": "EUR"
+            }
+          }
+        },
+        {
+          "key" : "purchaseDate",
+          "name" : "Purchase Date",
+          "fromColumn": "purchase_date",
+          "type" : {
+            "name" : "date",
+            "kind" : "date"
+          }
+        },
+        {
+          "key" : "equipmentMaintenance",
+          "name" : "Maintenance performed",
+          "type" : {
+            "name" : "text"
+          },
+          "relationship": {
+            "withTable": "maintenance",
+            "foreignKey": "equipment_id"
+          }
+        },
+        {
+          "key" : "equipmentWarranty",
+          "name" : "Equipment warranty",
+          "type" : {
+            "name" : "text"
+          },
+          "relationship": {
+            "withTable": "warranty",
+            "foreignKey": "equipment_id"
+          }
+        }
+      ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
+    },
+    {
+      "key" : "maintenance",
+      "name" : "Maintenance",
+      "tableName": "maintenance",
+      "columnAsOptionName": "id",
+      "fields" : [
+        {
+          "key" : "equipmentId",
+          "name" : "Equipment ID",
+          "fromColumn": "equipment_id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "maintenancePerformed",
+          "name" : "Maintenance Performed",
+          "fromColumn": "maintenance_performed",
+          "type" : {
+            "name" : "date",
+            "kind" : "datetime"
+          }
+        },
+        {
+          "key" : "notes",
+          "name" : "Notes",
+          "fromColumn": "notes",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "isScheduled",
+          "name" : "Is scheduled?",
+          "fromColumn": "is_scheduled",
+          "type" : {
+            "name" : "boolean"
+          }
+        },
+        {
+          "key" : "nextMaintenance",
+          "name" : "Next Maintenance Date",
+          "fromColumn" : "next_maintenance",
+          "type" : {
+            "name" : "date",
+            "kind" : "datetime"
+          }
+        }
+      ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
+    },
+    {
+      "key" : "warranty",
+      "name" : "Warrany",
+      "tableName": "warranty",
+      "columnAsOptionName": "id",
+      "fields" : [
+        {
+          "key" : "equipmentId",
+          "name" : "Equipment ID",
+          "fromColumn" : "equipment_id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "startDate",
+          "name" : "Warranty start date",
+          "fromColumn" : "start_date",
+          "type" : {
+            "name" : "date",
+            "kind" : "datetime"
+          }
+        },
+        {
+          "key" : "durationInYears",
+          "name" : "Warranty duration [year(s)]",
+          "fromColumn" : "duration_in_years",
+          "type" : {
+            "name" : "number"
+          }
+        },
+        {
+          "key" : "conditions",
+          "name" : "Warranty conditions",
+          "fromColumn" : "conditions",
+          "type" : {
+            "name" : "text"
+          }
+        }
+      ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
+    }
+  ],
+  "version": 1,
+  "protocolVersion": 1
+}

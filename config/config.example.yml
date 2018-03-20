@@ -1,0 +1,59 @@
+# Using a SQLite database
+---
+port: 8080
+database:
+  driver: sqlite3
+  # Relative to path of the executable 
+  url: test.db
+  # All database drivers can use multiple tables
+  tables: 
+    - name: products
+      columnAsOptionName: product_name
+    - name: users
+      columnAsOptionName: user_name
+  testTables:
+    - name: products_test
+      columnAsOptionName: product_name
+    - name: users_test
+      columnAsOptionName: user_name
+tls:
+  enabled: false
+  # Can be a fully qualified path to the certificate files
+  # example: /etc/ssl/certs/workflow-db-connector-server.crt
+  publicKey: server.crt
+  # example: /etc/ssl/certs/workflow-db-connector-server.key
+  privateKey: server.key
+...
+# Using a Microsoft SQL Server database
+---
+port: 8080
+database:
+  driver: sqlserver
+  url: sqlserver://john:84mj29rSgHz@172.17.8.2?database=test
+  tables: 
+    - name: products
+      columnAsOptionName: product_name
+  testTables:
+    - name: users
+      columnAsOptionName: user_name
+tls:
+  enabled: false
+  publicKey: server.crt
+  privateKey: server.key
+...
+# Using a Postgres database
+---
+port: 8080
+database:
+  driver: postgres
+  url: postgres://bob:l120arSgHz@172.17.8.2/test?sslmode=verify-full
+  tables: 
+    - name: products
+      columnAsOptionName: product_name
+  testTables:
+    - name: products
+      columnAsOptionName: product_name
+tls:
+  enabled: false
+  publicKey: server.crt
+  privateKey: server.key
