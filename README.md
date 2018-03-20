@@ -18,12 +18,27 @@ The connector is written in [go](https://golang.org) and can be downloaded from 
 ### Install from source (on linux)
 1. Download and install go from your distrubtion's package manager (for ubuntu `apt-get install go`) and make sure you are using version >= 1.9
 2. Download and install the workflow-connector using the `go get` command on the command line. The workflow-connector source code and all dependencies will be downloaded to the location pointed to by your `$GOPATH` environment variable. Here we assume that this is located in `~/go`.
+
 ```sh
-$ go get -v github.com/signavio/workflow-connector
+go get -v github.com/signavio/workflow-connector
+```
+3. Download the `dep` utility in order to install the projects dependencies locally.
+
+```sh
+# install dep utility
+go get github.com/golang/dep/cmd/dep
+# install project's dependencies
+${GOPATH}/bin/dep ensure -vendor-only
+```
+4. compile the source code into an architecture specific executable. Adjust your `$GOARCH` and `$GOOS` variables as needed.
+
+```sh
+export CGO_ENABLED=1 GOARCH=amd64 GOOS=linux PKG=github.com/signavio/workflow-connector && go build -o workflow-connector cmd/wfadb/main.go
 ```
 
 ### Install from source (using docker)
 
+TODO
 
 ## Deployment
 
@@ -36,7 +51,7 @@ The architecture specific executable file, and related configuration files, can 
 ```sh
 # first create the necessary directories
 #
-$ mkdir -p ~/.config/workflow-connector
+mkdir -p ~/.config/workflow-connector
 #
 # then copy the executable file to a 
 # directory located in your $PATH. Here
@@ -44,18 +59,20 @@ $ mkdir -p ~/.config/workflow-connector
 # that the exectuable file has already
 # been downloaded from github
 #
-$ cp 
+cp ~/Downloads/
 
 ```
 2. Copy the executable file to a directory located in your `$PATH`. Here we assume that `~/bin` is in your `$PATH` and that the executable file has already been downloaded from github using `go get -v github.com/signavio/workflow-connector`. Afterwards
 
 ```sh
 # We assume $GOPATH is set to ~/go
-$ cp ~/go/github.com/signavio/workflow-connector/bin/amd64/linux/workflow-connector ~/bin/
+cp ~/go/github.com/signavio/workflow-connector/bin/amd64/linux/workflow-connector ~/bin/
 # Copy the configuration files
-$ cp ~/go/github.com/signavio/workflow-connector/bin/amd64 
+cp ~/go/github.com/signavio/workflow-connector/bin/amd64 
 ```
 ### Containerized (using docker)
+
+TODO
 
 ## Configuration
 
@@ -67,7 +84,7 @@ All program configuration settings (like database connection information, userna
 | /etc/                        |
 | ~/.config/workflow-connector |
 
-All settings may instead be configured using the system's environment variables. For example, you can specify the database connection url by exporting the environment variable `DATABASE_URL=sqlserver://john:84mj29rSgHz@172.17.8.2?database=test`. This means that nested fields in the yaml file should be delimited with a '_' (underscore) character when used in an environment variable. All configuration settings declared via environment variables will take precedence over the settings in your `cofig.yaml` file.
+All settings may instead be configured using the system's environment variables. For example, you can specify the database connection url by exporting the environment variable `DATABASE_URL=sqlserver://john:84mj29rSgHz@172.17.8.2?database=test`. This means that nested fields in the yaml file should be delimited with a '_' (underscore) character when used in an environment variable. All configuration settings declared via environment variables will take precedence over the settings in your `config.yaml` file.
 
 ## Example (using heroku)
 
@@ -82,18 +99,18 @@ This example will assume you are running in a linux environment (using a ubuntu 
 1. Download this github repository to a local directory on your computer 
 
 ```bash
-$ git clone https://github.com/signavio/wfa-connector && cd wfa-connector
+git clone https://github.com/signavio/workflow-connector && cd wfa-connector
 ```
 
 2. Download and install sqlite and golang
 
 ```bash
-$ apt-get install sqlite go
+apt-get install sqlite go
 ```
 
 3. Create the database file
 ```bash
-$ touch test.db
+touch test.db
 ```
 
 ### Populate the database
@@ -113,7 +130,7 @@ For testing purposes, we will create a table called `equipment` and populate it 
 We can accomplish this by writing the necessary sql statements to a temporary file and then import the file into a sqlite database.
 
 ```bash
-$ echo "\
+echo "\
 CREATE TABLE IF NOT EXISTS equipment ( \
 id integer not null primary key, \
 name text, \
@@ -129,13 +146,13 @@ VALUES \
 ```
 
 ```bash
-$ sqlite3 test.db < /tmp/test.db
+sqlite3 test.db < /tmp/test.db
 ```
 
 The table should now look like this: 
 
 ```sqlite
-$ sqlite3 test.db
+sqlite3 test.db
 SQLite version 3.20.1 2017-08-24 16:21:36
 Enter ".help" for usage hints.
 sqlite> SELECT * FROM equipment;
@@ -144,7 +161,7 @@ sqlite> SELECT * FROM equipment;
 3|Temperature Gauge|49.99|2017-09-04 11:00:00
 4|Masch Tun (50L)|199.99|2016-09-04 11:00:00
 sqlite> .quit
-$ 
+
 ```
 
 Now exit out of the sqlite command line interface (using the command `.quit`)
@@ -156,10 +173,10 @@ Before running the `workflow-connector` command, you should either edit the `con
 ```sh
 # Export environment variables
 #
-$ export PORT=:8080 DATABASE_URL=test.db DATABASE_DRIVER=sqlite3
+export PORT=:8080 DATABASE_URL=test.db DATABASE_DRIVER=sqlite3
 #
 # Run the connector
-$ ./workflow-connector
+./workflow-connector
 Listening on :8080
 
 ```
@@ -171,7 +188,7 @@ Now we can test the functionality of the connector's REST API either in a new te
 Go ahead and fetch the product with id 1 by sending a `HTTP GET` request to the connector using the `curl` command (you can `apt-get install curl` if `curl` is not yet installed):
 
 ```bash
-$ curl --verbose --request GET http://localhost:8080/products/1
+curl --verbose --request GET http://localhost:8080/products/1
 # Response:
 ## Headers
 > GET /products HTTP/1.1
@@ -200,7 +217,7 @@ You will see that the webservice returned the product with id 1 as `application/
 You can create a new product by sending a `HTTP POST` to the webservice
 
 ```bash
-$ curl --verbose --request POST --header "Content-Type: application/x-www-form-urlencoded" --data "price=0.84&product_name=Schlenkerla+Rauchbier" http://localhost:3000/products
+curl --verbose --request POST --header "Content-Type: application/x-www-form-urlencoded" --data "price=0.84&product_name=Schlenkerla+Rauchbier" http://localhost:3000/products
 # Response:
 ## Headers
 > POST /products HTTP/1.1
@@ -224,7 +241,7 @@ $
 Let's verify that the new product was inserted into the database
 
 ```bash
-$ curl --request GET http://localhost:8080/products/4
+curl --request GET http://localhost:8080/products/4
 # Response:
 {
   "id": "4",
@@ -239,12 +256,12 @@ $
 You may be thinking, a delicious, franconian Rauchbier definitely costs more than .84€, and you would be right. So let's adjust that price to something more realistic by sending a `HTTP PUT` with the new price.
 
 ```bash
-$ curl --verbose --request PUT --data "price=1.25" http://localhost:8080/products/4
+curl --verbose --request PUT --data "price=1.25" http://localhost:8080/products/4
 # Response:
 {}
 
 # Now verify the new price
-$ curl --request GET http://localhost:8080/products/4
+curl --request GET http://localhost:8080/products/4
 # Response: 
 {
   "id": "4",
@@ -260,39 +277,8 @@ TODO: deletion is not supported at the moment.
 
 ## Technical Overview
 
-The following diagram shows the main components used in the workflow connector. The following list shows, at a high level, how an HTTP request is handled and how data is sent back to the user from the database.
+TODO
 
-
-
-![Program Execution](https://cip.li/res/wfa-connector.png)
-
-**Entrypoint**: the `main()` function in the `./server.go` file.
-### [010] load configuration settings
-
-#### Source:
-
-```go
-      cfg := config.Load()
-```
-
-#### Description:
-
-- The workflow-connector uses the `github.com/spf13/viper` dependency to load configuration settings from a file, environment variables or an external key-value store. `github.com/spf13/viper` is also used by many other go projects ([rkt](https://coreos.com/rkt/), [kubernetes](https://kubernetes.io), and others) to load configuration settings.
-
-### [020] create new endpoint
-
-#### Source:
-
-```go
-     endpoint, err := endpoints.NewEndpoint(cfg)
-     if err != nil {
-     log.Fatalf("%s", err)
-     }
- ``` 
- #### Description:
- 
- - Here we create a new endpoint like its no ones business.
- 
 ## Support
 
 Any inquiries for support can be sent to [support](mailto:support@signavio.com). 
