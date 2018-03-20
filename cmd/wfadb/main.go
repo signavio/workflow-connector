@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/sdaros/workflow-db-connector/pkg/app"
-	"github.com/sdaros/workflow-db-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/app"
+	"github.com/signavio/workflow-connector/pkg/config"
 )
 
 func main() {

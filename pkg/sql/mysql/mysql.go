@@ -4,8 +4,8 @@ import (
 	"database/sql"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/sdaros/workflow-db-connector/pkg/config"
-	sqlBackend "github.com/sdaros/workflow-db-connector/pkg/sql"
+	"github.com/signavio/workflow-connector/pkg/config"
+	sqlBackend "github.com/signavio/workflow-connector/pkg/sql"
 )
 
 func NewMysqlBackend(cfg *config.Config) (b *sqlBackend.Backend) {

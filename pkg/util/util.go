@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/sdaros/workflow-db-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/config"
 )
 
 // TypeDescriptorForCurrentTable will return the typeDescriptor from the descriptor.json

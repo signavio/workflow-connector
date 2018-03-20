@@ -19,7 +19,7 @@
   branch = "master"
 
 [[metadata.heroku]]
-  root-package = "github.com/sdaros/workflow-db-connector"
+  root-package = "github.com/signavio/workflow-connector"
   install = [ "./..." ]
 
 [[constraint]]

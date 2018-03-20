@@ -303,4 +303,4 @@ The development team at Signavio with input from Stefano Da Ros and Peter Hilton
 
 ## Licence
 
-MIT Licence
+Apache License 2.0

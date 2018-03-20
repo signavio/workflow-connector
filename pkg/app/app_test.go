@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sdaros/workflow-db-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/config"
 )
 
 type testCase struct {

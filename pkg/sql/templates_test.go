@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sdaros/workflow-db-connector/pkg/config"
-	"github.com/sdaros/workflow-db-connector/pkg/util"
+	"github.com/signavio/workflow-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/util"
 )
 
 type templatesTestCases struct {

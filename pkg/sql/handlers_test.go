@@ -14,8 +14,8 @@ import (
 	"text/template"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/sdaros/workflow-db-connector/pkg/config"
-	"github.com/sdaros/workflow-db-connector/pkg/util"
+	"github.com/signavio/workflow-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/util"
 )
 
 const descriptorFileTemplateText = `

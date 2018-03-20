@@ -3,9 +3,9 @@ package sql
 import (
 	"fmt"
 
-	"github.com/sdaros/workflow-db-connector/pkg/config"
-	"github.com/sdaros/workflow-db-connector/pkg/log"
-	"github.com/sdaros/workflow-db-connector/pkg/util"
+	"github.com/signavio/workflow-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/log"
+	"github.com/signavio/workflow-connector/pkg/util"
 )
 
 func (r *getSingle) handle() (results []interface{}, err error) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/sdaros/workflow-db-connector/pkg/config"
-	"github.com/sdaros/workflow-db-connector/pkg/log"
-	"github.com/sdaros/workflow-db-connector/pkg/util"
+	"github.com/signavio/workflow-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/log"
+	"github.com/signavio/workflow-connector/pkg/util"
 )
 
 // JSONForWfa is the Formatter for Signavio Workflow Acccelerator

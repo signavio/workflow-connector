@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/sdaros/workflow-db-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/config"
 )
 
 // TODO: from here

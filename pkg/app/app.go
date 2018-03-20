@@ -7,10 +7,10 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/sdaros/workflow-db-connector/pkg/config"
-	"github.com/sdaros/workflow-db-connector/pkg/formatting"
-	"github.com/sdaros/workflow-db-connector/pkg/log"
-	"github.com/sdaros/workflow-db-connector/pkg/util"
+	"github.com/signavio/workflow-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/formatting"
+	"github.com/signavio/workflow-connector/pkg/log"
+	"github.com/signavio/workflow-connector/pkg/util"
 	"github.com/urfave/negroni"
 )
 

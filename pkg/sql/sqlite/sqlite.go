@@ -4,8 +4,8 @@ import (
 	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/sdaros/workflow-db-connector/pkg/config"
-	sqlBackend "github.com/sdaros/workflow-db-connector/pkg/sql"
+	"github.com/signavio/workflow-connector/pkg/config"
+	sqlBackend "github.com/signavio/workflow-connector/pkg/sql"
 )
 
 func NewSqliteBackend(cfg *config.Config) (b *sqlBackend.Backend) {

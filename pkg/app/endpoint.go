@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sdaros/workflow-db-connector/pkg/config"
-	sqlBackend "github.com/sdaros/workflow-db-connector/pkg/sql"
-	"github.com/sdaros/workflow-db-connector/pkg/sql/mssql"
-	"github.com/sdaros/workflow-db-connector/pkg/sql/mysql"
-	"github.com/sdaros/workflow-db-connector/pkg/sql/pgsql"
-	"github.com/sdaros/workflow-db-connector/pkg/sql/sqlite"
+	"github.com/signavio/workflow-connector/pkg/config"
+	sqlBackend "github.com/signavio/workflow-connector/pkg/sql"
+	"github.com/signavio/workflow-connector/pkg/sql/mssql"
+	"github.com/signavio/workflow-connector/pkg/sql/mysql"
+	"github.com/signavio/workflow-connector/pkg/sql/pgsql"
+	"github.com/signavio/workflow-connector/pkg/sql/sqlite"
 )
 
 // Endpoint fetches data from a backend service and makes the data available via

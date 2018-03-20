@@ -3,7 +3,7 @@ package log
 import (
 	"fmt"
 
-	"github.com/sdaros/workflow-db-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/config"
 )
 
 type Logger bool

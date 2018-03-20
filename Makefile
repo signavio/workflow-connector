@@ -15,7 +15,7 @@
 BIN := wfadb
 
 # This repo's root import path (under GOPATH).
-PKG := github.com/sdaros/workflow-db-connector
+PKG := github.com/signavio/workflow-connector
 
 # Where to push the docker image.
 REGISTRY ?= sdaros
