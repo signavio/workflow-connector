@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/signavio/workflow-connector/pkg/config"
@@ -9,7 +10,7 @@ import (
 )
 
 func (r *getSingle) handle() (results []interface{}, err error) {
-	log.When(r.backend.Cfg).Infoln("[handlers] getSingle")
+	log.When(r.backend.Cfg).Infoln("[handler] getSingle")
 	r.table = r.ctx.Value(config.ContextKey("table")).(string)
 	// Use the TableSchema containing columns of related tables if the
 	// current table contains 1..* relationship with other tables
@@ -28,7 +29,7 @@ func (r *getSingle) handle() (results []interface{}, err error) {
 		return nil, err
 	}
 	log.When(r.backend.Cfg).Infof(
-		"[endpoint <- template] Interpolated `GetSingleWithRelationships`:\n%s\n",
+		"[handler <- template] Interpolated `GetSingleWithRelationships`:\n%s\n",
 		queryText,
 	)
 	results, err = r.getQueryResults(r.ctx, queryText, r.id)
@@ -36,14 +37,14 @@ func (r *getSingle) handle() (results []interface{}, err error) {
 		return nil, err
 	}
 	log.When(r.backend.Cfg).Infof(
-		"[endpoint <- db] getQueryResults: \n%+v\n",
+		"[handler <- db] getQueryResults: \n%+v\n",
 		results,
 	)
 	return
 }
 
 func (r *getCollection) handle() (results []interface{}, err error) {
-	log.When(r.backend.Cfg).Infoln("[handlers] getCollection")
+	log.When(r.backend.Cfg).Infoln("[handler] getCollection")
 	table := r.ctx.Value(config.ContextKey("table")).(string)
 	r.columnNames = r.backend.Cfg.TableSchemas[table].ColumnNames
 	r.dataTypes = r.backend.Cfg.TableSchemas[table].DataTypes
@@ -54,12 +55,12 @@ func (r *getCollection) handle() (results []interface{}, err error) {
 	}
 	if len(results) > 2 {
 		log.When(r.backend.Cfg).Infof(
-			"[endpoint <- db] getQueryResults: \n%+v ...\n",
+			"[handler <- db] getQueryResults: \n%+v ...\n",
 			results[0:1],
 		)
 	} else {
 		log.When(r.backend.Cfg).Infof(
-			"[endpoint <- db] getQueryResults (head): \n%+v ...\n",
+			"[handler <- db] getQueryResults (head): \n%+v ...\n",
 			results,
 		)
 	}
@@ -67,6 +68,7 @@ func (r *getCollection) handle() (results []interface{}, err error) {
 }
 
 func (r *getSingleAsOption) handle() (results []interface{}, err error) {
+	log.When(r.backend.Cfg).Infoln("[handler] getSingleAsOptions")
 	currentTable := r.ctx.Value(config.ContextKey("table")).(string)
 	columnAsOptionName := r.ctx.Value(config.ContextKey("columnAsOptionName")).(string)
 	r.columnNames, r.dataTypes = columnNamesAndDataTypesForOptionRoutes(
@@ -74,13 +76,14 @@ func (r *getSingleAsOption) handle() (results []interface{}, err error) {
 	)
 	results, err = r.getQueryResults(r.ctx, r.query, r.id)
 	log.When(r.backend.Cfg).Infof(
-		"[endpoint <- db] getQueryResults: \n%+v\n",
+		"[handler <- db] getQueryResults: \n%+v\n",
 		results,
 	)
 	return
 }
 
 func (r *getCollectionAsOptions) handle() (results []interface{}, err error) {
+	log.When(r.backend.Cfg).Infoln("[handler] getCollectionAsOptions")
 	currentTable := r.ctx.Value(config.ContextKey("table")).(string)
 	columnAsOptionName := r.ctx.Value(config.ContextKey("columnAsOptionName")).(string)
 	r.columnNames, r.dataTypes = columnNamesAndDataTypesForOptionRoutes(
@@ -89,12 +92,12 @@ func (r *getCollectionAsOptions) handle() (results []interface{}, err error) {
 	results, err = r.getQueryResults(r.ctx, r.query)
 	if len(results) > 2 {
 		log.When(r.backend.Cfg).Infof(
-			"[endpoint <- db] getQueryResults: \n%+v ...\n",
+			"[handler <- db] getQueryResults: \n%+v ...\n",
 			results[0:1],
 		)
 	} else {
 		log.When(r.backend.Cfg).Infof(
-			"[endpoint <- db] getQueryResults (head): \n%+v ...\n",
+			"[handler <- db] getQueryResults (head): \n%+v ...\n",
 			results,
 		)
 	}
@@ -102,6 +105,7 @@ func (r *getCollectionAsOptions) handle() (results []interface{}, err error) {
 }
 
 func (r *getCollectionAsOptionsFilterable) handle() (results []interface{}, err error) {
+	log.When(r.backend.Cfg).Infoln("[handler] getCollectionAsOptionsFilterable")
 	currentTable := r.ctx.Value(config.ContextKey("table")).(string)
 	columnAsOptionName := r.ctx.Value(config.ContextKey("columnAsOptionName")).(string)
 	r.columnNames, r.dataTypes = columnNamesAndDataTypesForOptionRoutes(
@@ -110,12 +114,12 @@ func (r *getCollectionAsOptionsFilterable) handle() (results []interface{}, err 
 	results, err = r.getQueryResults(r.ctx, r.query, r.filter)
 	if len(results) > 2 {
 		log.When(r.backend.Cfg).Infof(
-			"[endpoint <- db] getQueryResults: \n%+v ...\n",
+			"[handler <- db] getQueryResults: \n%+v ...\n",
 			results[0:1],
 		)
 	} else {
 		log.When(r.backend.Cfg).Infof(
-			"[endpoint <- db] getQueryResults (head): \n%+v ...\n",
+			"[handler <- db] getQueryResults (head): \n%+v ...\n",
 			results,
 		)
 	}
@@ -139,23 +143,54 @@ func columnNamesAndDataTypesForOptionRoutes(b *Backend, table, columnAsOptionNam
 }
 
 func (r *updateSingle) handle() (results []interface{}, err error) {
+	log.When(r.backend.Cfg).Infoln("[handler] updateSingle")
 	r.backend.RequestData, err = parseDataForm(r.request)
 	if err != nil {
 		return nil, err
 	}
 	updateSingle, err := r.backend.interpolateTemplate(
-		r.request.Context(),
-		r.backend.Templates["UpdateSingle"],
+		r.request.Context(), r.backend.Templates["UpdateSingle"],
 	)
 	if err != nil {
 		return nil, err
 	}
+	log.When(r.backend.Cfg).Infof(
+		"[handler <- template] Interpolated `CreateSingle`:\n%s\n",
+		updateSingle,
+	)
 	args := r.backend.buildExecQueryArgsWithID(r.request.Context(), r.id)
-	return r.backend.execContext(r.request.Context(), updateSingle, args)
+	log.When(r.backend.Cfg).Infof(
+		"[handler <- db] buildExecQueryArgsWithID(): returned following args:\n%s\n",
+		args,
+	)
+	result, err := r.backend.execContext(r.request.Context(), updateSingle, args)
+	if err != nil {
+		return nil, err
+	}
+	log.When(r.backend.Cfg).Infof(
+		"[handler <-> handlers] return the newly updated resource:\n call getSingle.handle()",
+		result,
+		err,
+	)
+	route := &getSingle{
+		ctx:     r.request.Context(),
+		id:      r.id,
+		backend: r.backend,
+	}
+	results, err = route.handle()
+	if err != nil {
+		return nil, err
+	}
+	log.When(r.backend.Cfg).Infof(
+		"[handler <- db] get just updated resource: \nresults: %+v\nerror: %+v\n",
+		results,
+		err,
+	)
+	return
 }
 
 func (r *createSingle) handle() (results []interface{}, err error) {
-	log.When(r.backend.Cfg).Infoln("[handlers] createSingle")
+	log.When(r.backend.Cfg).Infoln("[handler] createSingle")
 	r.backend.RequestData, err = parseDataForm(r.request)
 	if err != nil {
 		return nil, err
@@ -166,16 +201,47 @@ func (r *createSingle) handle() (results []interface{}, err error) {
 		return nil, err
 	}
 	log.When(r.backend.Cfg).Infof(
-		"[endpoint <- template] Interpolated `CreateSingle`:\n%s\n",
+		"[handler <- template] Interpolated `CreateSingle`:\n%s\n",
 		createSingle,
 	)
-
 	args := r.backend.buildExecQueryArgs(r.request.Context())
-	results, err = r.backend.execContext(r.request.Context(), createSingle, args)
 	log.When(r.backend.Cfg).Infof(
-		"[endpoint <- db] execContext: \nresults: %+v\nerror: %+v\n",
+		"[handler <- db] buildExecQueryArgs(): returned following args:\n%s\n",
+		args,
+	)
+	result, err := r.backend.execContext(r.request.Context(), createSingle, args)
+	if err != nil {
+		return nil, err
+	}
+	log.When(r.backend.Cfg).Infoln("[handler <-> handlers] return the" +
+		"newly created resource:\n call getSingle.handle()",
+	)
+	return r.getJustCreated(result)
+}
+func (r *createSingle) getJustCreated(result sql.Result) (results []interface{}, err error) {
+	// TODO: Figure out how to handle result.RowsAffected()
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	if id < 1 {
+		// getting the last inserted id probably not supported
+		return nil, nil
+	}
+	route := &getSingle{
+		ctx:     r.request.Context(),
+		id:      fmt.Sprintf("%d", id),
+		backend: r.backend,
+	}
+	results, err = route.handle()
+	if err != nil {
+		return nil, err
+	}
+	log.When(r.backend.Cfg).Infof(
+		"[handler <- db] getJustCreated(): \nresults: %+v\nerror: %+v\n",
 		results,
 		err,
 	)
 	return
+
 }

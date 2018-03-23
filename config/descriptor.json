@@ -21,13 +21,14 @@
           "key" : "cost",
           "name" : "Acquisition Cost",
           "type" : {
-            "name" : "money",
-            "amount": {
-                "fromColumn": "acquisition_cost"
-            },
-            "currency": {
-                "value": "EUR"
-            }
+            "name" : "money"
+          },
+          "amount": {
+              "key": "acquisitionCost",
+              "fromColumn": "acquisition_cost"
+          },
+          "currency": {
+              "value": "EUR"
           }
         },
         {

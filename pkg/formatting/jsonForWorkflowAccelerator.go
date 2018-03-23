@@ -16,7 +16,6 @@ type JSONForWfa struct{}
 // which is an array of empty interfaces, to a JSON byte array
 // that Workflow Accelerator can interpret and understand
 func (f *JSONForWfa) Format(ctx context.Context, cfg *config.Config, results []interface{}) (JSONResults []byte, err error) {
-	log.When(cfg).Infoln("[endpoint -> formatter] ")
 	activeRoute := ctx.Value(config.ContextKey("route")).(string)
 	tableName := ctx.Value(config.ContextKey("table")).(string)
 	if activeRoute == "getCollectionAsOptionsFilterable" {
@@ -56,6 +55,7 @@ func (f *JSONForWfa) Format(ctx context.Context, cfg *config.Config, results []i
 	if err != nil {
 		return nil, err
 	}
+	log.When(cfg).Infoln("[routeHandler <- formatter]")
 	return
 }
 
@@ -68,8 +68,8 @@ func formatAsAWorkflowType(nameValue map[string]interface{}, table string, cfg *
 	for _, field := range typeDescriptor.Fields {
 		switch {
 		case field.Type.Name == "money":
-			if nameValue[table].(map[string]interface{})[field.Type.Amount.FromColumn] != nil ||
-				nameValue[table].(map[string]interface{})[field.Type.Currency.FromColumn] != nil {
+			if nameValue[table].(map[string]interface{})[field.Amount.FromColumn] != nil ||
+				nameValue[table].(map[string]interface{})[field.Currency.FromColumn] != nil {
 				result[field.Key] =
 					resultAsWorkflowMoneyType(field, nameValue, table)
 			}
@@ -101,20 +101,20 @@ func formatAsAWorkflowType(nameValue map[string]interface{}, table string, cfg *
 func resultAsWorkflowMoneyType(field *config.Field, nameValue map[string]interface{}, table string) map[string]interface{} {
 	result := make(map[string]interface{})
 	var currency interface{}
-	if field.Type.Currency.FromColumn == "" {
-		if field.Type.Currency.Value == "" {
+	if field.Currency.FromColumn == "" {
+		if field.Currency.Value == "" {
 			// Default to EUR if no other information is provided
 			currency = "EUR"
 		} else {
 			// Otherwise use the currency that the user defines
 			// in the `value` field
-			currency = field.Type.Currency.Value
+			currency = field.Currency.Value
 		}
 	} else {
-		currency = nameValue[table].(map[string]interface{})[field.Type.Currency.FromColumn]
+		currency = nameValue[table].(map[string]interface{})[field.Currency.FromColumn]
 	}
 	result = map[string]interface{}{
-		"amount":   nameValue[table].(map[string]interface{})[field.Type.Amount.FromColumn],
+		"amount":   nameValue[table].(map[string]interface{})[field.Amount.FromColumn],
 		"currency": currency,
 	}
 	return result

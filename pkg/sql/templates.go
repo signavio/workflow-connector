@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"html/template"
-	"strings"
 
 	"github.com/signavio/workflow-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/util"
 )
 
 // TODO: from here
@@ -33,12 +33,19 @@ func (b *Backend) interpolateGetTemplate(ctx context.Context, templateText, tabl
 func (b *Backend) interpolateTemplate(ctx context.Context, templateText string) (interpolatedQuery string, err error) {
 	var columnNamesFromRequestData []string
 	currentTable := ctx.Value(config.ContextKey("table")).(string)
-	for _, column := range b.Cfg.TableSchemas[currentTable].ColumnNames {
-		// Remove tablename prefix
-		tableNamePrefix := strings.IndexRune(column, '_')
-		columnName := column[tableNamePrefix+1 : len(column)]
-		if _, ok := b.RequestData[columnName]; ok {
-			columnNamesFromRequestData = append(columnNamesFromRequestData, columnName)
+	td := util.TypeDescriptorForCurrentTable(b.Cfg.Descriptor.TypeDescriptors, currentTable)
+	for _, field := range td.Fields {
+		if field.Type.Name == "money" {
+			if _, ok := b.RequestData[field.Amount.Key]; ok {
+				columnNamesFromRequestData = append(columnNamesFromRequestData, field.Amount.FromColumn)
+			}
+			if _, ok := b.RequestData[field.Currency.Key]; ok {
+				columnNamesFromRequestData = append(columnNamesFromRequestData, field.Currency.FromColumn)
+			}
+		} else {
+			if _, ok := b.RequestData[field.Key]; ok {
+				columnNamesFromRequestData = append(columnNamesFromRequestData, field.FromColumn)
+			}
 		}
 	}
 	funcMap := template.FuncMap{
@@ -64,7 +71,7 @@ func (b *Backend) interpolateTemplate(ctx context.Context, templateText string) 
 		Table       string
 		ColumnNames []string
 	}{
-		Table:       ctx.Value(config.ContextKey("table")).(string),
+		Table:       currentTable,
 		ColumnNames: columnNamesFromRequestData,
 	}
 	if len(templateData.ColumnNames) == 0 {

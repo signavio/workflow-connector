@@ -216,6 +216,11 @@ var testCasesForGetSingleEquipment = func(caseType string) []testCase {
   "purchaseDate": "2016-09-04T11:00:00Z"
 }`,
 		},
+		{
+			name:            "equipment_id=999 (non existent)",
+			route:           "/equipment/999",
+			expectedResults: `{}`,
+		},
 	}
 	failureCases := []testCase{}
 	if caseType == "success" {
@@ -232,6 +237,11 @@ var testCasesForGetSingleEquipmentOption = func(caseType string) []testCase {
   "id": "1",
   "name": "Stainless Steel Cooling Spiral"
 }`,
+		},
+		{
+			name:            "equipment table column `id` and `name`",
+			route:           "/equipment/options/999",
+			expectedResults: `{}`,
 		},
 	}
 	failureCases := []testCase{}

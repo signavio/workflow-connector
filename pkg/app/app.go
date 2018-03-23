@@ -70,7 +70,7 @@ func (app *App) DefineRoutes() {
 		Methods("GET")
 }
 func (app *App) getDescriptorFile(rw http.ResponseWriter, req *http.Request) {
-	log.When(app.Cfg).Infoln("[request -> route] getDescriptorFile")
+	log.When(app.Cfg).Infoln("[request -> http.ServeFile] descriptor file")
 	requestWithActiveRoute := req.WithContext(
 		context.WithValue(
 			req.Context(),
@@ -81,7 +81,7 @@ func (app *App) getDescriptorFile(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (app *App) getSingle(rw http.ResponseWriter, req *http.Request) {
-	log.When(app.Cfg).Infoln("[request -> route] getSingle")
+	log.When(app.Cfg).Infoln("[request -> routeHandler] getSingle")
 	requestWithActiveRoute := req.WithContext(
 		context.WithValue(
 			req.Context(),
@@ -92,7 +92,7 @@ func (app *App) getSingle(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (app *App) getCollection(rw http.ResponseWriter, req *http.Request) {
-	log.When(app.Cfg).Infoln("[request -> route] getCollection")
+	log.When(app.Cfg).Infoln("[request -> routeHandler] getCollection")
 	requestWithActiveRoute := req.WithContext(
 		context.WithValue(
 			req.Context(),
@@ -103,7 +103,7 @@ func (app *App) getCollection(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (app *App) getSingleAsOption(rw http.ResponseWriter, req *http.Request) {
-	log.When(app.Cfg).Infoln("[request -> route] getSingleAsOption")
+	log.When(app.Cfg).Infoln("[request -> routeHandler] getSingleAsOption")
 	requestWithActiveRoute := req.WithContext(
 		context.WithValue(
 			req.Context(),
@@ -114,7 +114,7 @@ func (app *App) getSingleAsOption(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (app *App) getCollectionAsOptions(rw http.ResponseWriter, req *http.Request) {
-	log.When(app.Cfg).Infoln("[request -> route] getCollectionAsOptions")
+	log.When(app.Cfg).Infoln("[request -> routeHandler] getCollectionAsOptions")
 	requestWithActiveRoute := req.WithContext(
 		context.WithValue(
 			req.Context(),
@@ -125,7 +125,7 @@ func (app *App) getCollectionAsOptions(rw http.ResponseWriter, req *http.Request
 }
 
 func (app *App) getCollectionAsOptionsFilterable(rw http.ResponseWriter, req *http.Request) {
-	log.When(app.Cfg).Infoln("[request -> route] getCollectionAsOptionsFilterable")
+	log.When(app.Cfg).Infoln("[request -> routeHandler] getCollectionAsOptionsFilterable")
 	requestWithActiveRoute := req.WithContext(
 		context.WithValue(
 			req.Context(),
@@ -136,7 +136,7 @@ func (app *App) getCollectionAsOptionsFilterable(rw http.ResponseWriter, req *ht
 }
 
 func (app *App) updateSingle(rw http.ResponseWriter, req *http.Request) {
-	log.When(app.Cfg).Infoln("[request -> route] updateSingle")
+	log.When(app.Cfg).Infoln("[request -> routeHandler] updateSingle")
 	requestWithActiveRoute := req.WithContext(
 		context.WithValue(
 			req.Context(),
@@ -147,7 +147,7 @@ func (app *App) updateSingle(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (app *App) createSingle(rw http.ResponseWriter, req *http.Request) {
-	log.When(app.Cfg).Infoln("[request -> route] createSingle")
+	log.When(app.Cfg).Infoln("[request -> routeHandler] createSingle")
 	requestWithActiveRoute := req.WithContext(
 		context.WithValue(
 			req.Context(),
@@ -167,11 +167,14 @@ func (app *App) commonRouteHandler(method func(*http.Request) ([]interface{}, er
 	}
 	request, cancel := util.BuildRequest(req, app.Cfg.Descriptor.TypeDescriptors, tableFromRequest)
 	defer cancel()
+	log.When(app.Cfg).Infoln("[routeHandler -> handlers]")
 	results, err := method(request)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	log.When(app.Cfg).Infoln("[routeHandler <- handlers]")
+	log.When(app.Cfg).Infoln("[routeHandler -> formatter]")
 	formattedResults, err := app.Formatter.Format(request.Context(), app.Cfg, results)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)

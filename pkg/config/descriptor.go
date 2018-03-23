@@ -30,18 +30,20 @@ type Field struct {
 	Type         *WorkflowType
 	FromColumn   string
 	Relationship *Relationship
-}
-
-type WorkflowType struct {
-	Name   string
-	Kind   string
-	Amount struct {
+	Amount       struct {
+		Key        string
 		FromColumn string
 	}
 	Currency struct {
+		Key        string
 		FromColumn string
 		Value      string
 	}
+}
+
+type WorkflowType struct {
+	Name string
+	Kind string
 }
 
 type Relationship struct {

@@ -13,6 +13,9 @@ import (
 
 func (r *getSingle) getQueryResults(ctx context.Context, query string, args ...interface{}) (results []interface{}, err error) {
 	results, err = getQueryResults(ctx, r.backend.DB, query, r.columnNames, r.dataTypes, args...)
+	if len(results) == 0 {
+		return
+	}
 	if util.TableHasRelationships(r.backend.Cfg, r.table) {
 		return deduplicateSingleResource(
 				results,
@@ -47,9 +50,6 @@ func getQueryResults(ctx context.Context, db *sql.DB, query string, columnNames 
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 0 {
-		return
-	}
 	return
 }
 func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []interface{} {
@@ -77,7 +77,7 @@ func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []
 	return append([]interface{}{}, data[0])
 }
 
-func (b *Backend) execContext(ctx context.Context, query string, args []interface{}) (results []interface{}, err error) {
+func (b *Backend) execContext(ctx context.Context, query string, args []interface{}) (result sql.Result, err error) {
 	tx, err := b.DB.Begin()
 	if err != nil {
 		return nil, err
@@ -90,16 +90,9 @@ func (b *Backend) execContext(ctx context.Context, query string, args []interfac
 			tx.Rollback()
 		}
 	}()
-	result, err := b.DB.ExecContext(ctx, query, args...)
+	result, err = b.DB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
-	}
-	affectedRows, err := result.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-	if affectedRows != 1 {
-		return nil, ErrMismatchedAffectedRows
 	}
 	return
 }
@@ -136,20 +129,33 @@ func rowsToResults(rows *sql.Rows, columnNames []string, dataTypes []interface{}
 
 func (b *Backend) buildExecQueryArgs(ctx context.Context) (args []interface{}) {
 	currentTable := ctx.Value(config.ContextKey("table")).(string)
-	for _, column := range b.Cfg.TableSchemas[currentTable].ColumnNames {
-		// Remove tablename prefix
-		tableNamePrefix := strings.IndexRune(column, '_')
-		columnName := column[tableNamePrefix+1 : len(column)]
-		if val, ok := b.RequestData[columnName]; ok {
-			switch v := val.(type) {
-			case string:
-				args = append(args, v)
-			case bool:
-				args = append(args, v)
-			case float64:
-				args = append(args, v)
-			case nil:
-				args = append(args, v)
+	td := util.TypeDescriptorForCurrentTable(b.Cfg.Descriptor.TypeDescriptors, currentTable)
+	var val interface{}
+	var ok bool
+	appendRequestDataToArgs := func(args []interface{}, val interface{}) []interface{} {
+		switch v := val.(type) {
+		case string:
+			return append(args, v)
+		case bool:
+			return append(args, v)
+		case float64:
+			return append(args, v)
+		case nil:
+			return append(args, v)
+		}
+		return []interface{}{}
+	}
+	for _, field := range td.Fields {
+		if field.Type.Name == "money" {
+			if val, ok = b.RequestData[field.Amount.Key]; ok {
+				args = appendRequestDataToArgs(args, val)
+			}
+			if val, ok = b.RequestData[field.Currency.Key]; ok {
+				args = appendRequestDataToArgs(args, val)
+			}
+		} else {
+			if val, ok = b.RequestData[field.Key]; ok {
+				args = appendRequestDataToArgs(args, val)
 			}
 		}
 	}

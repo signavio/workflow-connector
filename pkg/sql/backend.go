@@ -73,13 +73,13 @@ type getCollectionAsOptionsFilterable struct {
 	dataTypes   []interface{}
 }
 type updateSingle struct {
-	backend *Backend
 	request *http.Request
+	backend *Backend
 	id      string
 }
 type createSingle struct {
-	backend *Backend
 	request *http.Request
+	backend *Backend
 }
 
 // NewBackend ...
@@ -172,8 +172,8 @@ func (b *Backend) GetCollectionAsOptionsFilterable(req *http.Request) (response 
 func (b *Backend) UpdateSingle(req *http.Request) (response []interface{}, err error) {
 	requestID := mux.Vars(req)["id"]
 	route := &updateSingle{
-		backend: b,
 		request: req,
+		backend: b,
 		id:      requestID,
 	}
 	return route.handle()
@@ -182,8 +182,8 @@ func (b *Backend) UpdateSingle(req *http.Request) (response []interface{}, err e
 // Create data from database
 func (b *Backend) CreateSingle(req *http.Request) (response []interface{}, err error) {
 	route := &createSingle{
-		backend: b,
 		request: req,
+		backend: b,
 	}
 	return route.handle()
 }
