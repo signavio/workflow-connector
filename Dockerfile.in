@@ -14,7 +14,9 @@
 
 FROM ARG_BUILDIMAGE as testing
 LABEL maintainer="Stefano Da Ros <stefano.daros@signavio.com>"
-RUN apk add --no-cache git \
+RUN apk add --no-cache \
+  git \
+  build-base \
   && mkdir -p /go/src/ARG_PKG
 COPY . /go/src/ARG_PKG
 WORKDIR /go/src/ARG_PKG

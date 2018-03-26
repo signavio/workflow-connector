@@ -36,11 +36,10 @@ if [ -z "${OS}" ]; then
 fi
 
 
-export CGO_ENABLED=0
+export CGO_ENABLED=1
 export GOARCH="${ARCH}"
 export GOOS="${OS}"
 
 go install                                                         \
-    -installsuffix "static"                                        \
     -ldflags "-X ${PKG}/pkg/version.VERSION=${VERSION}"            \
     ./...

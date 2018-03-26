@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # The binary to build (just the basename).
-BIN := wfadb
+BIN := workflow-connector
 
 # This repo's root import path (under GOPATH).
 PKG := github.com/signavio/workflow-connector
