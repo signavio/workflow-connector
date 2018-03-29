@@ -43,4 +43,4 @@ VALUES " +
 (4,5,'2017-02-19 12:00:00',2,'warranty only for parts'); "
 
 __EOF__
-psql -f migration.psql
+psql ${DATABASE_URL} -f migration.psql
