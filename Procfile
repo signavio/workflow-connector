@@ -1,1 +1,1 @@
-web: wfadb
+web: workflow-connector
