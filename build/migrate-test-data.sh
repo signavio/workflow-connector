@@ -1,6 +1,7 @@
 #!/bin/sh
 
 cat << __EOF__ >> ~/migration.psql
+BEGIN;
 CREATE TABLE IF NOT EXISTS equipment ( 
 id integer not null primary key,  
 name text,  
@@ -41,5 +42,6 @@ VALUES
 (2,2,'2016-10-02 12:00:00',2,'warranty only for parts'),  
 (3,3,'2017-02-19 12:00:00',3,'warranty covers parts and labour'),  
 (4,5,'2017-02-19 12:00:00',2,'warranty only for parts'); 
+COMMIT;
 __EOF__
 psql ${DATABASE_URL} -f migration.psql
