@@ -12,7 +12,7 @@ import (
 
 var home = os.Getenv("HOME")
 
-// Order in array is significant, items at the front will precedence
+// Order is significant, items at the front of the array take precedence
 var configPaths = []string{
 	// TODO fill out with typical windows config directories
 	filepath.Join(home, "/.config/workflow-connector/"),
