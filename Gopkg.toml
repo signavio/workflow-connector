@@ -20,6 +20,7 @@
 
 [[metadata.heroku]]
   root-package = "github.com/signavio/workflow-connector"
+  go-version = "1.9.4"
   install = [ "./..." ]
 
 [[constraint]]

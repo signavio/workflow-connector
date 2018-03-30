@@ -25,7 +25,7 @@ conditions text);
 
 COMMIT;
 __EOF__
-WD=$(pwd)
+WD=$(pwd)/build
 psql ${DATABASE_URL} -f migration.psql
 psql ${DATABASE_URL} -c "\copy equipment FROM '${WD}/equipment_data.csv' DELIMITER ',' CSV"
 psql ${DATABASE_URL} -c "\copy maintenance FROM '${WD}/maintenance_data.csv' DELIMITER ',' CSV"
