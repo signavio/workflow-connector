@@ -1,2 +1,2 @@
-release: ./build/migrate-test-data.sh
+release: ./build/migrate-table-schemas.sh
 web: workflow-connector
