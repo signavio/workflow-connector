@@ -27,8 +27,8 @@ code char(4) not null);
 
 COMMIT;
 __EOF__
-WD=$(pwd)/build
+DIR=$(pwd)/build
 psql ${DATABASE_URL} -f migration.psql
-psql ${DATABASE_URL} -c "\copy equipment FROM '${WD}/equipment_data.csv' DELIMITER ',' CSV"
-psql ${DATABASE_URL} -c "\copy maintenance FROM '${WD}/maintenance_data.csv' DELIMITER ',' CSV"
-psql ${DATABASE_URL} -c "\copy warranty FROM '${WD}/warranty_data.csv' DELIMITER ',' CSV"
+for table in $(ls "${DIR}" | grep '\.csv$' | cut -d'-' -f2 ); do
+    psql ${DATABASE_URL} -c "\copy ${table} FROM '${DIR}/${table}_data.csv' DELIMITER ',' CSV"
+done
