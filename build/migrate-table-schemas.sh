@@ -3,25 +3,27 @@
 cat << __EOF__ >> ~/migration.psql
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS equipment ( 
-id integer not null primary key,  
-name text,  
-acquisition_cost real,  
-purchase_date timestamp);  
+CREATE TABLE IF NOT EXISTS class (
+id integer not null primary key,
+section_code char(1) not null,
+course_code char(4) not null,
+organization_code varchar(8) not null);
 
-CREATE TABLE IF NOT EXISTS maintenance ( 
-id integer not null primary key,  
-equipment_id integer not null,  
-maintenance_performed timestamp,  
-notes text,  
-next_maintenance timestamp);  
+CREATE TABLE IF NOT EXISTS teacher (
+id integer not null primary key,
+code char(6) not null);
 
-CREATE TABLE IF NOT EXISTS warranty ( 
-id integer not null primary key,  
-equipment_id integer not null,  
-start_date timestamp,  
-duration_in_years numeric,  
-conditions text);  
+CREATE TABLE IF NOT EXISTS organization (
+id integer not null primary key,
+code varchar(8) not null);
+
+CREATE TABLE IF NOT EXISTS section (
+id integer not null primary key,
+code char(1) not null);
+
+CREATE TABLE IF NOT EXISTS course (
+id integer not null primary key,
+code char(4) not null);
 
 COMMIT;
 __EOF__
