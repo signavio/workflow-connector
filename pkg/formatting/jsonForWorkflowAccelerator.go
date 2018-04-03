@@ -65,6 +65,11 @@ func formatAsAWorkflowType(nameValue map[string]interface{}, table string, cfg *
 		table,
 	)
 	result = make(map[string]interface{})
+	// Add columnAsOptionName to the result set
+	if nameValue[table].(map[string]interface{})[typeDescriptor.ColumnAsOptionName] != nil {
+		result["name"] =
+			nameValue[table].(map[string]interface{})[typeDescriptor.ColumnAsOptionName]
+	}
 	for _, field := range typeDescriptor.Fields {
 		switch {
 		case field.Type.Name == "money":
