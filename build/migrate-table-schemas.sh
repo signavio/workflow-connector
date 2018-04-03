@@ -34,6 +34,6 @@ COMMIT;
 __EOF__
 DIR=$(pwd)/build
 psql ${DATABASE_URL} -f migration.psql
-for table in $(ls "${DIR}" | grep '\.csv$' | cut -d'-' -f2 ); do
+for table in $(ls "${DIR}" | grep '\.csv$' | cut -d'-' -f1 ); do
     psql ${DATABASE_URL} -c "\copy ${table} FROM '${DIR}/${table}_data.csv' DELIMITER ',' CSV"
 done
