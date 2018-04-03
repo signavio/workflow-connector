@@ -15,7 +15,7 @@ func NewPgsqlBackend(cfg *config.Config) (b *sqlBackend.Backend) {
 		"GetSingleAsOption":                "SELECT id, %s FROM %s WHERE id = $1",
 		"GetCollection":                    "SELECT * FROM %s",
 		"GetCollectionAsOptions":           "SELECT id, %s FROM %s",
-		"GetCollectionAsOptionsFilterable": "SELECT id, %s FROM %s WHERE %s LIKE $1",
+		"GetCollectionAsOptionsFilterable": "SELECT id, %s FROM %s WHERE CAST (%s AS TEXT) LIKE $1",
 		"GetTableSchema":                   "SELECT * FROM %s LIMIT 1",
 	}
 	b.Templates = map[string]string{
