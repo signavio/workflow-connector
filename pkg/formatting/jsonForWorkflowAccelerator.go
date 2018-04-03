@@ -145,6 +145,10 @@ func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSO
 	var formattedResults []interface{}
 	for _, result := range results {
 		nameValue := result.(map[string]interface{})
+		id := nameValue[table].(map[string]interface{})["id"]
+		name := nameValue[table].(map[string]interface{})["name"]
+		// NEXT
+		// if name not string toString() it
 		formattedResult := map[string]interface{}{
 			"id": nameValue[table].(map[string]interface{})["id"],
 			"name": fmt.Sprintf(
