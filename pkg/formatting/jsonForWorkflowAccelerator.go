@@ -1,6 +1,7 @@
 package formatting
 
 import (
+	"fmt"
 	"context"
 	"encoding/json"
 
@@ -130,7 +131,10 @@ func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSO
 	if len(results) == 1 {
 		formattedResult := map[string]interface{}{
 			"id": results[0].(map[string]interface{})[table].(map[string]interface{})["id"],
-			"name": results[0].(map[string]interface{})[table].(map[string]interface{})["name"],
+			"name": fmt.Sprintf(
+				"%d",
+				results[0].(map[string]interface{})[table].(map[string]interface{})["name"],
+			),
 		}
 		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
 		if err != nil {
@@ -143,7 +147,10 @@ func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSO
 		nameValue := result.(map[string]interface{})
 		formattedResult := map[string]interface{}{
 			"id": nameValue[table].(map[string]interface{})["id"],
-			"name": nameValue[table].(map[string]interface{})["name"],
+			"name": fmt.Sprintf(
+				"%d",
+				nameValue[table].(map[string]interface{})["name"],
+			),
 		}
 		formattedResults = append(formattedResults, formattedResult)
 	}
