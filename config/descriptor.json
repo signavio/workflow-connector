@@ -38,6 +38,32 @@
       "fetchOneAvailable" : true
     },
     {
+      "key" : "classTeacher",
+      "name" : "Class teacher relationships",
+      "tableName": "class_teacher",
+      "columnAsOptionName": "id",
+      "fields" : [
+        {
+          "key" : "classId",
+          "name" : "Class ID",
+          "fromColumn" : "class_id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "teacherId",
+          "name" : "Teacher ID",
+          "fromColumn" : "teacher_id",
+          "type" : {
+            "name" : "text"
+          }
+        }
+      ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
+    },
+    {
       "key" : "teacher",
       "name" : "Teacher",
       "tableName": "teacher",
