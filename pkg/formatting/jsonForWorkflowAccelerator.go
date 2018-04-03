@@ -127,6 +127,17 @@ func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSO
 	if len(results) == 0 {
 		return []byte("[{}]"), nil
 	}
+	if len(results) == 1 {
+		formattedResult := map[string]interface{}{
+			"id": results[0].(map[string]interface{})[table].(map[string]interface{})["id"],
+			"name": results[0].(map[string]interface{})[table].(map[string]interface{})["name"],
+		}
+		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+		return
+	}
 	var formattedResults []interface{}
 	for _, result := range results {
 		nameValue := result.(map[string]interface{})
@@ -142,22 +153,4 @@ func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSO
 	}
 	return
 
-}
-
-func specialFormattingForFilterRoute(results []interface{}, table string, cfg *config.Config) (JSONResults []byte, err error) {
-	if len(results) == 0 {
-		return []byte("[{}]"), nil
-	}
-	var formattedResults []interface{}
-	for _, result := range results {
-		formattedResult := formatAsAWorkflowType(
-			result.(map[string]interface{}), table, cfg,
-		)
-		formattedResults = append(formattedResults, formattedResult)
-	}
-	JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	return
 }
