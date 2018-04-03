@@ -24,6 +24,9 @@ func (f *JSONForWfa) Format(ctx context.Context, cfg *config.Config, results []i
 		// result set returns 0, 1 or many results
 		return specialFormattingForFilterRoute(results, tableName, cfg)
 	}
+	if activeRoute == "getSingleAsOption" || activeRoute == "getCollectionAsOptions" {
+		return specialFormattingForOptionsRoute(results, tableName)
+	}
 	if len(results) == 0 {
 		return []byte("{}"), nil
 	}
@@ -65,11 +68,6 @@ func formatAsAWorkflowType(nameValue map[string]interface{}, table string, cfg *
 		table,
 	)
 	result = make(map[string]interface{})
-	// Add columnAsOptionName to the result set
-	if nameValue[table].(map[string]interface{})[typeDescriptor.ColumnAsOptionName] != nil {
-		result["name"] =
-			nameValue[table].(map[string]interface{})[typeDescriptor.ColumnAsOptionName]
-	}
 	for _, field := range typeDescriptor.Fields {
 		switch {
 		case field.Type.Name == "money":
@@ -123,6 +121,27 @@ func resultAsWorkflowMoneyType(field *config.Field, nameValue map[string]interfa
 		"currency": currency,
 	}
 	return result
+}
+
+func specialFormattingForOptionsRoute(results []interface{}, table string) (JSONResults []byte, err error) {
+	if len(results) == 0 {
+		return []byte("[{}]"), nil
+	}
+	var formattedResults []interface{}
+	for _, result := range results {
+		nameValue := result.(map[string]interface{})
+		formattedResult := map[string]interface{}{
+			"id": nameValue[table].(map[string]interface{})["id"],
+			"name": nameValue[table].(map[string]interface{})["name"],
+		}
+		formattedResults = append(formattedResults, formattedResult)
+	}
+	JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return
+
 }
 
 func specialFormattingForFilterRoute(results []interface{}, table string, cfg *config.Config) (JSONResults []byte, err error) {
