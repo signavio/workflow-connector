@@ -129,15 +129,7 @@ func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSO
 	if len(results) == 0 {
 		return []byte("[{}]"), nil
 	}
-	if len(results) == 1 {
-		formattedResult := mapWithIDAndName(results[0].(map[string]interface{}), table)
-		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
-		if err != nil {
-			return nil, err
-		}
-		return
-	}
-		var formattedResults []interface{}
+	var formattedResults []interface{}
 	for _, result := range results {
 		formattedResult := mapWithIDAndName(result.(map[string]interface{}), table)
 		formattedResults = append(formattedResults, formattedResult)
