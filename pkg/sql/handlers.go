@@ -219,21 +219,14 @@ func (r *createSingle) handle() (results []interface{}, err error) {
 	log.When(r.backend.Cfg).Infoln("[handler <-> handlers] return the " +
 		"newly created resource:\n call getSingle.handle()",
 	)
-	results, err = r.getJustCreated(result)
-	if err == ErrNoLastInsertID {
-		// Return only a http.StatusCode 200
-		return []interface{}{}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
+	return r.getJustCreated(result)
 }
 func (r *createSingle) getJustCreated(result sql.Result) (results []interface{}, err error) {
 	// TODO: Figure out how to handle result.RowsAffected()
 	id, err := result.LastInsertId()
 	if err != nil {
-		return nil, err
+		// LastInsertID() not supported, return only a 200 http.StatusCode
+		return []interface{}{}, nil
 	}
 	if id < 1 {
 		// getting the last inserted id probably not supported
