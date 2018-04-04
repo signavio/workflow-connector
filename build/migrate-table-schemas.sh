@@ -28,7 +28,7 @@ organization_code varchar(8) references organization(code));
 CREATE TABLE IF NOT EXISTS class_teacher (
 id integer not null primary key,
 class_id integer references class(id),
-teacher_id integer references teacher(code));
+teacher_id char(6) references teacher(code));
 
 
 COMMIT;
