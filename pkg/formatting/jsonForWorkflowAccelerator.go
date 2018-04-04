@@ -2,6 +2,7 @@ package formatting
 
 import (
 	"fmt"
+	"time"
 	"context"
 	"encoding/json"
 
@@ -146,15 +147,20 @@ func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSO
 	for _, result := range results {
 		nameValue := result.(map[string]interface{})
 		id := nameValue[table].(map[string]interface{})["id"]
-		name := nameValue[table].(map[string]interface{})["name"]
-		// NEXT
-		// if name not string toString() it
+		var name interface{}
+		switch v := nameValue[table].(map[string]interface{})["name"].(type) {
+		case int64:
+			name = fmt.Sprintf("%v", v)
+		case float64:
+			name = fmt.Sprintf("%v", v)
+		case time.Time:
+			name = v.String()
+		case string:
+			name = v
+		}
 		formattedResult := map[string]interface{}{
-			"id": nameValue[table].(map[string]interface{})["id"],
-			"name": fmt.Sprintf(
-				"%d",
-				nameValue[table].(map[string]interface{})["name"],
-			),
+			"id": id,
+			"name": name,
 		}
 		formattedResults = append(formattedResults, formattedResult)
 	}
