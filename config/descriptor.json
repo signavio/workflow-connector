@@ -38,7 +38,7 @@
         {
           "key" : "classDuration",
           "name" : "Class duration [hours]",
-          "fromColumn" : "class_time",
+          "fromColumn" : "class_duration",
           "type" : {
             "name" : "number"
           }
