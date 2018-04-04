@@ -192,7 +192,7 @@ func (app *App) commonRouteHandler(method func(*http.Request) ([]interface{}, er
 func contains(typeDescriptors []*config.TypeDescriptor, table string) (result bool) {
 	result = false
 	for _, v := range typeDescriptors {
-		if v.TableName == table {
+		if v.Key == table {
 			result = true
 		}
 	}

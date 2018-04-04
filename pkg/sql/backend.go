@@ -127,12 +127,14 @@ func (b *Backend) GetCollection(req *http.Request) (response []interface{}, err 
 
 // Fetch Option data from database
 func (b *Backend) GetSingleAsOption(req *http.Request) (response []interface{}, err error) {
-	requestID := mux.Vars(req)["id"]
-	tableFromRequest := mux.Vars(req)["table"]
-	columnAsOptionName := req.Context().Value(config.ContextKey("columnAsOptionName")).(string)
+	request, cancel := util.BuildRequest(req, b.Cfg.Descriptor.TypeDescriptors, mux.Vars(req)["table"])
+	defer cancel()
+	requestID := mux.Vars(request)["id"]
+	tableFromRequest := request.Context().Value(config.ContextKey("table")).(string)
+	columnAsOptionName := request.Context().Value(config.ContextKey("columnAsOptionName")).(string)
 	query := fmt.Sprintf(b.Queries["GetSingleAsOption"], columnAsOptionName, tableFromRequest)
 	route := &getSingleAsOption{
-		ctx:     req.Context(),
+		ctx:     request.Context(),
 		id:      requestID,
 		backend: b,
 		query:   query,
@@ -142,11 +144,13 @@ func (b *Backend) GetSingleAsOption(req *http.Request) (response []interface{}, 
 
 // Fetch Options from database
 func (b *Backend) GetCollectionAsOptions(req *http.Request) (response []interface{}, err error) {
-	tableFromRequest := mux.Vars(req)["table"]
-	columnAsOptionName := req.Context().Value(config.ContextKey("columnAsOptionName")).(string)
+	request, cancel := util.BuildRequest(req, b.Cfg.Descriptor.TypeDescriptors, mux.Vars(req)["table"])
+	defer cancel()
+	tableFromRequest := request.Context().Value(config.ContextKey("table")).(string)
+	columnAsOptionName := request.Context().Value(config.ContextKey("columnAsOptionName")).(string)
 	query := fmt.Sprintf(b.Queries["GetCollectionAsOptions"], columnAsOptionName, tableFromRequest)
 	route := &getCollectionAsOptions{
-		ctx:     req.Context(),
+		ctx:     request.Context(),
 		backend: b,
 		query:   query,
 	}
@@ -155,12 +159,15 @@ func (b *Backend) GetCollectionAsOptions(req *http.Request) (response []interfac
 
 // Fetch Options from database
 func (b *Backend) GetCollectionAsOptionsFilterable(req *http.Request) (response []interface{}, err error) {
+	request, cancel := util.BuildRequest(req, b.Cfg.Descriptor.TypeDescriptors, mux.Vars(req)["table"])
+	defer cancel()
+	tableFromRequest := request.Context().Value(config.ContextKey("table")).(string)
+	columnAsOptionName := request.Context().Value(config.ContextKey("columnAsOptionName")).(string)
+
 	filter := mux.Vars(req)["filter"]
-	tableFromRequest := mux.Vars(req)["table"]
-	columnAsOptionName := req.Context().Value(config.ContextKey("columnAsOptionName")).(string)
 	query := fmt.Sprintf(b.Queries["GetCollectionAsOptionsFilterable"], columnAsOptionName, tableFromRequest, columnAsOptionName)
 	route := &getCollectionAsOptionsFilterable{
-		ctx:     req.Context(),
+		ctx:     request.Context(),
 		backend: b,
 		filter:  fmt.Sprintf("%%%s%%", filter),
 		query:   query,
