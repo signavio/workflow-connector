@@ -40,5 +40,5 @@ __EOF__
 DIR=$(pwd)/build
 psql ${DATABASE_URL} -f migration.psql
 for table in teacher organization section course class; do
-    psql ${DATABASE_URL} -c "\copy ${table} FROM '${DIR}/${table}-data.csv' DELIMITER ',' CSV"
+    psql ${DATABASE_URL} -c "\copy ${table} $(sed -n 1p ${DIR}/${table}-data.csv) FROM '${DIR}/${table}-data.csv' DELIMITER ',' CSV HEADER"
 done
