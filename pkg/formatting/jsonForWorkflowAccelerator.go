@@ -130,38 +130,16 @@ func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSO
 		return []byte("[{}]"), nil
 	}
 	if len(results) == 1 {
-		formattedResult := map[string]interface{}{
-			"id": results[0].(map[string]interface{})[table].(map[string]interface{})["id"],
-			"name": fmt.Sprintf(
-				"%d",
-				results[0].(map[string]interface{})[table].(map[string]interface{})["name"],
-			),
-		}
+		formattedResult := mapWithIDAndName(results[0].(map[string]interface{}), table)
 		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
 		if err != nil {
 			return nil, err
 		}
 		return
 	}
-	var formattedResults []interface{}
+		var formattedResults []interface{}
 	for _, result := range results {
-		nameValue := result.(map[string]interface{})
-		id := nameValue[table].(map[string]interface{})["id"]
-		var name interface{}
-		switch v := nameValue[table].(map[string]interface{})["name"].(type) {
-		case int64:
-			name = fmt.Sprintf("%v", v)
-		case float64:
-			name = fmt.Sprintf("%v", v)
-		case time.Time:
-			name = v.String()
-		case string:
-			name = v
-		}
-		formattedResult := map[string]interface{}{
-			"id": id,
-			"name": name,
-		}
+		formattedResult := mapWithIDAndName(result.(map[string]interface{}), table)
 		formattedResults = append(formattedResults, formattedResult)
 	}
 	JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
@@ -170,4 +148,23 @@ func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSO
 	}
 	return
 
+}
+
+func mapWithIDAndName (nameValue map[string]interface{}, table string) (map[string]interface{}) {
+	id := nameValue[table].(map[string]interface{})["id"]
+	var name interface{}
+	switch v := nameValue[table].(map[string]interface{})["name"].(type) {
+	case int64:
+		name = fmt.Sprintf("%v", v)
+	case float64:
+		name = fmt.Sprintf("%v", v)
+	case time.Time:
+		name = v.String()
+	case string:
+		name = v
+	}
+	return map[string]interface{}{
+		"id": id,
+		"name": name,
+	}
 }
