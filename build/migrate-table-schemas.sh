@@ -4,23 +4,23 @@ cat << __EOF__ >> ~/migration.psql
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS teacher (
-id integer not null primary key,
+id serial not null primary key,
 code char(6) unique not null);
 
 CREATE TABLE IF NOT EXISTS organization (
-id integer not null primary key,
+id serial not null primary key,
 code varchar(8) unique not null);
 
 CREATE TABLE IF NOT EXISTS section (
-id integer not null primary key,
+id serial not null primary key,
 code char(1) unique not null);
 
 CREATE TABLE IF NOT EXISTS course (
-id integer not null primary key,
+id serial not null primary key,
 code char(4) unique not null);
 
 CREATE TABLE IF NOT EXISTS class (
-id integer not null primary key,
+id serial not null primary key,
 class_coverage numeric,
 class_startdate date,
 class_time time,
@@ -30,7 +30,7 @@ course_code char(4) references course(code),
 organization_code varchar(8) references organization(code));
 
 CREATE TABLE IF NOT EXISTS class_teacher (
-id integer not null primary key,
+id serial not null primary key,
 class_id integer references class(id),
 teacher_id char(6) references teacher(code));
 
