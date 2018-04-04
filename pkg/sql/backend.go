@@ -321,6 +321,7 @@ func parseFormURLEncoded(req *http.Request) (data map[string]interface{}, err er
 	if err := req.ParseForm(); err != nil {
 		return nil, err
 	}
+	log.When(r.backend.Cfg).Infof("request form: %+v\n", req.PostForm)
 	if len(req.PostForm) == 0 {
 		return nil, ErrPostFormEmpty
 	}
