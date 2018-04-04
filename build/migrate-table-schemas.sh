@@ -27,12 +27,12 @@ class_time time,
 class_duration numeric,
 section_code char(1) not null references section(code),
 course_code char(4) not null references course(code),
-organization_code not null varchar(8) references organization(code));
+organization_code varchar(8) not null references organization(code));
 
 CREATE TABLE IF NOT EXISTS class_teacher (
 id serial not null primary key,
-class_id integer references class(id),
-teacher_id char(6) references teacher(code));
+class_id integer not null references class(id),
+teacher_id char(6) not null references teacher(code));
 
 
 COMMIT;
