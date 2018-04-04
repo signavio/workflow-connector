@@ -314,7 +314,6 @@ func parseDataForm(req *http.Request) (data map[string]interface{}, err error) {
 	case "application/x-www-form-urlencoded":
 		return parseFormURLEncoded(req)
 	}
-	fmt.Printf("content type: %+v\n", req.Header.Get("Content-Type"))
 	return nil, ErrPostFormEmpty
 }
 
@@ -322,7 +321,6 @@ func parseFormURLEncoded(req *http.Request) (data map[string]interface{}, err er
 	if err := req.ParseForm(); err != nil {
 		return nil, err
 	}
-	fmt.Printf("request form: %+v\n", req.PostForm)
 	if len(req.PostForm) == 0 {
 		return nil, ErrPostFormEmpty
 	}
