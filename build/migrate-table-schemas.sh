@@ -35,6 +35,6 @@ COMMIT;
 __EOF__
 DIR=$(pwd)/build
 psql ${DATABASE_URL} -f migration.psql
-for table in $(ls "${DIR}" | grep '\.csv$' | cut -d'-' -f1 ); do
+for table in teacher organization section course class; do
     psql ${DATABASE_URL} -c "\copy ${table} FROM '${DIR}/${table}-data.csv' DELIMITER ',' CSV"
 done
