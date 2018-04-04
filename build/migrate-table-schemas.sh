@@ -21,6 +21,10 @@ code char(4) unique not null);
 
 CREATE TABLE IF NOT EXISTS class (
 id integer not null primary key,
+class_coverage numeric,
+class_startdate date,
+class_time time,
+class_duration numeric,
 section_code char(1) references section(code),
 course_code char(4) references course(code),
 organization_code varchar(8) references organization(code));

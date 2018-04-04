@@ -10,6 +10,40 @@
       "columnAsOptionName": "id",
       "fields" : [
         {
+          "key" : "classCoverage",
+          "name" : "Class coverage [in weeks]",
+          "fromColumn" : "class_coverage",
+          "type" : {
+            "name" : "number"
+          }
+        },
+        {
+          "key" : "classStartdate",
+          "name" : "Class Startdate",
+          "fromColumn" : "class_startdate",
+          "type" : {
+            "name" : "date",
+            "kind": "date"
+          }
+        },
+        {
+          "key" : "classTime",
+          "name" : "Class time",
+          "fromColumn" : "class_time",
+          "type" : {
+            "name" : "date",
+            "kind": "time"
+          }
+        },
+        {
+          "key" : "classDuration",
+          "name" : "Class duration [hours]",
+          "fromColumn" : "class_time",
+          "type" : {
+            "name" : "number"
+          }
+        },
+        {
           "key" : "sectionCode",
           "name" : "Section code",
           "fromColumn" : "section_code",
