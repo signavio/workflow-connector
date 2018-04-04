@@ -32,6 +32,17 @@
           "type" : {
             "name" : "text"
           }
+        },
+        {
+          "key" : "teachers",
+          "name" : "Teachers",
+          "type" : {
+            "name" : "text"
+          },
+          "relationship": {
+              "withTable": "class_teacher",
+              "foreignKey": "class_id"
+          }
         }
       ],
       "optionsAvailable" : true,
