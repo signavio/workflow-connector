@@ -7,12 +7,12 @@ CREATE TABLE IF NOT EXISTS class (
 id integer not null primary key,
 section_code char(1) references section(code),
 course_code char(4) references course(code),
-organization_code varchar(8) references organization(code);
+organization_code varchar(8) references organization(code));
 
 CREATE TABLE IF NOT EXISTS class_teacher (
 id integer not null primary key,
 class_id integer references class(id),
-teacher_id integer references teacher(code);
+teacher_id integer references teacher(code));
 
 CREATE TABLE IF NOT EXISTS teacher (
 id integer not null primary key,
