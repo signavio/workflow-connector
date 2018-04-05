@@ -21,13 +21,15 @@ func (f *JSONForWfa) Format(ctx context.Context, cfg *config.Config, results []i
 	activeRoute := ctx.Value(config.ContextKey("route")).(string)
 	tableName := ctx.Value(config.ContextKey("table")).(string)
 	if activeRoute == "getCollectionAsOptionsFilterable" ||
-		activeRoute == "getSingleAsOption" ||
 		activeRoute == "getCollectionAsOptions" {
 		// Signavio Workflow Accelerator expects results from the options routes,
-		// for example, `/options/{id}`, `/options?filter=`, to be enclosed
-		// in an array, regardless of whether or note the result set
+		// for example, `/options`, `/options?filter=`, to be enclosed
+		// in an array, regardless of whether or not the result set
 		// return 0, 1 or many results
-		return specialFormattingForOptionsRoutes(results, tableName)
+		return specialFormattingForCollectionAsOptionsRoutes(results, tableName)
+	}
+	if activeRoute == "getSingleAsOption" {
+		return specialFormattingForSingleAsOptionsRoute(results, tableName)
 	}
 	if len(results) == 0 {
 		return []byte("{}"), nil
@@ -124,8 +126,19 @@ func resultAsWorkflowMoneyType(field *config.Field, nameValue map[string]interfa
 	}
 	return result
 }
+func specialFormattingForSingleAsOptionsRoute(results []interface{}, table string) (JSONResults []byte, err error) {
+	if len(results) == 0 {
+		return []byte("{}"), nil
+	}
+	formattedResult := mapWithIDAndName(results[0].(map[string]interface{}), table)
+	JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return
+}
 
-func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSONResults []byte, err error) {
+func specialFormattingForCollectionAsOptionsRoutes(results []interface{}, table string) (JSONResults []byte, err error) {
 	if len(results) == 0 {
 		return []byte("[{}]"), nil
 	}
