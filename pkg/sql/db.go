@@ -58,16 +58,17 @@ func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []
 		var fieldResultSet []map[string]interface{}
 		var relationshipTableContainsResults = false
 		for _, datum := range data {
-			tableResults := datum.(map[string]interface{})[field.Relationship.WithTable].(map[string]interface{})
-			// If the result set of a related table is empty, then all values
-			// will be equal to nil, so do not apend it to the fieldResultSet
-			for _, value := range tableResults {
-				if value != nil {
-					relationshipTableContainsResults = true
+			if tableResults, ok := datum.(map[string]interface{})[field.Relationship.WithTable].(map[string]interface{}); ok {
+				// If the result set of a related table is empty, then all values
+				// will be equal to nil, so do not append it to the fieldResultSet
+				for _, value := range tableResults {
+					if value != nil {
+						relationshipTableContainsResults = true
+					}
 				}
-			}
-			if relationshipTableContainsResults {
-				fieldResultSet = util.AppendNoDuplicates(fieldResultSet, tableResults)
+				if relationshipTableContainsResults {
+					fieldResultSet = util.AppendNoDuplicates(fieldResultSet, tableResults)
+				}
 			}
 		}
 		data[0].(map[string]interface{})[td.TableName].(map[string]interface{})[field.Key] = map[string]interface{}{

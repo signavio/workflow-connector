@@ -1,6 +1,8 @@
 package formatting
 
 import (
+	"fmt"
+	"time"
 	"context"
 	"encoding/json"
 
@@ -18,11 +20,14 @@ type JSONForWfa struct{}
 func (f *JSONForWfa) Format(ctx context.Context, cfg *config.Config, results []interface{}) (JSONResults []byte, err error) {
 	activeRoute := ctx.Value(config.ContextKey("route")).(string)
 	tableName := ctx.Value(config.ContextKey("table")).(string)
-	if activeRoute == "getCollectionAsOptionsFilterable" {
-		// Signavio Workflow Accelerator expects results from the filter route
-		// to be enclosed in an array, regardless of whether or not the
-		// result set returns 0, 1 or many results
-		return specialFormattingForFilterRoute(results, tableName, cfg)
+	if activeRoute == "getCollectionAsOptionsFilterable" ||
+		activeRoute == "getSingleAsOption" ||
+		activeRoute == "getCollectionAsOptions" {
+		// Signavio Workflow Accelerator expects results from the options routes,
+		// for example, `/options/{id}`, `/options?filter=`, to be enclosed
+		// in an array, regardless of whether or note the result set
+		// return 0, 1 or many results
+		return specialFormattingForOptionsRoutes(results, tableName)
 	}
 	if len(results) == 0 {
 		return []byte("{}"), nil
@@ -120,15 +125,21 @@ func resultAsWorkflowMoneyType(field *config.Field, nameValue map[string]interfa
 	return result
 }
 
-func specialFormattingForFilterRoute(results []interface{}, table string, cfg *config.Config) (JSONResults []byte, err error) {
+func specialFormattingForOptionsRoutes(results []interface{}, table string) (JSONResults []byte, err error) {
 	if len(results) == 0 {
 		return []byte("[{}]"), nil
 	}
+	if len(results) == 1 {
+		formattedResult := mapWithIDAndName(results[0].(map[string]interface{}), table)
+		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+		return
+	}
 	var formattedResults []interface{}
 	for _, result := range results {
-		formattedResult := formatAsAWorkflowType(
-			result.(map[string]interface{}), table, cfg,
-		)
+		formattedResult := mapWithIDAndName(result.(map[string]interface{}), table)
 		formattedResults = append(formattedResults, formattedResult)
 	}
 	JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
@@ -136,4 +147,24 @@ func specialFormattingForFilterRoute(results []interface{}, table string, cfg *c
 		return nil, err
 	}
 	return
+
+}
+
+func mapWithIDAndName (nameValue map[string]interface{}, table string) (map[string]interface{}) {
+	id := nameValue[table].(map[string]interface{})["id"]
+	var name interface{}
+	switch v := nameValue[table].(map[string]interface{})["name"].(type) {
+	case int64:
+		name = fmt.Sprintf("%v", v)
+	case float64:
+		name = fmt.Sprintf("%v", v)
+	case time.Time:
+		name = v.String()
+	case string:
+		name = v
+	}
+	return map[string]interface{}{
+		"id": id,
+		"name": name,
+	}
 }

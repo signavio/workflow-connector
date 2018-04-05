@@ -3,11 +3,14 @@ package sql
 import (
 	"database/sql"
 	"fmt"
+	"errors"
 
 	"github.com/signavio/workflow-connector/pkg/config"
 	"github.com/signavio/workflow-connector/pkg/log"
 	"github.com/signavio/workflow-connector/pkg/util"
 )
+
+var ErrNoLastInsertID = errors.New("Database does not support getting the last inserted ID")
 
 func (r *getSingle) handle() (results []interface{}, err error) {
 	log.When(r.backend.Cfg).Infoln("[handler] getSingle")
@@ -213,7 +216,7 @@ func (r *createSingle) handle() (results []interface{}, err error) {
 	if err != nil {
 		return nil, err
 	}
-	log.When(r.backend.Cfg).Infoln("[handler <-> handlers] return the" +
+	log.When(r.backend.Cfg).Infoln("[handler <-> handlers] return the " +
 		"newly created resource:\n call getSingle.handle()",
 	)
 	return r.getJustCreated(result)
@@ -222,7 +225,8 @@ func (r *createSingle) getJustCreated(result sql.Result) (results []interface{},
 	// TODO: Figure out how to handle result.RowsAffected()
 	id, err := result.LastInsertId()
 	if err != nil {
-		return nil, err
+		// LastInsertID() not supported, return only a 200 http.StatusCode
+		return []interface{}{}, nil
 	}
 	if id < 1 {
 		// getting the last inserted id probably not supported

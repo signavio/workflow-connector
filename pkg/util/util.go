@@ -10,8 +10,7 @@ import (
 
 // TypeDescriptorForCurrentTable will return the typeDescriptor from the descriptor.json
 // file defined for the table provided in the function's second parameter
-func TypeDescriptorForCurrentTable(typeDescriptors []*config.TypeDescriptor, table string) (typeDescriptor *config.TypeDescriptor) {
-	var result *config.TypeDescriptor
+func TypeDescriptorForCurrentTable(typeDescriptors []*config.TypeDescriptor, table string) (result *config.TypeDescriptor) {
 	for _, typeDescriptor := range typeDescriptors {
 		if table == typeDescriptor.TableName {
 			result = typeDescriptor
@@ -20,9 +19,21 @@ func TypeDescriptorForCurrentTable(typeDescriptors []*config.TypeDescriptor, tab
 	return result
 }
 
+// TypeDescriptorForCurrentTable will return the typeDescriptor from the descriptor.json
+// file defined for the table provided in the function's second parameter
+func getDBTableFromTableKey(typeDescriptors []*config.TypeDescriptor, tableKey string) (tableName string) {
+	for _, typeDescriptor := range typeDescriptors {
+		if tableKey == typeDescriptor.Key {
+			tableName = typeDescriptor.TableName
+		}
+	}
+	return
+}
+
 // BuildRequest will add necessary key value pairs to the context in request
 // that will be used later
-func BuildRequest(req *http.Request, typeDescriptors []*config.TypeDescriptor, table string) (*http.Request, context.CancelFunc) {
+func BuildRequest(req *http.Request, typeDescriptors []*config.TypeDescriptor, tableKey string) (*http.Request, context.CancelFunc) {
+	table := getDBTableFromTableKey(typeDescriptors, tableKey)
 	contextWithCurrentTable := context.WithValue(
 		req.Context(),
 		config.ContextKey("table"),

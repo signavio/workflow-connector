@@ -12,20 +12,24 @@ func NewPgsqlBackend(cfg *config.Config) (b *sqlBackend.Backend) {
 	b = sqlBackend.NewBackend(cfg)
 	b.ConvertDBSpecificDataType = convertFromPgsqlDataType
 	b.Queries = map[string]string{
-		"Get":                              "SELECT * FROM %s WHERE id = $1",
-		"GetCollection":                    "SELECT * FROM %s",
-		"GetRelation":                      "SELECT * FROM %s WHERE %s = $1",
 		"GetSingleAsOption":                "SELECT id, %s FROM %s WHERE id = $1",
+		"GetCollection":                    "SELECT * FROM %s",
 		"GetCollectionAsOptions":           "SELECT id, %s FROM %s",
-		"GetCollectionAsOptionsFilterable": "SELECT id, %s FROM %s WHERE %s LIKE $1",
+		"GetCollectionAsOptionsFilterable": "SELECT id, %s FROM %s WHERE CAST (%s AS TEXT) LIKE $1",
 		"GetTableSchema":                   "SELECT * FROM %s LIMIT 1",
 	}
 	b.Templates = map[string]string{
-
-		"GetCollectionWithRelationships": "SELECT * FROM {{.Name}} AS _{{.Name}} " +
-			"{{range $index, $element := {{.Relations}}}} " +
-			"join {{.TableName}}" +
-			"on _{{.TableName}}.{{.ForeignKey}} = _{{.Name}}.id{{end}}",
+		"GetTableWithRelationshipsSchema": "SELECT * FROM {{.TableName}} AS _{{.TableName}}" +
+			"{{range .Relations}}" +
+			" LEFT JOIN {{.Relationship.WithTable}}" +
+			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
+			" = _{{$.TableName}}.id{{end}} LIMIT 1",
+		"GetSingleWithRelationships": "SELECT * FROM {{.TableName}} AS _{{.TableName}}" +
+			"{{range .Relations}}" +
+			" LEFT JOIN {{.Relationship.WithTable}}" +
+			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
+			" = _{{$.TableName}}.id{{end}}" +
+			" WHERE _{{$.TableName}}.id = $1",
 		"UpdateSingle": "UPDATE {{.Table}} SET {{.ColumnNames | head}}" +
 			" = $1{{range $index, $Element := .ColumnNames | tail}}," +
 			" {{$element}} = ${{(add2 $index)}}{{end}}" +
