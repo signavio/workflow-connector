@@ -3,13 +3,14 @@ package sqlite
 import (
 	"database/sql"
 
+	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/signavio/workflow-connector/pkg/config"
 	sqlBackend "github.com/signavio/workflow-connector/pkg/sql"
 )
 
-func NewSqliteBackend(cfg *config.Config) (b *sqlBackend.Backend) {
-	b = sqlBackend.NewBackend(cfg)
+func NewSqliteBackend(cfg *config.Config, router *mux.Router) (b *sqlBackend.Backend) {
+	b = sqlBackend.NewBackend(cfg, router)
 	b.ConvertDBSpecificDataType = convertFromSqliteDataType
 	b.Queries = map[string]string{
 		"GetSingleAsOption":                "SELECT id, %s FROM %s WHERE id = ?",

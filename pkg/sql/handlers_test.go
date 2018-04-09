@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	_ "io"
 	"net/http"
@@ -88,7 +89,7 @@ type testCase struct {
 	tableSchema      *config.TableSchema
 	columnNames      []string
 	rowsAsCsv        string
-	expectations     func(sqlmock.Sqlmock, []string, string)
+	expectations     func(sqlmock.Sqlmock, []string, string, ...driver.Value)
 	expectedResults  []interface{}
 	postData         url.Values
 	request          *http.Request
@@ -106,14 +107,14 @@ var equip = &equipment{
 }
 
 var testCasesForGetEquipmentByID = func(caseType string) []testCase {
-	expectationsSuccess := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string) {
+	expectationsSuccess := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 		rows := sqlmock.NewRows(columns).
 			FromCSVString(rowsAsCsv)
 		mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
 			WithArgs("1").
 			WillReturnRows(rows)
 	}
-	expectationsFail := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string) {
+	expectationsFail := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 		rows := sqlmock.NewRows(columns).
 			FromCSVString(rowsAsCsv)
 		mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
@@ -195,14 +196,14 @@ var testCasesForGetEquipmentByID = func(caseType string) []testCase {
 }
 
 var testCasesForGetEquipmentOptionsByID = func(caseType string) []testCase {
-	expectationsSuccess := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string) {
+	expectationsSuccess := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 		rows := sqlmock.NewRows(columns).
 			FromCSVString(rowsAsCsv)
 		mock.ExpectQuery("SELECT id, name FROM (.+) WHERE (.+) = (.+)").
 			WithArgs("1").
 			WillReturnRows(rows)
 	}
-	expectationsFail := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string) {
+	expectationsFail := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 		rows := sqlmock.NewRows(columns).
 			FromCSVString(rowsAsCsv)
 		mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
@@ -294,13 +295,13 @@ var testCasesForGetEquipmentOptionsByID = func(caseType string) []testCase {
 }
 
 var testCasesForGetEquipmentCollectionOptions = func(caseType string) []testCase {
-	expectationsSuccess := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string) {
+	expectationsSuccess := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 		rows := sqlmock.NewRows(columns).
 			FromCSVString(rowsAsCsv)
 		mock.ExpectQuery("SELECT id, name FROM (.+)").
 			WillReturnRows(rows)
 	}
-	expectationsFail := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string) {
+	expectationsFail := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 		rows := sqlmock.NewRows(columns).
 			FromCSVString(rowsAsCsv)
 		mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
@@ -364,13 +365,13 @@ var testCasesForGetEquipmentCollectionOptions = func(caseType string) []testCase
 	return []testCase{}
 }
 var testCasesForGetEquipmentCollection = func(caseType string) []testCase {
-	expectationsSuccess := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string) {
+	expectationsSuccess := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 		rows := sqlmock.NewRows(columns).
 			FromCSVString(rowsAsCsv)
 		mock.ExpectQuery("SELECT . FROM (.+)").
 			WillReturnRows(rows)
 	}
-	expectationsFail := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string) {
+	expectationsFail := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 		rows := sqlmock.NewRows(columns).
 			FromCSVString(rowsAsCsv)
 		mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
@@ -379,6 +380,112 @@ var testCasesForGetEquipmentCollection = func(caseType string) []testCase {
 	}
 	successCases := []testCase{
 		{name: "table with four columns",
+			descriptorFields: commonDescriptorFields,
+			tableSchema:      commonTableSchema,
+			columnNames:      []string{"equipment_id", "equipment_name", "equipment_acquisition_cost", "equipment_purchase_date"},
+			rowsAsCsv:        "1,HolzbierFaß (100L),400.99,2017-03-02T00:00:00Z\n2,Cooling Spiral (2m),89.99,2017-03-02T00:00:00Z",
+			expectedResults: []interface{}{
+				map[string]interface{}{
+					"equipment": map[string]interface{}{
+						"id":               "1",
+						"name":             "HolzbierFaß (100L)",
+						"acquisition_cost": 400.99,
+						"purchase_date":    "2017-03-02T00:00:00Z",
+					},
+				},
+				map[string]interface{}{
+					"equipment": map[string]interface{}{
+						"id":               "2",
+						"name":             "Cooling Spiral (2m)",
+						"acquisition_cost": 89.99,
+						"purchase_date":    "2017-03-02T00:00:00Z",
+					},
+				},
+			},
+			expectations: expectationsSuccess,
+		},
+		{
+			name: "table with one column",
+			descriptorFields: `
+		{
+		  "key" : "id",
+		  "name" : "ID",
+		  "type" : {
+			"name" : "text"
+		  }
+		}`,
+			tableSchema: &config.TableSchema{
+				[]string{"equipment_id"},
+				[]interface{}{equip.id},
+			},
+			columnNames: []string{"equipment_id"},
+			rowsAsCsv:   "1\n2",
+			expectedResults: []interface{}{
+				map[string]interface{}{
+					"equipment": map[string]interface{}{
+						"id": "1",
+					},
+				},
+				map[string]interface{}{
+					"equipment": map[string]interface{}{
+						"id": "2",
+					},
+				},
+			},
+			expectations: expectationsSuccess,
+		},
+	}
+	failureCases := []testCase{
+		{
+			name:             "test with four columns and incorrect row data",
+			descriptorFields: commonDescriptorFields,
+			tableSchema:      commonTableSchema,
+			columnNames:      []string{"id", "name", "acquisition_cost", "purchase_date"},
+			rowsAsCsv:        "1,HolzbierFaß (100L),400.99\n2,Cooling Spiral (2m),89.99",
+			expectedResults: []interface{}{
+				map[string]interface{}{
+					"equipment": map[string]interface{}{
+						"id":               "1",
+						"name":             "HolzbierFaß (100L)",
+						"acquisition_cost": 400.99,
+					},
+				},
+				map[string]interface{}{
+					"equipment": map[string]interface{}{
+						"id":               "2",
+						"name":             "Cooling Spiral (2m)",
+						"acquisition_cost": 89.99,
+					},
+				},
+			},
+			expectations: expectationsFail,
+		},
+	}
+	switch caseType {
+	case "success":
+		return successCases
+	case "failure":
+		return failureCases
+	}
+	return []testCase{}
+}
+var testCasesForUpdateSingle = func(caseType string) []testCase {
+	// NEXT: testCases for update single
+	expectationsSuccess := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
+		rows := sqlmock.NewRows(columns).
+			FromCSVString(rowsAsCsv)
+		mock.ExpectExec("INSERT INTO (.+)").
+			WithArgs(args)
+		mock.ExpectQuery("SELECT . FROM (.+)").
+			WillReturnRows(rows)
+	}
+	expectationsFail := func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
+		mock.ExpectExec("INSERT INTO (.+)").
+			WithArgs(args)
+	}
+	successCases := []testCase{
+		{
+			name:             "table with four columns",
 			descriptorFields: commonDescriptorFields,
 			tableSchema:      commonTableSchema,
 			columnNames:      []string{"equipment_id", "equipment_name", "equipment_acquisition_cost", "equipment_purchase_date"},
@@ -525,7 +632,7 @@ func newTestBackend(cfg *config.Config) (b *Backend, mock sqlmock.Sqlmock, err e
 	return b, mock, nil
 }
 
-func interpolateTestCase(ctx context.Context, b *Backend, route string, t *testing.T) (response []interface{}, err error) {
+func handleTestCase(ctx context.Context, b *Backend, route string, t *testing.T) (response []interface{}, err error) {
 	switch route {
 	case "GetSingle":
 		route := &getSingle{
@@ -582,7 +689,7 @@ func commonTest(testCases func(string) []testCase, testName, route string, t *te
 		for _, tc := range testCases("success") {
 			b, mock, ctx := commonSubTest(tc, t)
 			t.Run(fmt.Sprintf("when using %v", tc.name), func(t *testing.T) {
-				response, err := interpolateTestCase(ctx, b, route, t)
+				response, err := handleTestCase(ctx, b, route, t)
 				if err != nil {
 					t.Errorf("Expected no error, instead we received: %s", err)
 				}
@@ -601,7 +708,7 @@ func commonTest(testCases func(string) []testCase, testName, route string, t *te
 		for _, tc := range testCasesForGetEquipmentByID("failure") {
 			b, mock, ctx := commonSubTest(tc, t)
 			t.Run(fmt.Sprintf("when using %v", tc.name), func(t *testing.T) {
-				response, err := interpolateTestCase(ctx, b, route, t)
+				response, err := handleTestCase(ctx, b, route, t)
 				if err == nil {
 					t.Errorf("Expected no error, instead we received: %s", err)
 				}
@@ -650,7 +757,6 @@ func TestGetEquipmentCollectionAsOptions(t *testing.T) {
 	)
 }
 
-// TODO
 func TestGetEquipmentCollectionAsOptionsFilterable(t *testing.T) {
 	//	commonTest(
 	//		testCasesForGetEquipmentCollectionOptions,

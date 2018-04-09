@@ -12,15 +12,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/satori/go.uuid"
 	"github.com/signavio/workflow-connector/pkg/config"
+	"github.com/signavio/workflow-connector/pkg/log"
 	"github.com/signavio/workflow-connector/pkg/util"
 )
 
 var (
-	ErrPostFormEmpty          = errors.New("Form data sent was either empty, incomplete or of an unsupported type")
+	ErrPostForm               = errors.New("Form data sent was either empty, incomplete or of an unsupported type")
 	ErrCardinalityMany        = errors.New("Form data contained multiple input values for a single column")
 	ErrUnexpectedJSON         = errors.New("Received JSON data that we are unable to parse")
 	ErrMismatchedAffectedRows = errors.New("The amount of rows affected should be sane")
@@ -31,9 +34,19 @@ type Backend struct {
 	ConvertDBSpecificDataType func(string) interface{}
 	DB                        *sql.DB
 	Queries                   map[string]string
-	RequestData               map[string]interface{}
+	Router                    *mux.Router
 	Templates                 map[string]string
-	getSingle                 getSingle
+	Transactions              sync.Map
+}
+
+// Route specifies any backend specific routes that will be
+// added to the application's route list after the backend
+// has been initialized
+type Route struct {
+	path   string
+	f      func(http.ResponseWriter, *http.Request)
+	method string
+	query  string
 }
 type getSingle struct {
 	ctx         context.Context
@@ -83,12 +96,15 @@ type createSingle struct {
 }
 
 // NewBackend ...
-func NewBackend(cfg *config.Config) (b *Backend) {
-	return &Backend{
+func NewBackend(cfg *config.Config, router *mux.Router) (b *Backend) {
+	b = &Backend{
 		Cfg:       cfg,
+		Router:    router,
 		Queries:   make(map[string]string),
 		Templates: make(map[string]string),
 	}
+	b.defineRoutes()
+	return b
 }
 
 // Open a connection to the backend database
@@ -106,23 +122,70 @@ func (b *Backend) TearDown() {
 	b.DB.Close()
 }
 
+func (b *Backend) defineRoutes() {
+	b.Router.HandleFunc("/", b.createDBTransaction).
+		Methods("POST").Queries("begin", "{begin}")
+}
+
+func (b *Backend) createDBTransaction(rw http.ResponseWriter, req *http.Request) {
+	log.When(b.Cfg).Infoln("[request -> routeHandler] createDBTransaction()")
+	delay := 60 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), delay)
+	tx, err := b.DB.BeginTx(ctx, nil)
+	if err != nil {
+		cancel()
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	txUUID := uuid.NewV4()
+	if err != nil {
+		cancel()
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	b.Transactions.Store(txUUID, tx)
+	log.When(b.Cfg).Infof("[createDBTransaction] store tx to backend.Transactions: \n"+
+		"Added transaction %s to backend\n", txUUID)
+	// Explicitly call cancel after delay
+	go func(c context.CancelFunc, d time.Duration, id uuid.UUID) {
+		select {
+		case <-time.After(d):
+			c()
+			b.Transactions.Delete(txUUID)
+			log.When(b.Cfg).Infof("[createDBTransaction] Timeout expired: \n"+
+				"Deleted transaction %s from backend\n", txUUID)
+		}
+	}(cancel, delay, txUUID)
+	results := map[string]interface{}{
+		"transactionUUID": txUUID,
+	}
+	JSONResult, err := json.MarshalIndent(&results, "", "  ")
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rw.Header().Set("Content-Type", "application/json")
+	rw.Write(JSONResult)
+	return
+}
+
 // Fetch data from database
 func (b *Backend) GetSingle(req *http.Request) (response []interface{}, err error) {
 	requestID := mux.Vars(req)["id"]
-	route := &getSingle{
+	handler := &getSingle{
 		ctx:     req.Context(),
 		id:      requestID,
 		backend: b,
 	}
-	return route.handle()
+	return handler.handle()
 }
 
 func (b *Backend) GetCollection(req *http.Request) (response []interface{}, err error) {
-	route := &getCollection{
+	handler := &getCollection{
 		ctx:     req.Context(),
 		backend: b,
 	}
-	return route.handle()
+	return handler.handle()
 }
 
 // Fetch Option data from database
@@ -133,13 +196,13 @@ func (b *Backend) GetSingleAsOption(req *http.Request) (response []interface{}, 
 	tableFromRequest := request.Context().Value(config.ContextKey("table")).(string)
 	columnAsOptionName := request.Context().Value(config.ContextKey("columnAsOptionName")).(string)
 	query := fmt.Sprintf(b.Queries["GetSingleAsOption"], columnAsOptionName, tableFromRequest)
-	route := &getSingleAsOption{
-		ctx:     request.Context(),
+	handler := &getSingleAsOption{
+		ctx:     req.Context(),
 		id:      requestID,
 		backend: b,
 		query:   query,
 	}
-	return route.handle()
+	return handler.handle()
 }
 
 // Fetch Options from database
@@ -149,12 +212,12 @@ func (b *Backend) GetCollectionAsOptions(req *http.Request) (response []interfac
 	tableFromRequest := request.Context().Value(config.ContextKey("table")).(string)
 	columnAsOptionName := request.Context().Value(config.ContextKey("columnAsOptionName")).(string)
 	query := fmt.Sprintf(b.Queries["GetCollectionAsOptions"], columnAsOptionName, tableFromRequest)
-	route := &getCollectionAsOptions{
-		ctx:     request.Context(),
+	handler := &getCollectionAsOptions{
+		ctx:     req.Context(),
 		backend: b,
 		query:   query,
 	}
-	return route.handle()
+	return handler.handle()
 }
 
 // Fetch Options from database
@@ -166,33 +229,33 @@ func (b *Backend) GetCollectionAsOptionsFilterable(req *http.Request) (response 
 
 	filter := mux.Vars(req)["filter"]
 	query := fmt.Sprintf(b.Queries["GetCollectionAsOptionsFilterable"], columnAsOptionName, tableFromRequest, columnAsOptionName)
-	route := &getCollectionAsOptionsFilterable{
-		ctx:     request.Context(),
+	handler := &getCollectionAsOptionsFilterable{
+		ctx:     req.Context(),
 		backend: b,
 		filter:  fmt.Sprintf("%%%s%%", filter),
 		query:   query,
 	}
-	return route.handle()
+	return handler.handle()
 }
 
 // Update data from database
 func (b *Backend) UpdateSingle(req *http.Request) (response []interface{}, err error) {
 	requestID := mux.Vars(req)["id"]
-	route := &updateSingle{
+	handler := &updateSingle{
 		request: req,
 		backend: b,
 		id:      requestID,
 	}
-	return route.handle()
+	return handler.handle()
 }
 
 // Create data from database
 func (b *Backend) CreateSingle(req *http.Request) (response []interface{}, err error) {
-	route := &createSingle{
+	handler := &createSingle{
 		request: req,
 		backend: b,
 	}
-	return route.handle()
+	return handler.handle()
 }
 
 // insert context
@@ -314,7 +377,7 @@ func parseDataForm(req *http.Request) (data map[string]interface{}, err error) {
 	case "application/x-www-form-urlencoded":
 		return parseFormURLEncoded(req)
 	}
-	return nil, ErrPostFormEmpty
+	return nil, ErrPostForm
 }
 
 func parseFormURLEncoded(req *http.Request) (data map[string]interface{}, err error) {
@@ -322,7 +385,7 @@ func parseFormURLEncoded(req *http.Request) (data map[string]interface{}, err er
 		return nil, err
 	}
 	if len(req.PostForm) == 0 {
-		return nil, ErrPostFormEmpty
+		return nil, ErrPostForm
 	}
 	data = make(map[string]interface{})
 	for k, v := range req.PostForm {

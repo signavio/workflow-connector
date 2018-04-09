@@ -75,7 +75,7 @@ func (b *Backend) interpolateTemplate(ctx context.Context, templateText string) 
 		ColumnNames: columnNamesFromRequestData,
 	}
 	if len(templateData.ColumnNames) == 0 {
-		return "", ErrPostFormEmpty
+		return "", ErrPostForm
 	}
 	err = queryTemplate.Execute(query, templateData)
 	if err != nil {

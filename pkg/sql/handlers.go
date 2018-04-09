@@ -161,7 +161,7 @@ func (r *updateSingle) handle() (results []interface{}, err error) {
 		"[handler <- template] Interpolated `CreateSingle`:\n%s\n",
 		updateSingle,
 	)
-	args := r.backend.buildExecQueryArgsWithID(r.request.Context(), r.id)
+	args := r.backend.buildExecQueryArgsWithID(r.request.Context(), r.id, requestData)
 	log.When(r.backend.Cfg).Infof(
 		"[handler <- db] buildExecQueryArgsWithID(): returned following args:\n%s\n",
 		args,
@@ -207,7 +207,7 @@ func (r *createSingle) handle() (results []interface{}, err error) {
 		"[handler <- template] Interpolated `CreateSingle`:\n%s\n",
 		createSingle,
 	)
-	args := r.backend.buildExecQueryArgs(r.request.Context())
+	args := r.backend.buildExecQueryArgs(r.request.Context(), requestData)
 	log.When(r.backend.Cfg).Infof(
 		"[handler <- db] buildExecQueryArgs(): returned following args:\n%s\n",
 		args,

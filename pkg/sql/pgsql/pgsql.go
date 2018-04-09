@@ -3,13 +3,14 @@ package pgsql
 import (
 	"database/sql"
 
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/signavio/workflow-connector/pkg/config"
 	sqlBackend "github.com/signavio/workflow-connector/pkg/sql"
 )
 
-func NewPgsqlBackend(cfg *config.Config) (b *sqlBackend.Backend) {
-	b = sqlBackend.NewBackend(cfg)
+func NewPgsqlBackend(cfg *config.Config, router *mux.Router) (b *sqlBackend.Backend) {
+	b = sqlBackend.NewBackend(cfg, router)
 	b.ConvertDBSpecificDataType = convertFromPgsqlDataType
 	b.Queries = map[string]string{
 		"GetSingleAsOption":                "SELECT id, %s FROM %s WHERE id = $1",

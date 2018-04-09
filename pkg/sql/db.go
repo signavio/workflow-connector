@@ -128,7 +128,7 @@ func rowsToResults(rows *sql.Rows, columnNames []string, dataTypes []interface{}
 	return
 }
 
-func (b *Backend) buildExecQueryArgs(ctx context.Context) (args []interface{}) {
+func (b *Backend) buildExecQueryArgs(ctx context.Context, requestData map[string]interface{}) (args []interface{}) {
 	currentTable := ctx.Value(config.ContextKey("table")).(string)
 	td := util.TypeDescriptorForCurrentTable(b.Cfg.Descriptor.TypeDescriptors, currentTable)
 	var val interface{}
@@ -148,14 +148,14 @@ func (b *Backend) buildExecQueryArgs(ctx context.Context) (args []interface{}) {
 	}
 	for _, field := range td.Fields {
 		if field.Type.Name == "money" {
-			if val, ok = b.RequestData[field.Amount.Key]; ok {
+			if val, ok = requestData[field.Amount.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
-			if val, ok = b.RequestData[field.Currency.Key]; ok {
+			if val, ok = requestData[field.Currency.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
 		} else {
-			if val, ok = b.RequestData[field.Key]; ok {
+			if val, ok = requestData[field.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
 		}
@@ -163,8 +163,8 @@ func (b *Backend) buildExecQueryArgs(ctx context.Context) (args []interface{}) {
 	return
 }
 
-func (b *Backend) buildExecQueryArgsWithID(ctx context.Context, id string) (args []interface{}) {
-	args = b.buildExecQueryArgs(ctx)
+func (b *Backend) buildExecQueryArgsWithID(ctx context.Context, id string, requestData map[string]interface{}) (args []interface{}) {
+	args = b.buildExecQueryArgs(ctx, requestData)
 	args = append(args, id)
 	return
 }
