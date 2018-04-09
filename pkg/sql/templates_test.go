@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/pkg/config"
 	"github.com/signavio/workflow-connector/pkg/util"
 )
@@ -366,7 +367,7 @@ var testCasesForDescriptorWithTwoRelationships = func() []templatesTestCases {
 func setupInterpolationTests(descriptor string) *Backend {
 	cfg := config.Initialize(
 		strings.NewReader(descriptor))
-	backend := NewBackend(cfg)
+	backend := NewBackend(cfg, mux.NewRouter())
 	backend.Templates["GetSingleWithRelationships"] =
 		"SELECT * FROM {{.TableName}} AS _{{.TableName}}" +
 			"{{range .Relations}}" +

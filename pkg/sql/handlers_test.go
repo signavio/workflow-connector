@@ -15,6 +15,7 @@ import (
 	"text/template"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/pkg/config"
 	"github.com/signavio/workflow-connector/pkg/util"
 )
@@ -598,7 +599,7 @@ func setupBackend(t testCase) (b *Backend, mock sqlmock.Sqlmock, err error) {
 }
 
 func newTestBackend(cfg *config.Config) (b *Backend, mock sqlmock.Sqlmock, err error) {
-	b = NewBackend(cfg)
+	b = NewBackend(cfg, mux.NewRouter())
 	b.Queries = map[string]string{
 		"GetSingleAsOption":                "SELECT id, %s FROM %s WHERE id = ?",
 		"GetCollection":                    "SELECT * FROM %s",

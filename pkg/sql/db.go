@@ -78,19 +78,30 @@ func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []
 	return append([]interface{}{}, data[0])
 }
 
-func (b *Backend) execContext(ctx context.Context, query string, args []interface{}) (result sql.Result, err error) {
-	tx, err := b.DB.Begin()
+func (b *Backend) transact(tx *sql.Tx, ctx context.Context, query string, args []interface{}) (result sql.Result, err error) {
+	// A DB Transaction is already defined in *Backend.Transactions
+	if tx != nil {
+		result, err = tx.ExecContext(ctx, query, args...)
+		if err != nil {
+			return nil, err
+		}
+		return
+	}
+	tx, err = b.DB.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		switch err {
-		case nil:
-			err = tx.Commit()
-		default:
+		if p := recover(); p != nil {
 			tx.Rollback()
+			panic(p) // re-throw panic after tx.Rollback()
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
 		}
 	}()
+	fmt.Printf("ctx: %+v\nquery: %+v\nargs: %v\n", ctx, query, args)
 	result, err = b.DB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

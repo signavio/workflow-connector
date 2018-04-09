@@ -1,6 +1,5 @@
 // Package sql defines a Backend that is responsible for communicating
 // with SQL databases
-
 package sql
 
 import (
@@ -27,6 +26,8 @@ var (
 	ErrCardinalityMany        = errors.New("Form data contained multiple input values for a single column")
 	ErrUnexpectedJSON         = errors.New("Received JSON data that we are unable to parse")
 	ErrMismatchedAffectedRows = errors.New("The amount of rows affected should be sane")
+	ErrTransactionUUIDInvalid = errors.New("A valid transaction UUID must be given " +
+		"when performing inserts/updates to the database")
 )
 
 type Backend struct {
@@ -89,10 +90,12 @@ type updateSingle struct {
 	request *http.Request
 	backend *Backend
 	id      string
+	tx      *sql.Tx
 }
 type createSingle struct {
 	request *http.Request
 	backend *Backend
+	tx      *sql.Tx
 }
 
 // NewBackend ...
@@ -117,14 +120,15 @@ func (b *Backend) Open(driver, url string) error {
 	return nil
 }
 
-// Tear down any connections opened by the endpoint
-func (b *Backend) TearDown() {
-	b.DB.Close()
-}
-
 func (b *Backend) defineRoutes() {
 	b.Router.HandleFunc("/", b.createDBTransaction).
 		Methods("POST").Queries("begin", "{begin}")
+	b.Router.HandleFunc("/", b.commitDBTransaction).
+		Methods("POST").Queries("commit", "{commit}")
+	b.Router.HandleFunc("/{table}", b.createSingleWithinTx).
+		Methods("POST").Queries("tx", "{tx}")
+	b.Router.HandleFunc("/{table}/{id}", b.updateSingleWithinTx).
+		Methods("PUT").Queries("tx", "{tx}")
 }
 
 func (b *Backend) createDBTransaction(rw http.ResponseWriter, req *http.Request) {
@@ -143,7 +147,7 @@ func (b *Backend) createDBTransaction(rw http.ResponseWriter, req *http.Request)
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	b.Transactions.Store(txUUID, tx)
+	b.Transactions.Store(fmt.Sprintf("%s", txUUID), tx)
 	log.When(b.Cfg).Infof("[createDBTransaction] store tx to backend.Transactions: \n"+
 		"Added transaction %s to backend\n", txUUID)
 	// Explicitly call cancel after delay
@@ -160,6 +164,33 @@ func (b *Backend) createDBTransaction(rw http.ResponseWriter, req *http.Request)
 		"transactionUUID": txUUID,
 	}
 	JSONResult, err := json.MarshalIndent(&results, "", "  ")
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rw.Header().Set("Content-Type", "application/json")
+	rw.Write(JSONResult)
+	return
+}
+
+func (b *Backend) commitDBTransaction(rw http.ResponseWriter, req *http.Request) {
+	log.When(b.Cfg).Infoln("[request -> routeHandler] commitDBTransaction()")
+	requestTx := mux.Vars(req)["commit"]
+	tx, ok := b.Transactions.Load(requestTx)
+	if !ok {
+		http.Error(rw, ErrTransactionUUIDInvalid.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := tx.(*sql.Tx).Commit(); err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	b.Transactions.Delete(tx)
+	message := map[string]interface{}{
+		"message": fmt.Sprintf("transaction: %s has been commited to the database",
+			requestTx),
+	}
+	JSONResult, err := json.MarshalIndent(&message, "", "  ")
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
@@ -245,8 +276,40 @@ func (b *Backend) UpdateSingle(req *http.Request) (response []interface{}, err e
 		request: req,
 		backend: b,
 		id:      requestID,
+		tx:      nil,
 	}
 	return handler.handle()
+}
+
+// Update a single resource within a DB transaction
+func (b *Backend) updateSingleWithinTx(rw http.ResponseWriter, req *http.Request) {
+	log.When(b.Cfg).Infoln("[request -> routeHandler] updateSingleWithinTx()")
+	requestID := mux.Vars(req)["id"]
+	requestTx := mux.Vars(req)["tx"]
+	tx, ok := b.Transactions.Load(requestTx)
+	if !ok {
+		http.Error(rw, ErrTransactionUUIDInvalid.Error(), http.StatusInternalServerError)
+		return
+	}
+	handler := &updateSingle{
+		request: req,
+		backend: b,
+		id:      requestID,
+		tx:      tx.(*sql.Tx),
+	}
+	results, err := handler.handle()
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	JSONResult, err := json.MarshalIndent(&results, "", "  ")
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rw.Header().Set("Content-Type", "application/json")
+	rw.Write(JSONResult)
+
 }
 
 // Create data from database
@@ -254,8 +317,36 @@ func (b *Backend) CreateSingle(req *http.Request) (response []interface{}, err e
 	handler := &createSingle{
 		request: req,
 		backend: b,
+		tx:      nil,
 	}
 	return handler.handle()
+}
+
+// Create a single resource within a DB transaction
+func (b *Backend) createSingleWithinTx(rw http.ResponseWriter, req *http.Request) {
+	requestTx := mux.Vars(req)["tx"]
+	tx, ok := b.Transactions.Load(requestTx)
+	if !ok {
+		http.Error(rw, ErrTransactionUUIDInvalid.Error(), http.StatusInternalServerError)
+		return
+	}
+	handler := &createSingle{
+		request: req,
+		backend: b,
+		tx:      tx.(*sql.Tx),
+	}
+	results, err := handler.handle()
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	JSONResult, err := json.MarshalIndent(&results, "", "  ")
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rw.Header().Set("Content-Type", "application/json")
+	rw.Write(JSONResult)
 }
 
 // insert context

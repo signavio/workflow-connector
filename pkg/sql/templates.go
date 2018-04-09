@@ -30,20 +30,20 @@ func (b *Backend) interpolateGetTemplate(ctx context.Context, templateText, tabl
 	return query.String(), nil
 }
 
-func (b *Backend) interpolateTemplate(ctx context.Context, templateText string) (interpolatedQuery string, err error) {
+func (b *Backend) interpolateTemplate(ctx context.Context, templateText string, requestData map[string]interface{}) (interpolatedQuery string, err error) {
 	var columnNamesFromRequestData []string
 	currentTable := ctx.Value(config.ContextKey("table")).(string)
 	td := util.TypeDescriptorForCurrentTable(b.Cfg.Descriptor.TypeDescriptors, currentTable)
 	for _, field := range td.Fields {
 		if field.Type.Name == "money" {
-			if _, ok := b.RequestData[field.Amount.Key]; ok {
+			if _, ok := requestData[field.Amount.Key]; ok {
 				columnNamesFromRequestData = append(columnNamesFromRequestData, field.Amount.FromColumn)
 			}
-			if _, ok := b.RequestData[field.Currency.Key]; ok {
+			if _, ok := requestData[field.Currency.Key]; ok {
 				columnNamesFromRequestData = append(columnNamesFromRequestData, field.Currency.FromColumn)
 			}
 		} else {
-			if _, ok := b.RequestData[field.Key]; ok {
+			if _, ok := requestData[field.Key]; ok {
 				columnNamesFromRequestData = append(columnNamesFromRequestData, field.FromColumn)
 			}
 		}

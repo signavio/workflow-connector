@@ -2,8 +2,8 @@ package sql
 
 import (
 	"database/sql"
-	"fmt"
 	"errors"
+	"fmt"
 
 	"github.com/signavio/workflow-connector/pkg/config"
 	"github.com/signavio/workflow-connector/pkg/log"
@@ -128,37 +128,20 @@ func (r *getCollectionAsOptionsFilterable) handle() (results []interface{}, err 
 	}
 	return
 }
-
-func columnNamesAndDataTypesForOptionRoutes(b *Backend, table, columnAsOptionName string) (columnNames []string, dataTypes []interface{}) {
-	columnNamesAndDataTypes := make(map[string]interface{})
-	for i, columnName := range b.Cfg.TableSchemas[table].ColumnNames {
-		columnNamesAndDataTypes[columnName] = b.Cfg.TableSchemas[table].DataTypes[i]
-	}
-	IDName := []string{
-		fmt.Sprintf("%s_%s", table, "id"),
-		fmt.Sprintf("%s_%s", table, "name"),
-	}
-	IDNameDataTypes := []interface{}{
-		columnNamesAndDataTypes[fmt.Sprintf("%s_%s", table, "id")],
-		columnNamesAndDataTypes[fmt.Sprintf("%s_%s", table, columnAsOptionName)],
-	}
-	return IDName, IDNameDataTypes
-}
-
 func (r *updateSingle) handle() (results []interface{}, err error) {
 	log.When(r.backend.Cfg).Infoln("[handler] updateSingle")
-	r.backend.RequestData, err = parseDataForm(r.request)
+	requestData, err := parseDataForm(r.request)
 	if err != nil {
 		return nil, err
 	}
 	updateSingle, err := r.backend.interpolateTemplate(
-		r.request.Context(), r.backend.Templates["UpdateSingle"],
+		r.request.Context(), r.backend.Templates["UpdateSingle"], requestData,
 	)
 	if err != nil {
 		return nil, err
 	}
 	log.When(r.backend.Cfg).Infof(
-		"[handler <- template] Interpolated `CreateSingle`:\n%s\n",
+		"[handler <- template] Interpolated `UpdateSingle`:\n%s\n",
 		updateSingle,
 	)
 	args := r.backend.buildExecQueryArgsWithID(r.request.Context(), r.id, requestData)
@@ -166,7 +149,7 @@ func (r *updateSingle) handle() (results []interface{}, err error) {
 		"[handler <- db] buildExecQueryArgsWithID(): returned following args:\n%s\n",
 		args,
 	)
-	result, err := r.backend.execContext(r.request.Context(), updateSingle, args)
+	result, err := r.backend.transact(r.tx, r.request.Context(), updateSingle, args)
 	if err != nil {
 		return nil, err
 	}
@@ -194,12 +177,13 @@ func (r *updateSingle) handle() (results []interface{}, err error) {
 
 func (r *createSingle) handle() (results []interface{}, err error) {
 	log.When(r.backend.Cfg).Infoln("[handler] createSingle")
-	r.backend.RequestData, err = parseDataForm(r.request)
+	requestData, err := parseDataForm(r.request)
 	if err != nil {
 		return nil, err
 	}
 	createSingle, err := r.backend.interpolateTemplate(
-		r.request.Context(), r.backend.Templates["CreateSingle"])
+		r.request.Context(), r.backend.Templates["CreateSingle"], requestData,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +196,7 @@ func (r *createSingle) handle() (results []interface{}, err error) {
 		"[handler <- db] buildExecQueryArgs(): returned following args:\n%s\n",
 		args,
 	)
-	result, err := r.backend.execContext(r.request.Context(), createSingle, args)
+	result, err := r.backend.transact(r.tx, r.request.Context(), createSingle, args)
 	if err != nil {
 		return nil, err
 	}
@@ -248,4 +232,20 @@ func (r *createSingle) getJustCreated(result sql.Result) (results []interface{},
 	)
 	return
 
+}
+
+func columnNamesAndDataTypesForOptionRoutes(b *Backend, table, columnAsOptionName string) (columnNames []string, dataTypes []interface{}) {
+	columnNamesAndDataTypes := make(map[string]interface{})
+	for i, columnName := range b.Cfg.TableSchemas[table].ColumnNames {
+		columnNamesAndDataTypes[columnName] = b.Cfg.TableSchemas[table].DataTypes[i]
+	}
+	IDName := []string{
+		fmt.Sprintf("%s_%s", table, "id"),
+		fmt.Sprintf("%s_%s", table, "name"),
+	}
+	IDNameDataTypes := []interface{}{
+		columnNamesAndDataTypes[fmt.Sprintf("%s_%s", table, "id")],
+		columnNamesAndDataTypes[fmt.Sprintf("%s_%s", table, columnAsOptionName)],
+	}
+	return IDName, IDNameDataTypes
 }
