@@ -4,12 +4,13 @@ import (
 	"database/sql"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/pkg/config"
 	sqlBackend "github.com/signavio/workflow-connector/pkg/sql"
 )
 
-func NewMysqlBackend(cfg *config.Config) (b *sqlBackend.Backend) {
-	b = sqlBackend.NewBackend(cfg)
+func NewMysqlBackend(cfg *config.Config, router *mux.Router) (b *sqlBackend.Backend) {
+	b = sqlBackend.NewBackend(cfg, router)
 	b.ConvertDBSpecificDataType = convertFromMysqlDataType
 	b.Queries = map[string]string{
 		"Get":                              "SELECT * FROM %s WHERE id = ?",

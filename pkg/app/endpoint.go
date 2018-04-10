@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/pkg/config"
 	sqlBackend "github.com/signavio/workflow-connector/pkg/sql"
 	"github.com/signavio/workflow-connector/pkg/sql/mssql"
@@ -15,14 +16,16 @@ import (
 )
 
 // Endpoint fetches data from a backend service and makes the data available via
-// a standard REST API to the user. The REST API satisfies the interface for a
-// Custom Connector specified by Signavio's Workflow Accelerator.
+// a standard REST API to the user. It also defines specific routes which
+// provide additional functionality, such as being able to wrap a
+// group of CRUD calls within a DB Transaction
+
 type Endpoint interface {
 	BackendService
 }
 
-// BackendService communicates with a particular backend, for example,
-// with a SQL Server, to provide basic CRUD functionality.
+// BackendService communicates with a particular backend, for example, with a SQL
+// Server, to provide basic CRUD functionality.
 type BackendService interface {
 	CRUD
 	WorkflowConnector
@@ -39,8 +42,8 @@ type CRUD interface {
 	//Delete(req *http.Request) (response []interface{}, err error)
 }
 
-// WorkflowConnector implements the methods which are expected from Signavio's
-// Workflow Accelerator for a Custom Connector.
+// WorkflowConnector satisfies the interface for a custom connector as
+// specified by Signavio's Workflow Accelerator documentation
 type WorkflowConnector interface {
 	GetSingleAsOption(req *http.Request) (response []interface{}, err error)
 	GetCollectionAsOptions(req *http.Request) (response []interface{}, err error)
@@ -55,29 +58,29 @@ type Formatter interface {
 }
 
 var (
-	ErrPostFormEmpty          = errors.New("Form data sent was empty and/or not of type `application/x-www-form-urlencoded`")
+	ErrPostForm               = errors.New("Form data sent was empty and/or not of type `application/x-www-form-urlencoded`")
 	ErrCardinalityMany        = errors.New("Form data contained multiple input values for a single column")
 	ErrUnexpectedJSON         = errors.New("Received JSON data that we are unable to parse")
 	ErrMismatchedAffectedRows = errors.New("The amount of rows affected should be sane")
 )
 
-func NewEndpoint(cfg *config.Config) (Endpoint, error) {
+func NewEndpoint(cfg *config.Config, router *mux.Router) (Endpoint, error) {
 	switch cfg.Database.Driver {
 	case "sqlserver":
-		return connectToBackend(mssql.NewMssqlBackend, cfg)
+		return connectToBackend(mssql.NewMssqlBackend, router, cfg)
 	case "sqlite3":
-		return connectToBackend(sqlite.NewSqliteBackend, cfg)
+		return connectToBackend(sqlite.NewSqliteBackend, router, cfg)
 	case "mysql":
-		return connectToBackend(mysql.NewMysqlBackend, cfg)
+		return connectToBackend(mysql.NewMysqlBackend, router, cfg)
 	case "postgres":
-		return connectToBackend(pgsql.NewPgsqlBackend, cfg)
+		return connectToBackend(pgsql.NewPgsqlBackend, router, cfg)
 	default:
 		return nil, fmt.Errorf("Database driver: %s, not supported", cfg.Database.Driver)
 
 	}
 }
-func connectToBackend(backendFn func(*config.Config) *sqlBackend.Backend, cfg *config.Config) (*sqlBackend.Backend, error) {
-	backend := backendFn(cfg)
+func connectToBackend(backendFn func(*config.Config, *mux.Router) *sqlBackend.Backend, router *mux.Router, cfg *config.Config) (*sqlBackend.Backend, error) {
+	backend := backendFn(cfg, router)
 	err := backend.Open(cfg.Database.Driver, cfg.Database.URL)
 	if err != nil {
 		return nil, err

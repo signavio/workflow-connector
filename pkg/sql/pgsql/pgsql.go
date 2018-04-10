@@ -1,15 +1,21 @@
 package pgsql
 
 import (
+	"context"
 	"database/sql"
 
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/signavio/workflow-connector/pkg/config"
 	sqlBackend "github.com/signavio/workflow-connector/pkg/sql"
 )
 
-func NewPgsqlBackend(cfg *config.Config) (b *sqlBackend.Backend) {
-	b = sqlBackend.NewBackend(cfg)
+type lastId struct {
+	id int64
+}
+
+func NewPgsqlBackend(cfg *config.Config, router *mux.Router) (b *sqlBackend.Backend) {
+	b = sqlBackend.NewBackend(cfg, router)
 	b.ConvertDBSpecificDataType = convertFromPgsqlDataType
 	b.Queries = map[string]string{
 		"GetSingleAsOption":                "SELECT id, %s FROM %s WHERE id = $1",
@@ -38,9 +44,35 @@ func NewPgsqlBackend(cfg *config.Config) (b *sqlBackend.Backend) {
 			"{{range .ColumnNames | tail}}, {{.}}{{end}}) VALUES($1{{range $index," +
 			" $element := .ColumnNames | tail}}, ${{$index | add2}}{{end}}) RETURNING id",
 	}
+	b.TransactDirectly = execContextDirectly
+	b.TransactWithinTx = execContextWithinTx
 	return b
 }
 
+func (l *lastId) LastInsertId() (int64, error) {
+	return l.id, nil
+}
+
+func (l *lastId) RowsAffected() (int64, error) {
+	return 0, nil
+}
+
+func execContextDirectly(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
+	var id int64
+	if err = db.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
+		return nil, err
+	}
+	result = &lastId{id}
+	return result, nil
+}
+func execContextWithinTx(ctx context.Context, tx *sql.Tx, query string, args ...interface{}) (result sql.Result, err error) {
+	var id int64
+	if err = tx.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
+		return nil, err
+	}
+	result = &lastId{id}
+	return result, nil
+}
 func convertFromPgsqlDataType(fieldDataType string) interface{} {
 	switch fieldDataType {
 	// Text data types

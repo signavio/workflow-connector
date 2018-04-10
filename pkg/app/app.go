@@ -28,12 +28,12 @@ type App struct {
 // created a connection to an endpoint and configured a http.Server
 // which listens on typical routes defined by a standard REST API
 func NewApp(cfg *config.Config) *App {
-	endpoint, err := NewEndpoint(cfg)
+	router := mux.NewRouter()
+	endpoint, err := NewEndpoint(cfg, router)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	router := mux.NewRouter()
 	var server *http.Server
 	if cfg.TLS.Enabled {
 		server = config.HTTPServerWithSecureTLSOptions()
@@ -68,6 +68,8 @@ func (app *App) DefineRoutes() {
 		Methods("POST")
 	app.Router.HandleFunc("/", app.getDescriptorFile).
 		Methods("GET")
+	// TODO
+	// app.Router = appendEndpointSpecificRoutes()
 }
 func (app *App) getDescriptorFile(rw http.ResponseWriter, req *http.Request) {
 	log.When(app.Cfg).Infoln("[request -> http.ServeFile] descriptor file")

@@ -78,20 +78,30 @@ func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []
 	return append([]interface{}{}, data[0])
 }
 
-func (b *Backend) execContext(ctx context.Context, query string, args []interface{}) (result sql.Result, err error) {
-	tx, err := b.DB.Begin()
+func (b *Backend) transact(tx *sql.Tx, ctx context.Context, query string, args []interface{}) (result sql.Result, err error) {
+	// A DB Transaction is already defined in *Backend.Transactions
+	if tx != nil {
+		result, err = b.TransactWithinTx(ctx, tx, query, args...)
+		if err != nil {
+			return nil, err
+		}
+		return
+	}
+	tx, err = b.DB.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		switch err {
-		case nil:
-			err = tx.Commit()
-		default:
+		if p := recover(); p != nil {
 			tx.Rollback()
+			panic(p) // re-throw panic after tx.Rollback()
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
 		}
 	}()
-	result, err = b.DB.ExecContext(ctx, query, args...)
+	result, err = b.TransactDirectly(ctx, b.DB, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +138,7 @@ func rowsToResults(rows *sql.Rows, columnNames []string, dataTypes []interface{}
 	return
 }
 
-func (b *Backend) buildExecQueryArgs(ctx context.Context) (args []interface{}) {
+func (b *Backend) buildExecQueryArgs(ctx context.Context, requestData map[string]interface{}) (args []interface{}) {
 	currentTable := ctx.Value(config.ContextKey("table")).(string)
 	td := util.TypeDescriptorForCurrentTable(b.Cfg.Descriptor.TypeDescriptors, currentTable)
 	var val interface{}
@@ -148,14 +158,14 @@ func (b *Backend) buildExecQueryArgs(ctx context.Context) (args []interface{}) {
 	}
 	for _, field := range td.Fields {
 		if field.Type.Name == "money" {
-			if val, ok = b.RequestData[field.Amount.Key]; ok {
+			if val, ok = requestData[field.Amount.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
-			if val, ok = b.RequestData[field.Currency.Key]; ok {
+			if val, ok = requestData[field.Currency.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
 		} else {
-			if val, ok = b.RequestData[field.Key]; ok {
+			if val, ok = requestData[field.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
 		}
@@ -163,8 +173,8 @@ func (b *Backend) buildExecQueryArgs(ctx context.Context) (args []interface{}) {
 	return
 }
 
-func (b *Backend) buildExecQueryArgsWithID(ctx context.Context, id string) (args []interface{}) {
-	args = b.buildExecQueryArgs(ctx)
+func (b *Backend) buildExecQueryArgsWithID(ctx context.Context, id string, requestData map[string]interface{}) (args []interface{}) {
+	args = b.buildExecQueryArgs(ctx, requestData)
 	args = append(args, id)
 	return
 }
