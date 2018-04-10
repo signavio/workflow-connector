@@ -36,7 +36,7 @@ func NewPgsqlBackend(cfg *config.Config) (b *sqlBackend.Backend) {
 			" WHERE id = ${{(lenPlus1 .ColumnNames)}}",
 		"CreateSingle": "INSERT INTO {{.Table}}({{.ColumnNames | head}}" +
 			"{{range .ColumnNames | tail}}, {{.}}{{end}}) VALUES($1{{range $index," +
-			" $element := .ColumnNames | tail}}, ${{$index | add2}}{{end}})",
+			" $element := .ColumnNames | tail}}, ${{$index | add2}}{{end}}) RETURNING id",
 	}
 	return b
 }
