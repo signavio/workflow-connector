@@ -38,6 +38,8 @@ type Backend struct {
 	Router                    *mux.Router
 	Templates                 map[string]string
 	Transactions              sync.Map
+	TransactDirectly          func(context.Context, *sql.DB, string, ...interface{}) (sql.Result, error)
+	TransactWithinTx          func(context.Context, *sql.Tx, string, ...interface{}) (sql.Result, error)
 }
 
 // Route specifies any backend specific routes that will be

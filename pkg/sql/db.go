@@ -81,7 +81,7 @@ func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []
 func (b *Backend) transact(tx *sql.Tx, ctx context.Context, query string, args []interface{}) (result sql.Result, err error) {
 	// A DB Transaction is already defined in *Backend.Transactions
 	if tx != nil {
-		result, err = tx.ExecContext(ctx, query, args...)
+		result, err = b.TransactWithinTx(ctx, tx, query, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -101,8 +101,7 @@ func (b *Backend) transact(tx *sql.Tx, ctx context.Context, query string, args [
 			err = tx.Commit()
 		}
 	}()
-	fmt.Printf("ctx: %+v\nquery: %+v\nargs: %v\n", ctx, query, args)
-	result, err = b.DB.ExecContext(ctx, query, args...)
+	result, err = b.TransactDirectly(ctx, b.DB, query, args...)
 	if err != nil {
 		return nil, err
 	}
