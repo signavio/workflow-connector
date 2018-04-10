@@ -149,7 +149,7 @@ func (r *updateSingle) handle() (results []interface{}, err error) {
 		"[handler <- db] buildExecQueryArgsWithID(): returned following args:\n%s\n",
 		args,
 	)
-	result, err := r.backend.transact(r.tx, r.request.Context(), updateSingle, args)
+	result, err := r.backend.transactUpdateSingle(r.tx, r.request.Context(), updateSingle, args)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (r *createSingle) handle() (results []interface{}, err error) {
 		"[handler <- db] buildExecQueryArgs(): returned following args:\n%s\n",
 		args,
 	)
-	result, err := r.backend.transact(r.tx, r.request.Context(), createSingle, args)
+	result, err := r.backend.transactCreateSingle(r.tx, r.request.Context(), createSingle, args)
 	if err != nil {
 		return nil, err
 	}

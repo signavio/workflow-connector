@@ -78,7 +78,7 @@ func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []
 	return append([]interface{}{}, data[0])
 }
 
-func (b *Backend) transact(tx *sql.Tx, ctx context.Context, query string, args []interface{}) (result sql.Result, err error) {
+func (b *Backend) transactCreateSingle(tx *sql.Tx, ctx context.Context, query string, args []interface{}) (result sql.Result, err error) {
 	// A DB Transaction is already defined in *Backend.Transactions
 	if tx != nil {
 		result, err = b.TransactWithinTx(ctx, tx, query, args...)
@@ -102,6 +102,36 @@ func (b *Backend) transact(tx *sql.Tx, ctx context.Context, query string, args [
 		}
 	}()
 	result, err = b.TransactDirectly(ctx, b.DB, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return
+}
+
+func (b *Backend) transactUpdateSingle(tx *sql.Tx, ctx context.Context, query string, args []interface{}) (result sql.Result, err error) {
+	// A DB Transaction is already defined in *Backend.Transactions
+	if tx != nil {
+		result, err = tx.ExecContext(ctx, query, args...)
+		if err != nil {
+			return nil, err
+		}
+		return
+	}
+	tx, err = b.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p) // re-throw panic after tx.Rollback()
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+	result, err = b.DB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
