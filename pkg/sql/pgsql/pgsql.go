@@ -37,7 +37,7 @@ func NewPgsqlBackend(cfg *config.Config, router *mux.Router) (b *sqlBackend.Back
 			" = _{{$.TableName}}.id{{end}}" +
 			" WHERE _{{$.TableName}}.id = $1",
 		"UpdateSingle": "UPDATE {{.Table}} SET {{.ColumnNames | head}}" +
-			" = $1{{range $index, $Element := .ColumnNames | tail}}," +
+			" = $1{{range $index, $element := .ColumnNames | tail}}," +
 			" {{$element}} = ${{(add2 $index)}}{{end}}" +
 			" WHERE id = ${{(lenPlus1 .ColumnNames)}}",
 		"CreateSingle": "INSERT INTO {{.Table}}({{.ColumnNames | head}}" +
