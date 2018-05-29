@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+export GO_VERSION
+GO_VERSION=$(curl -sSL "https://golang.org/VERSION?m=text")
+export GO_SRC=/usr/local/go
+export GOPATH=${HOME}/go
+# if we are passing the version
+if [[ ! -z "$1" ]]; then
+	  GO_VERSION=$1
+fi
+# purge old src
+if [[ -d "$GO_SRC" ]]; then
+	  sudo rm -rf "$GO_SRC"
+	  sudo rm -rf "$GOPATH"
+fi
+GO_VERSION=${GO_VERSION#go}
+# subshell
+(	kernel=$(uname -s | tr '[:upper:]' '[:lower:]')
+	curl -sSL "https://storage.googleapis.com/golang/go${GO_VERSION}.${kernel}-amd64.tar.gz" | sudo tar -v -C /usr/local -xz # rebuild stdlib for faster builds
+	sudo chown -R "${USER}" /usr/local/go/pkg
+	CGO_ENABLED=0 /usr/local/go/bin/go install -a -installsuffix cgo std
+)
+echo "PATH=\$PATH:/usr/local/go/bin:${GOPATH}/bin" >> "${HOME}"/.bashrc
+source "${HOME}"/.bashrc
+# dependency management tool
+go get -v -u github.com/golang/dep/cmd/dep
