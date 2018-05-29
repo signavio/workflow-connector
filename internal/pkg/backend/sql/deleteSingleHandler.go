@@ -144,7 +144,7 @@ func (b *Backend) DeleteSingle(rw http.ResponseWriter, req *http.Request) {
 	if requestTx != "" {
 		tx, ok := b.Transactions.Load(requestTx)
 		if !ok {
-			http.Error(rw, ErrTransactionUUIDInvalid.Error(), http.StatusInternalServerError)
+			http.Error(rw, string(failureMsg(requestTx, table)[:]), http.StatusNotFound)
 			return
 		}
 		log.When(config.Options).Infof("Query will execute within user specified transaction:\n%s\n", tx)
