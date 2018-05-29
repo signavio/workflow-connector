@@ -521,46 +521,46 @@ func (h handler) interpolateExecTemplates(ctx context.Context, requestData map[s
 func RunTests(t *testing.T, args ...interface{}) {
 	t.Run("GetSingle", func(t *testing.T) {
 		for _, tc := range TestCasesGetSingle {
-			run(t, tc, args...)
+			Run(t, tc, args...)
 		}
 	})
 	t.Run("GetSingleAsOption", func(t *testing.T) {
 		for _, tc := range TestCasesGetSingleAsOption {
-			run(t, tc, args...)
+			Run(t, tc, args...)
 		}
 	})
 	t.Run("GetCollection", func(t *testing.T) {
 		for _, tc := range TestCasesGetCollection {
-			run(t, tc, args...)
+			Run(t, tc, args...)
 		}
 	})
 	t.Run("GetCollectionAsOptions", func(t *testing.T) {
 		for _, tc := range TestCasesGetCollectionAsOptions {
-			run(t, tc, args...)
+			Run(t, tc, args...)
 		}
 	})
 	t.Run("GetCollectionAsOptionsFilterable", func(t *testing.T) {
 		for _, tc := range TestCasesGetCollectionAsOptionsFilterable {
-			run(t, tc, args...)
+			Run(t, tc, args...)
 		}
 	})
 	t.Run("UpdateSingle", func(t *testing.T) {
 		for _, tc := range TestCasesUpdateSingle {
-			run(t, tc, args...)
+			Run(t, tc, args...)
 		}
 	})
 	t.Run("CreateSingle", func(t *testing.T) {
 		for _, tc := range TestCasesCreateSingle {
-			run(t, tc, args...)
+			Run(t, tc, args...)
 		}
 	})
 	t.Run("DeleteSingle", func(t *testing.T) {
 		for _, tc := range TestCasesDeleteSingle {
-			run(t, tc, args...)
+			Run(t, tc, args...)
 		}
 	})
 }
-func run(t *testing.T, tc TestCase, args ...interface{}) {
+func Run(t *testing.T, tc TestCase, args ...interface{}) {
 	if tc.Kind == "success" {
 		tc.Run = itSucceeds
 		tc.Run(t, tc, args...)
