@@ -1,0 +1,91 @@
+package sql
+
+import (
+	"database/sql/driver"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"testing"
+
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"github.com/signavio/workflow-connector/internal/pkg/config"
+)
+
+var testCasesGetSingle = []TestCase{
+	{
+		Name:             "it succeeds on a table containing four columns",
+		DescriptorFields: commonDescriptorFields,
+		TableSchema:      commonTableSchema,
+		ColumnNames: []string{
+			"equipment_id",
+			"equipment_name",
+			"equipment_acquisition_cost",
+			"equipment_purchase_date",
+		},
+		RowsAsCsv: "1,HolzbierFaß (100L),400.99,2017-03-02T00:00:00Z",
+		ExpectedResults: `{
+  "acquisitionCost": {
+    "amount": 400.99,
+    "currency": "EUR"
+  },
+  "name": "HolzbierFaß (100L)",
+  "purchaseDate": "2017-03-02T00:00:00Z"
+}`,
+		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
+			rows := sqlmock.NewRows(columns).
+				FromCSVString(rowsAsCsv)
+			mock.ExpectQuery("SELECT . FROM (.+) WHERE (.+) = (.+)").
+				WithArgs("1").
+				WillReturnRows(rows)
+		},
+		Request: func() *http.Request {
+			req, _ := http.NewRequest("GET", "/equipment/1", nil)
+			return req
+		}(),
+		Run: TestGetSingle,
+	},
+}
+
+var TestGetSingle = func(t *testing.T, tc testCase) {
+	// The config.Descriptor in config.Options needs to be mocked
+	mockedDescriptorFile, err := mockDescriptorFile(tc.descriptorFields)
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	config.Options.Descriptor = config.ParseDescriptorFile(mockedDescriptorFile)
+	backend, mock, err := setupBackendWithMockedDB()
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	// initialize mock database
+	tc.expectedQueries(mock, tc.columnNames, tc.rowsAsCsv)
+	// mock the database table schema
+	backend.TableSchemas["equipment"] = tc.tableSchema
+	ts := setupTestServer(backend)
+	defer ts.Close()
+	tc.request.URL, err = url.Parse(ts.URL + tc.request.URL.String())
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	tc.request.SetBasicAuth(config.Options.Auth.Username, "Foobar")
+	client := ts.Client()
+	res, err := client.Do(tc.request)
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	got, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	if res.StatusCode != 200 {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	if string(got[:]) != tc.expectedResults {
+		t.Errorf("Response doesn't match what we expected\nResponse:\n%s\nExpected:\n%s\n",
+			got, tc.expectedResults)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}

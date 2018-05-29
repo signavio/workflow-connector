@@ -12,12 +12,16 @@
   version = "1.3.0"
 
 [[constraint]]
+  name = "github.com/mattn/go-sqlite3"
+  version = "1"
+
+[[constraint]]
   name = "github.com/gorilla/mux"
-  version = "1.5.0"
+  version = "1.6"
 
 [[constraint]]
   name = "github.com/spf13/viper"
-  version = "1.0.0"
+  version = "1"
 
 [[constraint]]
   name = "golang.org/x/crypto"
@@ -29,4 +33,4 @@
 
 [[constraint]]
   name = "github.com/satori/go.uuid"
-  version = "1.2.0"
+  version = "1"

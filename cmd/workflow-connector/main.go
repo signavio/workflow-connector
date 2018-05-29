@@ -3,23 +3,26 @@ package main
 import (
 	"log"
 
-	"github.com/signavio/workflow-connector/pkg/app"
-	"github.com/signavio/workflow-connector/pkg/config"
+	"github.com/signavio/workflow-connector/internal/app/endpoint"
+	"github.com/signavio/workflow-connector/internal/app/server"
+	"github.com/signavio/workflow-connector/internal/pkg/config"
 )
 
 func main() {
-	withDescriptorFile, err := config.LocationsForDescriptorFile()
+	endpoint, err := endpoint.NewEndpoint(config.Options)
 	if err != nil {
 		panic(err)
 	}
-	cfg := config.Initialize(withDescriptorFile)
-	a := app.NewApp(cfg)
-	a.DefineRoutes()
-	println("Listening in :" + a.Cfg.Port)
-	if a.Cfg.TLS.Enabled {
-		log.Fatal(a.Server.ListenAndServeTLS(a.Cfg.TLS.PublicKey,
-			a.Cfg.TLS.PrivateKey))
+	endpoint.Open(
+		config.Options.Database.Driver,
+		config.Options.Database.URL,
+	)
+	server := server.NewServer(config.Options, endpoint)
+	println("Listening on :" + config.Options.Port)
+	if config.Options.TLS.Enabled {
+		log.Fatal(server.ListenAndServeTLS(config.Options.TLS.PublicKey,
+			config.Options.TLS.PrivateKey))
 	} else {
-		log.Fatal(a.Server.ListenAndServe())
+		log.Fatal(server.ListenAndServe())
 	}
 }

@@ -1,125 +1,176 @@
 {
-  "key": "classSchedulingConnector",
-  "name": "Class Scheduling Connector",
-  "description": "Signavio Workflow Accelerator integration with a SQL database to help automate class scheduling",
+  "key": "MaintenanceSchedulingConnector",
+  "name": "Maintenance Scheduling Connector",
+  "description": "Signavio Workflow Accelerator integration with a SQL database to help automate keeping track of equipment maintenance",
   "typeDescriptors": [
     {
-      "key" : "class",
-      "name" : "Class",
-      "tableName": "class",
-      "columnAsOptionName": "id",
+      "key" : "equipment",
+      "name" : "Equipment",
+      "tableName": "equipment",
+      "columnAsOptionName": "name",
+      "uniqueIdColumn": "id",
       "fields" : [
         {
-          "key" : "classCoverage",
-          "name" : "Class coverage [in weeks]",
-          "fromColumn" : "class_coverage",
+          "key" : "id",
+          "name" : "Equipment ID",
+          "fromColumn" : "id",
           "type" : {
-            "name" : "number"
+            "name" : "text"
           }
         },
         {
-          "key" : "classStartdate",
-          "name" : "Class Startdate",
-          "fromColumn" : "class_startdate",
+          "key" : "name",
+          "name" : "Equipment Name",
+          "fromColumn" : "name",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "acquisitionCost",
+          "name" : "Acquisition Cost",
+          "type" : {
+           "name" : "money",
+           "amount": {
+             "key": "acquisitionCost",
+             "fromColumn": "acquisition_cost"
+           },
+           "currency": {
+             "value": "EUR"
+           }
+          }
+        },
+        {
+          "key" : "purchaseDate",
+          "name" : "Purchase Date",
+          "fromColumn" : "purchase_date",
           "type" : {
             "name" : "date",
             "kind": "date"
           }
-        },
+        }
+      ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
+    },
+    {
+      "key" : "person",
+      "name" : "Person",
+      "tableName": "person",
+      "columnAsOptionName": "family_name",
+      "uniqueIdColumn": "id",
+      "fields" : [
         {
-          "key" : "classTime",
-          "name" : "Class time",
-          "fromColumn" : "class_time",
+          "key" : "preferredName",
+          "name" : "Preferred Name",
+          "fromColumn" : "preferred_name",
           "type" : {
-            "name" : "date",
-            "kind": "time"
+            "name" : "text"
           }
         },
         {
-          "key" : "classDuration",
-          "name" : "Class duration [hours]",
-          "fromColumn" : "class_duration",
+          "key" : "familyName",
+          "name" : "Family Name",
+          "fromColumn" : "family_name",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "emailAddress",
+          "name" : "Email Address",
+          "fromColumn" : "email_address",
+          "type" : {
+            "name" : "text"
+          }
+        }
+      ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
+    },
+    {
+      "key" : "maintenance",
+      "name" : "Maintenance",
+      "tableName": "maintenance",
+      "columnAsOptionName": "comments",
+      "uniqueIdColumn": "id",
+      "fields" : [
+        {
+          "key" : "dateScheduled",
+          "name" : "Date Scheduled",
+          "fromColumn" : "date_scheduled",
+          "type" : {
+            "name" : "date",
+            "kind": "datetime"
+          }
+        },
+        {
+          "key" : "datePerformed",
+          "name" : "Date Performed",
+          "fromColumn" : "date_performed",
+          "type" : {
+            "name" : "date",
+            "kind": "datetime"
+          }
+        },
+        {
+          "key" : "equipmentId",
+          "name" : "Equipment ID",
+          "fromColumn" : "equipment_id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "maintainerId",
+          "name" : "Maintainer Id",
+          "fromColumn" : "maintainer_id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "comments",
+          "name" : "Comments",
+          "fromColumn" : "comments",
+          "type" : {
+            "name" : "text"
+          }
+        }
+     ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
+    },
+    {
+      "key" : "warranty",
+      "name" : "Warranty",
+      "tableName": "warranty",
+      "columnAsOptionName": "type",
+      "uniqueIdColumn": "id",
+      "fields" : [
+        {
+          "key" : "type",
+          "name" : "Type",
+          "fromColumn" : "type",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "durationInWeeks",
+          "name" : "Duration [in weeks]",
+          "fromColumn" : "duration_in_weeks",
           "type" : {
             "name" : "number"
           }
         },
         {
-          "key" : "sectionCode",
-          "name" : "Section code",
-          "fromColumn" : "section_code",
+          "key" : "dateFrom",
+          "name" : "Date From",
+          "fromColumn" : "date_from",
           "type" : {
-            "name" : "text"
-          }
-        },
-        {
-          "key" : "courseCode",
-          "name" : "Course code",
-          "fromColumn" : "course_code",
-          "type" : {
-            "name" : "text"
-          }
-        },
-        {
-          "key" : "organizationCode",
-          "name" : "Organization code",
-          "fromColumn" : "organization_code",
-          "type" : {
-            "name" : "text"
-          }
-        },
-        {
-          "key" : "teachers",
-          "name" : "Teachers",
-          "type" : {
-            "name" : "text"
-          },
-          "relationship": {
-              "withTable": "class_teacher",
-              "foreignKey": "class_id"
-          }
-        }
-      ],
-      "optionsAvailable" : true,
-      "fetchOneAvailable" : true
-    },
-    {
-      "key" : "classTeacher",
-      "name" : "Class teacher relationships",
-      "tableName": "class_teacher",
-      "columnAsOptionName": "id",
-      "fields" : [
-        {
-          "key" : "classId",
-          "name" : "Class ID",
-          "fromColumn" : "class_id",
-          "type" : {
-            "name" : "text"
-          }
-        },
-        {
-          "key" : "teacherId",
-          "name" : "Teacher ID",
-          "fromColumn" : "teacher_id",
-          "type" : {
-            "name" : "text"
-          }
-        }
-      ],
-      "optionsAvailable" : true,
-      "fetchOneAvailable" : true
-    },
-    {
-      "key" : "teacher",
-      "name" : "Teacher",
-      "tableName": "teacher",
-      "columnAsOptionName": "code",
-      "fields" : [
-        {
-          "key" : "code",
-          "name" : "Teacher code",
-          "fromColumn" : "code",
-          "type" : {
-            "name" : "text"
+            "name" : "date",
+            "kind" : "datetime"
           }
         }
      ],
@@ -127,58 +178,30 @@
       "fetchOneAvailable" : true
     },
     {
-      "key" : "organization",
-      "name" : "Organization",
-      "tableName": "organization",
-      "columnAsOptionName": "code",
+      "key" : "maintenanceWarranty",
+      "name" : "Maintenance/Warranty Mapping Table",
+      "tableName": "maintenance_warranty",
+      "columnAsOptionName": "maintenance_id",
       "fields" : [
         {
-          "key" : "code",
-          "name" : "Organization code",
-          "fromColumn" : "code",
+          "key" : "maintenanceId",
+          "name" : "Maintenance ID",
+          "fromColumn" : "maintenance_id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "warrantyId",
+          "name" : "Warranty ID",
+          "fromColumn" : "warranty_id",
           "type" : {
             "name" : "text"
           }
         }
      ],
-      "optionsAvailable" : true,
-      "fetchOneAvailable" : true
-    },
-    {
-      "key" : "section",
-      "name" : "Section",
-      "tableName": "section",
-      "columnAsOptionName": "code",
-      "fields" : [
-        {
-          "key" : "code",
-          "name" : "Section code",
-          "fromColumn" : "code",
-          "type" : {
-            "name" : "text"
-          }
-        }
-     ],
-      "optionsAvailable" : true,
-      "fetchOneAvailable" : true
-    },
-    {
-      "key" : "course",
-      "name" : "Course",
-      "tableName": "course",
-      "columnAsOptionName": "code",
-      "fields" : [
-        {
-          "key" : "code",
-          "name" : "Course code",
-          "fromColumn" : "code",
-          "type" : {
-            "name" : "text"
-          }
-        }
-     ],
-      "optionsAvailable" : true,
-      "fetchOneAvailable" : true
+      "optionsAvailable" : false,
+      "fetchOneAvailable" : false
     }
   ],
   "version": 1,

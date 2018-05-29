@@ -3,86 +3,74 @@
 cat << __EOF__ | sqlite3 test.db
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS teacher (
+CREATE TABLE IF NOT EXISTS equipment (
   id integer primary key autoincrement,
-  code char(6) unique not null
+  name text,
+  acquisition_cost decimal(10,5),
+  purchase_date date
 );
-UPDATE SQLITE_SEQUENCE SET seq = 1000 WHERE name = 'teacher';
-INSERT INTO 'teacher' ('code') VALUES
-  ('T12903'),
-  ('T12144'),
-  ('T12933');
+INSERT INTO 'equipment' ('name','acquisition_cost','purchase_date')
+  VALUES
+  ('Stainless Steel Mash Tun (50L)', 999.00,'2017-12-12T12:00:00Z'),
+  ('HolzbierFaß (200L)', 512.23,'2017-12-12T12:00:00Z'),
+  ('Refractometer', 129.00,'2017-12-12T12:00:00Z')
+;
 
-CREATE TABLE IF NOT EXISTS organization (
+CREATE TABLE IF NOT EXISTS person (
   id integer primary key autoincrement,
-  code varchar(8) unique not null
+  preferred_name text,
+  family_name text,
+  email_address text unique not null
 );
-UPDATE SQLITE_SEQUENCE SET seq = 2000 WHERE name = 'organization';
-INSERT INTO 'organization' ('code') VALUES
-  ('MTRLGY'),
-  ('FINBUS'),
-  ('ASTRNMY'),
-  ('MATSTAT');
+INSERT INTO 'person' ('preferred_name','family_name','email_address')
+  VALUES
+  ('Jane','Feather','jane.feather@example.com'),
+  ('Jack','Calm','jack.calm@example.com'),
+  ('Bob','White','bob.white@example.com'),
+  ('Joe','Frei','joe.frei@example.com');
 
-CREATE TABLE IF NOT EXISTS section (
+CREATE TABLE IF NOT EXISTS maintenance (
   id integer primary key autoincrement,
-  code char(1) unique not null
+  date_scheduled datetime,
+  date_performed datetime,
+  equipment_id integer,
+  maintainer_id integer,
+  comments text,
+  foreign key (equipment_id) references equipment(id),
+  foreign key (maintainer_id) references person(id)
 );
-UPDATE SQLITE_SEQUENCE SET seq = 3000 WHERE name = 'section';
-INSERT INTO 'section' ('code') VALUES
-  ('A'),
-  ('B'),
-  ('C'),
-  ('D');
+INSERT INTO 'maintenance' ('date_scheduled','date_performed','comments','equipment_id','maintainer_id') VALUES
+  ('2017-02-03T02:00:00Z', '2018-02-03T12:22:01Z', 'It went well!', 1, 1),
+  ('2017-02-03T02:00:00Z', '2018-02-03T12:22:01Z', 'It went poorly!', 2, 1),
+  ('2017-02-03T02:00:00Z', '2018-02-03T12:22:01Z', 'It went okay!', 1, 2),
+  ('2017-02-03T02:00:00Z', '2018-02-03T12:22:01Z', 'It went great!', 3, 2);
 
-CREATE TABLE IF NOT EXISTS course (
+CREATE TABLE IF NOT EXISTS warranty (
   id integer primary key autoincrement,
-  code char(4) unique not null
+  type text,
+  duration_in_weeks integer,
+  date_from datetime
 );
-UPDATE SQLITE_SEQUENCE SET seq = 4000 WHERE name = 'course';
-INSERT INTO 'course' ('code') VALUES
-  ('M200'),
-  ('M100'),
-  ('T110'),
-  ('T200');
+INSERT INTO 'warranty' ('type','duration_in_weeks','date_from') VALUES
+  ('parts and labour', 104, '2017-10-02T05:00:00Z'),
+  ('parts and labour', 156, '2017-10-02T05:00:00Z'),
+  ('parts', 104, '2017-10-02T05:00:00Z'),
+  ('parts and labour', 104, '2017-10-02T05:00:00Z');
 
-CREATE TABLE IF NOT EXISTS class (
-  id integer primary key autoincrement,
-  class_coverage numeric,
-  class_startdate date,
-  class_time datetime,
-  class_duration numeric,
-  section_code char(1) not null,
-  course_code char(4) not null,
-  organization_code varchar(8) not null,
-  foreign key (section_code) references section(code),
-  foreign key (course_code) references course(code),
-  foreign key (organization_code) references organization(code)
+CREATE TABLE IF NOT EXISTS maintenance_warranty (
+  maintenance_id integer,
+  warranty_id integer,
+  foreign key (maintenance_id) references maintenance(id),
+  foreign key (warranty_id) references warranty(id),
+  primary key(maintenance_id, warranty_id)
 );
-UPDATE SQLITE_SEQUENCE SET seq = 5000 WHERE name = 'class';
-INSERT INTO 'class' (
-  'class_coverage',
-  'class_startdate',
-  'class_time',
-  'class_duration',
-  'section_code',
-  'course_code',
-  'organization_code'
-)
-VALUES
-  ('2','2018-09-09','2018-09-09 09:00','1','A','M200','MTRLGY'),
-  ('4','2018-09-09','2018-09-09 09:00','1.5','B','M200','MTRLGY'),
-  ('4','2018-09-09','2018-09-09 10:00','1','A','M100','FINBUS'),
-  ('4','2018-09-08','2018-09-09 11:00','2.25','A','T110','ASTRNMY');
-
-CREATE TABLE IF NOT EXISTS class_teacher (
-  id integer primary key autoincrement,
-  class_id integer not null,
-  teacher_id integer not null,
-  foreign key (class_id) references class(id),
-  foreign key (teacher_id) references teacher(id)
-);
-UPDATE SQLITE_SEQUENCE SET seq = 6000 WHERE name = 'class_teacher';
+INSERT INTO 'maintenance_warranty' ('maintenance_id', 'warranty_id') VALUES
+  (1, 1),
+  (2, 2),
+  (3, 3),
+  (1, 2);
 
 COMMIT;
 __EOF__
+
+
