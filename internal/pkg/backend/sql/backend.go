@@ -9,13 +9,13 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
 	"sync"
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/alecthomas/template"
 	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
@@ -25,11 +25,8 @@ import (
 var (
 	ErrUnexpectedJSON         = errors.New("Received JSON data that we are unable to parse")
 	ErrMismatchedAffectedRows = errors.New("The amount of rows affected should be sane")
-	ErrTransactionUUIDInvalid = errors.New("A valid transaction UUID must be given " +
-
-		"when performing inserts/updates to the database")
-	ErrNoLastInsertID = errors.New("Database does not support getting the last inserted ID")
-	addHandlers       = func(r *mux.Router, b *Backend) *mux.Router {
+	ErrNoLastInsertID         = errors.New("Database does not support getting the last inserted ID")
+	addHandlers               = func(r *mux.Router, b *Backend) *mux.Router {
 		r.HandleFunc("/{table}/options/{id}", b.GetSingleAsOption).
 			Name("GetSingleAsOption").
 			Methods("GET")
