@@ -38,8 +38,13 @@ var TestCasesCreateSingle = []TestCase{
 }`,
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 			mock.ExpectBegin()
-			mock.ExpectExec("INSERT INTO (.+)\\(id, name, acquisition_cost\\) VALUES\\(., ., .\\)").
-				WithArgs("Cooling Spiral", "99.99").
+			mock.ExpectExec("INSERT INTO (.+)\\(id, name, acquisition_cost, purchase_date\\) VALUES\\(., ., ., .\\)").
+				// insert id specifically instead of relying on the autoincrement feature
+				// of the database. This allows us to run our tests multiple times on
+				// the test database in such a way that the state of the database
+				// before running the tests *is equal to* the state after
+				// runnning the tests
+				WithArgs("4", "Cooling Spiral", "99.99", "2017-03-02T00:00:00Z").
 				WillReturnResult(sqlmock.NewResult(4, 1))
 			mock.ExpectCommit()
 			rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)

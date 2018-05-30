@@ -181,6 +181,7 @@ var (
 		"CreateSingle": "INSERT INTO {{.TableName}}({{.ColumnNames | head}}" +
 			"{{range .ColumnNames | tail}}, {{.}}{{end}}) " +
 			"VALUES(?{{range .ColumnNames | tail}}, ?{{end}})",
+		"DeleteSingle": "DELETE FROM {{.TableName}} WHERE {{.UniqueIDColumn}} = ?",
 		"GetTableSchema": "SELECT * " +
 			"FROM {{.TableName}} " +
 			"LIMIT 1",
@@ -586,7 +587,7 @@ func itFails(t *testing.T, tc TestCase, args ...interface{}) {
 			t.Errorf("Expected no error, instead we received: %s", err)
 		}
 		config.Options.Descriptor = config.ParseDescriptorFile(mockedDescriptorFile)
-		backend, mock, err := setupBackendWithMockedDB()
+		backend, mock, err = setupBackendWithMockedDB()
 		if err != nil {
 			t.Errorf("Expected no error, instead we received: %s", err)
 		}
@@ -598,7 +599,7 @@ func itFails(t *testing.T, tc TestCase, args ...interface{}) {
 		driver := args[0]
 		url := args[1]
 		setupBackendFn := args[2].(func() *Backend)
-		backend := setupBackendFn()
+		backend = setupBackendFn()
 		err = backend.Open(
 			driver,
 			url,
@@ -653,7 +654,7 @@ func itSucceeds(t *testing.T, tc TestCase, args ...interface{}) {
 			t.Errorf("Expected no error, instead we received: %s", err)
 		}
 		config.Options.Descriptor = config.ParseDescriptorFile(mockedDescriptorFile)
-		backend, mock, err := setupBackendWithMockedDB()
+		backend, mock, err = setupBackendWithMockedDB()
 		if err != nil {
 			t.Errorf("Expected no error, instead we received: %s", err)
 		}
@@ -665,7 +666,7 @@ func itSucceeds(t *testing.T, tc TestCase, args ...interface{}) {
 		driver := args[0]
 		url := args[1]
 		setupBackendFn := args[2].(func() *Backend)
-		backend := setupBackendFn()
+		backend = setupBackendFn()
 		err = backend.Open(
 			driver,
 			url,
@@ -696,7 +697,7 @@ func itSucceeds(t *testing.T, tc TestCase, args ...interface{}) {
 		t.Errorf("Expected HTTP 2xx, instead we received: %d", res.StatusCode)
 	}
 	if string(got[:]) != tc.ExpectedResults {
-		t.Errorf("Response doesn't match what we expected\nResponse:\n%s\nExpected:\n%s\n",
+		t.Errorf("Response doesn't match what we expected\nResponse:\n%q\nExpected:\n%q\n",
 			got, tc.ExpectedResults)
 	}
 	if usingMockedDB {

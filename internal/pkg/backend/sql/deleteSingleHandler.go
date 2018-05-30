@@ -33,11 +33,11 @@ var TestCasesDeleteSingle = []TestCase{
   }
 }`,
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-			rows := sqlmock.NewRows(columns).
-				FromCSVString(rowsAsCsv)
-			mock.ExpectQuery("DELETE FROM (.+) WHERE (.+) = (.+)").
+			mock.ExpectBegin()
+			mock.ExpectExec("DELETE FROM (.+) WHERE (.+) = (.+)").
 				WithArgs("4").
-				WillReturnRows(rows)
+				WillReturnResult(sqlmock.NewResult(4, 1))
+			mock.ExpectCommit()
 		},
 		Request: func() *http.Request {
 			req, _ := http.NewRequest("DELETE", "/equipment/4", nil)
@@ -66,11 +66,11 @@ var TestCasesDeleteSingle = []TestCase{
   ]
 }`,
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-			rows := sqlmock.NewRows(columns).
-				FromCSVString(rowsAsCsv)
-			mock.ExpectQuery("DELETE FROM (.+) WHERE (.+) = (.+)").
+			mock.ExpectBegin()
+			mock.ExpectExec("DELETE FROM (.+) WHERE (.+) = (.+)").
 				WithArgs("42").
-				WillReturnRows(rows)
+				WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectCommit()
 		},
 		Request: func() *http.Request {
 			req, _ := http.NewRequest("DELETE", "/equipment/42", nil)

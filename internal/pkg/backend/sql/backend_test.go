@@ -4,45 +4,66 @@ import (
 	"testing"
 )
 
-func TestHandlers(t *testing.T) {
-	t.Run("GetSingle", func(t *testing.T) {
-		for _, tc := range TestCasesGetSingle {
+func TestGetSingleHandler(t *testing.T) {
+	for _, tc := range TestCasesGetSingle {
+		t.Run(tc.Name, func(t *testing.T) {
 			Run(t, tc)
-		}
-	})
-	t.Run("GetSingleAsOption", func(t *testing.T) {
-		for _, tc := range TestCasesGetSingleAsOption {
+		})
+	}
+}
+
+func TestGetAsOptionHandler(t *testing.T) {
+	for _, tc := range TestCasesGetSingleAsOption {
+		t.Run(tc.Name, func(t *testing.T) {
 			Run(t, tc)
-		}
-	})
-	t.Run("GetCollection", func(t *testing.T) {
-		for _, tc := range TestCasesGetCollection {
+		})
+	}
+}
+
+func TestGetCollectionHandler(t *testing.T) {
+	for _, tc := range TestCasesGetCollection {
+		t.Run(tc.Name, func(t *testing.T) {
 			Run(t, tc)
-		}
-	})
-	t.Run("GetCollectionAsOptions", func(t *testing.T) {
-		for _, tc := range TestCasesGetCollectionAsOptions {
+		})
+	}
+}
+
+func TestGetCollectionAsOptionsHandler(t *testing.T) {
+	for _, tc := range TestCasesGetCollectionAsOptions {
+		t.Run(tc.Name, func(t *testing.T) {
 			Run(t, tc)
-		}
-	})
-	t.Run("GetCollectionAsOptionsFilterable", func(t *testing.T) {
-		for _, tc := range TestCasesGetCollectionAsOptionsFilterable {
+		})
+	}
+}
+
+func TestGetCollectionAsOptionsFilterableHandler(t *testing.T) {
+	for _, tc := range TestCasesGetCollectionAsOptionsFilterable {
+		t.Run(tc.Name, func(t *testing.T) {
 			Run(t, tc)
-		}
-	})
-	t.Run("UpdateSingle", func(t *testing.T) {
-		for _, tc := range TestCasesUpdateSingle {
+		})
+	}
+}
+
+func TestUpdateSingleHandler(t *testing.T) {
+	for _, tc := range TestCasesUpdateSingle {
+		t.Run(tc.Name, func(t *testing.T) {
 			Run(t, tc)
-		}
-	})
-	t.Run("CreateSingle", func(t *testing.T) {
-		for _, tc := range TestCasesCreateSingle {
+		})
+	}
+}
+
+func TestCreateSingleHandler(t *testing.T) {
+	for _, tc := range TestCasesCreateSingle {
+		t.Run(tc.Name, func(t *testing.T) {
 			Run(t, tc)
-		}
-	})
-	t.Run("DeleteSingle", func(t *testing.T) {
-		for _, tc := range TestCasesDeleteSingle {
+		})
+	}
+}
+
+func TestDeleteSingleHandler(t *testing.T) {
+	for _, tc := range TestCasesDeleteSingle {
+		t.Run(tc.Name, func(t *testing.T) {
 			Run(t, tc)
-		}
-	})
+		})
+	}
 }
