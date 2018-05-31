@@ -45,7 +45,6 @@ var (
 	}
 	integer = []string{
 		"BIGINT",
-		"BIGINT",
 		"INT",
 		"INT2",
 		"INT8",
@@ -57,24 +56,24 @@ var (
 	}
 	text = []string{
 		"CHARACTER",
-		"VARCHAR",
-		"VARYING CHARACTER",
-		"NCHAR",
+		"CLOB",
 		"NATIVE CHARACTER",
+		"NCHAR",
 		"NVARCHAR",
 		"TEXT",
-		"CLOB",
+		"VARCHAR",
+		"VARYING CHARACTER",
 	}
 	real = []string{
-		"REAL",
-		"DOUBLE",
 		"DOUBLE PRECISION",
+		"DOUBLE",
 		"FLOAT",
+		"REAL",
 	}
 	numeric = []string{
-		"NUMERIC",
-		"DECIMAL",
 		"BOOLEAN",
+		"DECIMAL",
+		"NUMERIC",
 	}
 	time = []string{
 		"DATE",
