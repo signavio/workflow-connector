@@ -3,26 +3,16 @@
 port: 8080
 database:
   driver: sqlite3
-  # Relative to path of the executable 
-  url: test.db
-  # All database drivers can use multiple tables
-  tables: 
-    - name: products
-      columnAsOptionName: product_name
-    - name: users
-      columnAsOptionName: user_name
-  testTables:
-    - name: products_test
-      columnAsOptionName: product_name
-    - name: users_test
-      columnAsOptionName: user_name
+  url: test.db 
 tls:
   enabled: false
-  # Can be a fully qualified path to the certificate files
-  # example: /etc/ssl/certs/workflow-db-connector-server.crt
-  publicKey: server.crt
-  # example: /etc/ssl/certs/workflow-db-connector-server.key
-  privateKey: server.key
+  publicKey: ./config/server.crt
+  privateKey: ./config/server.key
+auth:
+  username: wfauser
+  # password = Foobar
+  passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
+logging: true
 ...
 # Using a Microsoft SQL Server database
 ---
@@ -30,16 +20,15 @@ port: 8080
 database:
   driver: sqlserver
   url: sqlserver://john:84mj29rSgHz@172.17.8.2?database=test
-  tables: 
-    - name: products
-      columnAsOptionName: product_name
-  testTables:
-    - name: users
-      columnAsOptionName: user_name
 tls:
   enabled: false
-  publicKey: server.crt
-  privateKey: server.key
+  publicKey: ./config/server.crt
+  privateKey: ./config/server.key
+auth:
+  username: wfauser
+  # password = Foobar
+  passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
+logging: true
 ...
 # Using a Postgres database
 ---
@@ -47,13 +36,30 @@ port: 8080
 database:
   driver: postgres
   url: postgres://bob:l120arSgHz@172.17.8.2/test?sslmode=verify-full
-  tables: 
-    - name: products
-      columnAsOptionName: product_name
-  testTables:
-    - name: products
-      columnAsOptionName: product_name
 tls:
   enabled: false
-  publicKey: server.crt
-  privateKey: server.key
+  publicKey: ./config/server.crt
+  privateKey: ./config/server.key
+auth:
+  username: wfauser
+  # password = Foobar
+  passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
+logging: true
+...
+# Using a mysql database
+---
+port: 8080
+database:
+  driver: mysql
+  # url = username:password@protocol(address)/dbname?param=value
+  url: bob:l120arSgHz@tcp(172.17.8.2:3306)/test?timeout=90s&collation=utf8mb4_unicode_ci
+tls:
+  enabled: false
+  publicKey: ./config/server.crt
+  privateKey: ./config/server.key
+auth:
+  username: wfauser
+  # password = Foobar
+  passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
+logging: true
+...
