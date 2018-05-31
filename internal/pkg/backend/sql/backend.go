@@ -435,9 +435,7 @@ func (b *Backend) getColumnNamesAndDataTypesFromDBTableSchema(table string) (col
 	return
 }
 
-func (b *Backend) getColumnNamesAndDataTypesForOptionRoutes(table, columnAsOptionName string) (columnNames []string, dataTypes []interface{}) {
-	// TODO this function should also take a parameter for the primary key
-	// instead of just assuming there will be a field call `id` in the table
+func (b *Backend) getColumnNamesAndDataTypesForOptionRoutes(table, columnAsOptionName, uniqueIDColumn string) (columnNames []string, dataTypes []interface{}) {
 	columnNamesAndDataTypes := make(map[string]interface{})
 	for i, columnName := range b.TableSchemas[table].ColumnNames {
 		columnNamesAndDataTypes[columnName] = b.TableSchemas[table].DataTypes[i]
@@ -447,7 +445,7 @@ func (b *Backend) getColumnNamesAndDataTypesForOptionRoutes(table, columnAsOptio
 		fmt.Sprintf("%s\x00%s", table, "name"),
 	}
 	dataTypesForIDandName := []interface{}{
-		columnNamesAndDataTypes[fmt.Sprintf("%s\x00%s", table, "id")],
+		columnNamesAndDataTypes[fmt.Sprintf("%s\x00%s", table, uniqueIDColumn)],
 		columnNamesAndDataTypes[fmt.Sprintf("%s\x00%s", table, columnAsOptionName)],
 	}
 	return columnIDAndName, dataTypesForIDandName
@@ -471,7 +469,8 @@ func (b *Backend) queryContext(ctx context.Context, query string, args ...interf
 func (b *Backend) queryContextForOptionRoutes(ctx context.Context, query string, args ...interface{}) (results []interface{}, err error) {
 	table := ctx.Value(util.ContextKey("table")).(string)
 	columnAsOptionName := ctx.Value(util.ContextKey("columnAsOptionName")).(string)
-	columnNames, dataTypes := b.getColumnNamesAndDataTypesForOptionRoutes(table, columnAsOptionName)
+	uniqueIDColumn := ctx.Value(util.ContextKey("uniqueIDColumn")).(string)
+	columnNames, dataTypes := b.getColumnNamesAndDataTypesForOptionRoutes(table, columnAsOptionName, uniqueIDColumn)
 	rows, err := b.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

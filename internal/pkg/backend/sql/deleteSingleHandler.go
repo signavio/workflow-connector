@@ -114,7 +114,7 @@ var failureMsg = func(id, table string) []byte {
 func (b *Backend) DeleteSingle(rw http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	routeName := mux.CurrentRoute(req).GetName()
-	table := mux.Vars(req)["table"]
+	table := req.Context().Value(util.ContextKey("table")).(string)
 	requestTx := mux.Vars(req)["tx"]
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
 	queryTemplate := b.Templates[routeName]

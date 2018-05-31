@@ -9,11 +9,12 @@ import (
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/formatting"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
+	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
 func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 	routeName := mux.CurrentRoute(req).GetName()
-	table := mux.Vars(req)["table"]
+	table := req.Context().Value(util.ContextKey("table")).(string)
 	queryTemplate := b.Templates[routeName]
 	handler := &handler{
 		vars: []string{queryTemplate},

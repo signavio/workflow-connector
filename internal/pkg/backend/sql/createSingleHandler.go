@@ -66,7 +66,7 @@ var TestCasesCreateSingle = []TestCase{
 
 func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 	routeName := mux.CurrentRoute(req).GetName()
-	table := mux.Vars(req)["table"]
+	table := req.Context().Value(util.ContextKey("table")).(string)
 	requestTx := mux.Vars(req)["tx"]
 	queryTemplate := b.Templates[routeName]
 	requestData, err := util.ParseDataForm(req)

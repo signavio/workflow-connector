@@ -16,7 +16,7 @@ import (
 func (b *Backend) GetCollectionAsOptionsFilterable(rw http.ResponseWriter, req *http.Request) {
 	log.When(config.Options.Logging).Infoln("[handler] GetSingleAsOption")
 	routeName := mux.CurrentRoute(req).GetName()
-	table := mux.Vars(req)["table"]
+	table := req.Context().Value(util.ContextKey("table")).(string)
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
 	columnAsOptionName := req.Context().Value(util.ContextKey("columnAsOptionName")).(string)
 	filter := fmt.Sprintf("%%%s%%", mux.Vars(req)["filter"])

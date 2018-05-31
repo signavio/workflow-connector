@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/formatting"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
@@ -16,7 +15,7 @@ import (
 func (b *Backend) GetSingle(rw http.ResponseWriter, req *http.Request) {
 	id := req.Context().Value(util.ContextKey("id")).(string)
 	routeName := req.Context().Value(util.ContextKey("currentRoute")).(string)
-	table := mux.Vars(req)["table"]
+	table := req.Context().Value(util.ContextKey("table")).(string)
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
 	queryTemplate := b.Templates[routeName]
 	relations := req.Context().Value(util.ContextKey("relationships")).([]*config.Field)

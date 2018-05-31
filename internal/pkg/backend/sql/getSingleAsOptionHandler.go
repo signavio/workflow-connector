@@ -16,7 +16,7 @@ func (b *Backend) GetSingleAsOption(rw http.ResponseWriter, req *http.Request) {
 	log.When(config.Options.Logging).Infoln("[handler] GetSingleAsOption")
 	routeName := mux.CurrentRoute(req).GetName()
 	id := mux.Vars(req)["id"]
-	table := mux.Vars(req)["table"]
+	table := req.Context().Value(util.ContextKey("table")).(string)
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
 	columnAsOptionName := req.Context().Value(util.ContextKey("columnAsOptionName")).(string)
 	queryTemplate := b.Templates[routeName]

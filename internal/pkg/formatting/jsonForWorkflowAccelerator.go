@@ -23,7 +23,7 @@ var WorkflowAccelerator = &workflowAcceleratorFormatter{}
 // that Workflow Accelerator can interpret and understand
 func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
 	currentRoute := mux.CurrentRoute(req).GetName()
-	tableName := mux.Vars(req)["table"]
+	tableName := req.Context().Value(util.ContextKey("table")).(string)
 	if currentRoute == "GetCollectionAsOptionsFilterable" ||
 		currentRoute == "GetCollectionAsOptions" {
 		// Signavio Workflow Accelerator expects results from the options routes,

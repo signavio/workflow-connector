@@ -13,9 +13,8 @@ import (
 )
 
 func (b *Backend) GetCollectionAsOptions(rw http.ResponseWriter, req *http.Request) {
-	log.When(config.Options.Logging).Infoln("[handler] GetSingleAsOption")
 	routeName := mux.CurrentRoute(req).GetName()
-	table := mux.Vars(req)["table"]
+	table := req.Context().Value(util.ContextKey("table")).(string)
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
 	columnAsOptionName := req.Context().Value(util.ContextKey("columnAsOptionName")).(string)
 	queryTemplate := b.Templates[routeName]
@@ -31,15 +30,15 @@ func (b *Backend) GetCollectionAsOptions(rw http.ResponseWriter, req *http.Reque
 			ColumnAsOptionName: columnAsOptionName,
 		},
 	}
-	log.When(config.Options.Logging).Infof("[handler] %s", routeName)
+	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
-	log.When(config.Options.Logging).Infoln("[handler -> template] interpolate query string")
+	log.When(config.Options.Logging).Infoln("[handler] interpolate query string")
 	queryString, err := handler.interpolateQueryTemplate()
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryString)
+	log.When(config.Options.Logging).Infoln(queryString)
 
 	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
 	results, err := b.queryContextForOptionRoutes(req.Context(), queryString)

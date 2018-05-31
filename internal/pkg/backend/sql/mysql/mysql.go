@@ -18,7 +18,7 @@ var (
 			"{{end}}" +
 			" WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = ?",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-			"FROM {{.TableName}}" +
+			"FROM {{.TableName}} " +
 			"WHERE {{.UniqueIDColumn}} = ?",
 		"GetCollection": "SELECT * " +
 			"FROM {{.TableName}}",

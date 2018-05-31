@@ -139,7 +139,7 @@ var TestCasesUpdateSingle = []TestCase{
 
 func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 	routeName := mux.CurrentRoute(req).GetName()
-	table := mux.Vars(req)["table"]
+	table := req.Context().Value(util.ContextKey("table")).(string)
 	requestTx := mux.Vars(req)["tx"]
 	queryTemplate := b.Templates[routeName]
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
