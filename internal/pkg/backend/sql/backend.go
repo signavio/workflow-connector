@@ -357,7 +357,7 @@ func getTableSchema(b *Backend, query, table string) (*TableSchema, error) {
 	for _, column := range columns {
 		columnsPrepended = append(
 			columnsPrepended,
-			fmt.Sprintf("%s_%s", table, column),
+			fmt.Sprintf("%s\x00%s", table, column),
 		)
 	}
 	columnTypes, err := rows.ColumnTypes()
@@ -392,7 +392,7 @@ func getTableSchemaWithRelationships(b *Backend, query, table string) (*TableSch
 	for _, cc := range currentColumns {
 		columnsPrepended = append(
 			columnsPrepended,
-			fmt.Sprintf("%s_%s", table, cc),
+			fmt.Sprintf("%s\x00%s", table, cc),
 		)
 	}
 	var previousTableIdx = currentColumnsIdx
@@ -404,7 +404,7 @@ func getTableSchemaWithRelationships(b *Backend, query, table string) (*TableSch
 		for _, cc := range currentColumns {
 			columnsPrepended = append(
 				columnsPrepended,
-				fmt.Sprintf("%s_%s", thisTable, cc),
+				fmt.Sprintf("%s\x00%s", thisTable, cc),
 			)
 		}
 		previousTableIdx = newTableIdx
@@ -443,12 +443,12 @@ func (b *Backend) getColumnNamesAndDataTypesForOptionRoutes(table, columnAsOptio
 		columnNamesAndDataTypes[columnName] = b.TableSchemas[table].DataTypes[i]
 	}
 	columnIDAndName := []string{
-		fmt.Sprintf("%s_%s", table, "id"),
-		fmt.Sprintf("%s_%s", table, "name"),
+		fmt.Sprintf("%s\x00%s", table, "id"),
+		fmt.Sprintf("%s\x00%s", table, "name"),
 	}
 	dataTypesForIDandName := []interface{}{
-		columnNamesAndDataTypes[fmt.Sprintf("%s_%s", table, "id")],
-		columnNamesAndDataTypes[fmt.Sprintf("%s_%s", table, columnAsOptionName)],
+		columnNamesAndDataTypes[fmt.Sprintf("%s\x00%s", table, "id")],
+		columnNamesAndDataTypes[fmt.Sprintf("%s\x00%s", table, columnAsOptionName)],
 	}
 	return columnIDAndName, dataTypesForIDandName
 }

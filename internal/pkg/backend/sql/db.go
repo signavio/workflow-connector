@@ -157,7 +157,7 @@ func processRow(rows *sql.Rows, columns []string, values []interface{}) (result 
 	tableResult := make(map[string]interface{})
 	var previous = ""
 	for i := 0; i < len(columns); i++ {
-		tableNamePrefix := strings.IndexRune(columns[i], '_')
+		tableNamePrefix := strings.IndexRune(columns[i], '\x00')
 		var tableName, columnName string
 		tableName = columns[i][0:tableNamePrefix]
 		columnName = columns[i][tableNamePrefix+1 : len(columns[i])]
