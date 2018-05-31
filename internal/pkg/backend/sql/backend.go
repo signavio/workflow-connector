@@ -259,6 +259,10 @@ func NewBackend() *Backend {
 
 // Open a connection to the backend database
 func (b *Backend) Open(args ...interface{}) error {
+	log.When(config.Options.Logging).Infof(
+		"[backend] open connection to database %v\n",
+		config.Options.Database.Driver,
+	)
 	driver := args[0].(string)
 	url := args[1].(string)
 	db, err := sql.Open(driver, url)
@@ -279,6 +283,9 @@ func (b *Backend) GetHandler() http.Handler {
 }
 
 func (b *Backend) SaveTableSchemas() (err error) {
+	log.When(config.Options.Logging).Infoln(
+		"[backend] query database and save table schemas",
+	)
 	for _, table := range config.Options.Database.Tables {
 		if util.TableHasRelationships(config.Options, table.Name) {
 			err := b.populateBackendTableSchemas(
@@ -302,6 +309,10 @@ func (b *Backend) SaveTableSchemas() (err error) {
 			}
 		}
 	}
+	log.When(config.Options.Logging).Infof(
+		"[backend] the following table schemas were retrieved:\n%#+v\n",
+		b.TableSchemas,
+	)
 	return nil
 }
 
