@@ -39,18 +39,18 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		return []byte("{}"), nil
 	}
 	if len(results) == 1 {
-		log.When(config.Options).Infoln("[formatter -> asWorkflowType] Format with result set == 1")
+		log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set == 1")
 		formattedResult := formatAsAWorkflowType(
 			results[0].(map[string]interface{}), tableName,
 		)
-		log.When(config.Options).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
+		log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
 		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
 		if err != nil {
 			return nil, err
 		}
 		return
 	}
-	log.When(config.Options).Infoln("[formatter -> asWorkflowType] Format with result set > 1")
+	log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set > 1")
 	var formattedResults []interface{}
 	for _, result := range results {
 		formattedResult := formatAsAWorkflowType(
@@ -58,7 +58,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		)
 		formattedResults = append(formattedResults, formattedResult)
 	}
-	log.When(config.Options).Infof(
+	log.When(config.Options.Logging).Infof(
 		"[formatter <- asWorkflowType] formattedResult (top 2): \n%+v ...\n",
 		formattedResults[0:1],
 	)
@@ -66,7 +66,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 	if err != nil {
 		return nil, err
 	}
-	log.When(config.Options).Infoln("[routeHandler <- formatter]")
+	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
 	return
 }
 

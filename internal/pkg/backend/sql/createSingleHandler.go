@@ -96,16 +96,16 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 			ColumnNames: columnNames,
 		},
 	}
-	log.When(config.Options).Infof("[handler] %s\n", routeName)
+	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
-	log.When(config.Options).Infoln("[handler -> template] interpolate query string")
+	log.When(config.Options.Logging).Infoln("[handler -> template] interpolate query string")
 	queryString, args, err := handler.interpolateExecTemplates(req.Context(), requestData)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options).Infof("[handler <- template]\n%s\n", queryString)
-	log.When(config.Options).Infof("will be called with these args:\n%s\n", args)
+	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryString)
+	log.When(config.Options.Logging).Infof("will be called with these args:\n%s\n", args)
 
 	// Check that user provided tx is already in backend.Transactions
 	if requestTx != "" {
@@ -114,22 +114,22 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 			http.Error(rw, string(failureMsg(requestTx, table)[:]), http.StatusNotFound)
 			return
 		}
-		log.When(config.Options).Infof("Query will execute within user specified transaction:\n%s\n", tx)
+		log.When(config.Options.Logging).Infof("Query will execute within user specified transaction:\n%s\n", tx)
 	}
 	result, err := b.execContext(req.Context(), queryString, args...)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options).Infof("[handler <- db] query results: \n%#v\n", result)
+	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n", result)
 
-	log.When(config.Options).Infoln("[handler] try to return the newly updated resource")
+	log.When(config.Options.Logging).Infoln("[handler] try to return the newly updated resource")
 	lastInsertID, err := result.LastInsertId()
 	if err != nil || lastInsertID < 1 {
 		// LastInsertId() probably not supported by the database. Therefore,
 		// Since we can not return the newly created resource to the user,
 		// we instead return an empty body and a 204 No Content
-		log.When(config.Options).Infof(
+		log.When(config.Options.Logging).Infof(
 			"[handler] Returning newly updated resource not supported by %s database\n",
 			config.Options.Database.Driver,
 		)
@@ -154,32 +154,6 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 	newReq := req.WithContext(usingLastInsertID)
 	b.GetSingle(rw, newReq)
 	return
-	//queryString, err = interpolateCreateSingle(req.Context(), "GetSingleWithRelationships", table)
-	//if err != nil {
-	//	http.Error(rw, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//rows, err := b.DB.QueryContext(
-	//	req.Context(),
-	//	queryString,
-	//	fmt.Sprintf("%d", lastInsertId),
-	//)
-	//if err != nil {
-	//	http.Error(rw, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//defer rows.Close()
-	//results, err := rowsToResults(rows, columnNames, dataTypes)
-	//if err != nil {
-	//	http.Error(rw, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//log.When(config.Options).Infof(
-	//	"[handler <- db] getQueryResults: \n%+v\n",
-	//	results,
-	//)
-	//log.When(config.Options).Infoln("[routeHandler <- handlers]")
-	//log.When(config.Options).Infoln("[routeHandler -> formatter]")
 }
 
 func getColumnNamesFromRequestData(tableName string, requestData map[string]interface{}) (columnNames []string) {

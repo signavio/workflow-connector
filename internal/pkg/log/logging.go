@@ -2,14 +2,12 @@ package log
 
 import (
 	"fmt"
-
-	"github.com/signavio/workflow-connector/internal/pkg/config"
 )
 
 type Logger bool
 
-func When(cfg config.Config) Logger {
-	if cfg.Logging != "" {
+func When(isEnabled bool) Logger {
+	if isEnabled {
 		return Logger(true)
 	}
 	return Logger(false)

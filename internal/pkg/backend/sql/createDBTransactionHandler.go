@@ -28,7 +28,7 @@ var txCreatedMsg = func(txUUID string) []byte {
 
 func (b *Backend) CreateDBTransaction(rw http.ResponseWriter, req *http.Request) {
 	routeName := mux.CurrentRoute(req).GetName()
-	log.When(config.Options).Infof("[handler] %s\n", routeName)
+	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 	delay := 60 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), delay)
 	tx, err := b.DB.BeginTx(ctx, nil)
@@ -44,7 +44,7 @@ func (b *Backend) CreateDBTransaction(rw http.ResponseWriter, req *http.Request)
 		return
 	}
 	b.Transactions.Store(fmt.Sprintf("%s", txUUID), tx)
-	log.When(config.Options).Infof("[handler] Added transaction %s to backend\n", txUUID)
+	log.When(config.Options.Logging).Infof("[handler] Added transaction %s to backend\n", txUUID)
 	// Explicitly call cancel after delay
 	go func(c context.CancelFunc, d time.Duration, id uuid.UUID) {
 		select {
@@ -53,7 +53,7 @@ func (b *Backend) CreateDBTransaction(rw http.ResponseWriter, req *http.Request)
 			_, ok := b.Transactions.Load(fmt.Sprintf("%s", id))
 			if ok {
 				b.Transactions.Delete(id)
-				log.When(config.Options).Infof("[handler] Timeout expired: \n"+
+				log.When(config.Options.Logging).Infof("[handler] Timeout expired: \n"+
 					"Open transaction %s has been deleted from backend\n", id)
 			}
 		}

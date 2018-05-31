@@ -9,4 +9,4 @@ tls:
 auth:
   username: wfauser
   passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
-logging: "true"
+logging: true

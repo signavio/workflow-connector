@@ -13,7 +13,7 @@ import (
 )
 
 func (b *Backend) GetCollectionAsOptions(rw http.ResponseWriter, req *http.Request) {
-	log.When(config.Options).Infoln("[handler] GetSingleAsOption")
+	log.When(config.Options.Logging).Infoln("[handler] GetSingleAsOption")
 	routeName := mux.CurrentRoute(req).GetName()
 	table := mux.Vars(req)["table"]
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
@@ -31,33 +31,33 @@ func (b *Backend) GetCollectionAsOptions(rw http.ResponseWriter, req *http.Reque
 			ColumnAsOptionName: columnAsOptionName,
 		},
 	}
-	log.When(config.Options).Infof("[handler] %s", routeName)
+	log.When(config.Options.Logging).Infof("[handler] %s", routeName)
 
-	log.When(config.Options).Infoln("[handler -> template] interpolate query string")
+	log.When(config.Options.Logging).Infoln("[handler -> template] interpolate query string")
 	queryString, err := handler.interpolateQueryTemplate()
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options).Infof("[handler <- template]\n%s\n", queryString)
+	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryString)
 
-	log.When(config.Options).Infoln("[handler -> db] get query results")
+	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
 	results, err := b.queryContextForOptionRoutes(req.Context(), queryString)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options).Infof("[handler <- db] query results: \n%#v\n",
+	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n",
 		results,
 	)
 
-	log.When(config.Options).Infoln("[handler -> formatter] format results as json")
+	log.When(config.Options.Logging).Infoln("[handler -> formatter] format results as json")
 	formattedResults, err := formatting.WorkflowAccelerator.Format(req, results)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options).Infof("[handler <- formatter] formatted results: \n%s\n",
+	log.When(config.Options.Logging).Infof("[handler <- formatter] formatted results: \n%s\n",
 		formattedResults,
 	)
 

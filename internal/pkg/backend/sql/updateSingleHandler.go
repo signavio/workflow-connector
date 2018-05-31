@@ -172,16 +172,16 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 			UniqueIDColumn: uniqueIDColumn,
 		},
 	}
-	log.When(config.Options).Infof("[handler] %s\n", routeName)
+	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
-	log.When(config.Options).Infoln("[handler -> template] interpolate query string")
+	log.When(config.Options.Logging).Infoln("[handler -> template] interpolate query string")
 	queryString, args, err := handler.interpolateExecTemplates(req.Context(), requestData)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options).Infof("[handler <- template]\n%s\n", queryString)
-	log.When(config.Options).Infof("will be called with these args:\n%s\n", args)
+	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryString)
+	log.When(config.Options.Logging).Infof("will be called with these args:\n%s\n", args)
 
 	// Check that user provided tx is already in backend.Transactions
 	if requestTx != "" {
@@ -190,14 +190,14 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 			http.Error(rw, string(failureMsg(requestTx, table)[:]), http.StatusNotFound)
 			return
 		}
-		log.When(config.Options).Infof("Query will execute within user specified transaction:\n%s\n", tx)
+		log.When(config.Options.Logging).Infof("Query will execute within user specified transaction:\n%s\n", tx)
 	}
 	result, err := b.execContext(req.Context(), queryString, args...)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options).Infof("[handler <- db] query results: \n%#v\n", result)
+	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n", result)
 
 	withUpdatedRoute := context.WithValue(
 		req.Context(),

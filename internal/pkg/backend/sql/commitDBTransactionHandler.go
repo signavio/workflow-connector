@@ -45,7 +45,7 @@ var txCommittedMsg = func(txUUID string) []byte {
 func (b *Backend) CommitDBTransaction(rw http.ResponseWriter, req *http.Request) {
 	requestTx := mux.Vars(req)["commit"]
 	routeName := mux.CurrentRoute(req).GetName()
-	log.When(config.Options).Infof("[handler] %s\n", routeName)
+	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
 	tx, ok := b.Transactions.Load(requestTx)
 	if !ok {

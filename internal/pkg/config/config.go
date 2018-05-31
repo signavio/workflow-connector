@@ -20,7 +20,7 @@ var configPaths = []string{
 	os.Getenv("WORKFLOW_CONFIG"),
 }
 
-// Options is populated by the packages init() function
+// Options is populated by this package's init() function
 // TODO It should be a singleton
 var Options Config
 
@@ -40,7 +40,7 @@ type Config struct {
 	}
 	Descriptor *Descriptor
 	Auth       *Auth
-	Logging    string
+	Logging    bool
 }
 
 // Table defines the name of the database table that will be queried
