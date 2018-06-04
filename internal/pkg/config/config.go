@@ -2,23 +2,13 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/signavio/workflow-connector/internal/pkg/log"
 	"github.com/spf13/viper"
 )
-
-// Order is significant, items at the front of the array take precedence
-var configPaths = []string{
-	// TODO fill out with typical windows config directories
-	filepath.Join(os.Getenv("HOME"), "/.config/workflow-connector/"),
-	"/etc/workflow-connector/",
-	"config/",
-	"./",
-	os.Getenv("WFC_CONFIG"),
-}
 
 // Options is populated by this package's init() function
 // TODO It should be a singleton
@@ -65,12 +55,23 @@ type db struct {
 	val  string
 }
 
+// config is a command line flag that specifies the path to the config directory
+type configDir struct {
+	name string
+	val  string
+}
+
 // Initialize configuration file from typical directory locations and parse it
 func init() {
+	db := &db{name: "db", val: ""}
+	flag.StringVar(&db.val, "db", "", "run tests on the real test databases")
+	viper.BindFlagValue("db", db)
+	configDir := &configDir{name: "config-dir", val: ""}
+	flag.StringVar(&configDir.val, "config-dir", "", "specify location to config directory")
+	viper.BindFlagValue("config-dir", configDir)
+	flag.Parse()
 	viper.SetConfigName("config")
-	for _, p := range configPaths {
-		viper.AddConfigPath(p)
-	}
+	viper.AddConfigPath(configDir.val)
 	viper.SetEnvPrefix("wfc")
 	viper.AutomaticEnv()
 	// Nested keys use a single underscore `_` as seperator when
@@ -78,18 +79,17 @@ func init() {
 	replacer := strings.NewReplacer(".", "_")
 	viper.SetEnvKeyReplacer(replacer)
 	if err := viper.ReadInConfig(); err != nil {
-		panic(fmt.Errorf("Can not parse config file: %s", err))
+		log.Fatalln(
+			"Can not parse config file: you must specify the path to the " +
+				"config directory using the --config-dir flag",
+		)
 	}
 	if err := viper.Unmarshal(&Options); err != nil {
-		panic(fmt.Errorf("Unable to decode config file into struct: %s", err))
+		log.Fatalf("Unable to decode config file into struct: %s", err)
 	}
-	db := &db{name: "db", val: ""}
-	flag.StringVar(&db.val, "db", "", "run tests on the real test databases")
-	viper.BindFlagValue("db", db)
-	flag.Parse()
-	descriptorFile, err := locationsForDescriptorFile()
+	descriptorFile, err := os.Open(filepath.Join(configDir.val, "descriptor.json"))
 	if err != nil {
-		panic(err)
+		log.Fatalf("Unable to open descriptor.json file: %v\n", err)
 	}
 	Options.Descriptor = ParseDescriptorFile(descriptorFile)
 	for _, td := range Options.Descriptor.TypeDescriptors {
@@ -98,33 +98,11 @@ func init() {
 	}
 }
 
-// locationsForDescriptorFile will look in common directories for the
-// descriptor.json file that will be served on the root path for
-// inbound HTTP requests. The descriptor.json file is parsed
-// by the Workflow Accelerator to determine the schema
-// of the data provided by this connector.
-func locationsForDescriptorFile() (descriptorFile *os.File, err error) {
-	filename := "descriptor.json"
-	makeAbsPath := func(path string) string {
-		absPath, _ := filepath.Abs(filepath.Join(path, filename))
-		return absPath
-	}
-	var file *os.File
-	var absPaths []string
-	for _, p := range configPaths {
-		absPath := makeAbsPath(p)
-		absPaths = append(absPaths, absPath)
-		file, err = os.Open(absPath)
-		if err == nil {
-			return file, nil
-		}
-	}
-	return nil, fmt.Errorf(
-		"couldn't find descriptor.json in these directories: \n%+v",
-		absPaths,
-	)
-}
-func (f db) HasChanged() bool    { return false }
-func (f db) Name() string        { return f.name }
-func (f db) ValueString() string { return f.val }
-func (f db) ValueType() string   { return "string" }
+func (f db) HasChanged() bool           { return false }
+func (f db) Name() string               { return f.name }
+func (f db) ValueString() string        { return f.val }
+func (f db) ValueType() string          { return "string" }
+func (f configDir) HasChanged() bool    { return false }
+func (f configDir) Name() string        { return f.name }
+func (f configDir) ValueString() string { return f.val }
+func (f configDir) ValueType() string   { return "string" }

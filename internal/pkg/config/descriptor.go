@@ -61,6 +61,8 @@ func ParseDescriptorFile(file io.Reader) (descriptor *Descriptor) {
 	if err != nil {
 		panic(fmt.Errorf("Unable to read descriptor.json file: %v", err))
 	}
+	fmt.Printf("DEBUG: %s\n", content) // output for debug
+
 	err = json.Unmarshal(content, &descriptor)
 	if err != nil {
 		panic(fmt.Errorf("Unable to unmarshal descriptor.json: %v", err))
