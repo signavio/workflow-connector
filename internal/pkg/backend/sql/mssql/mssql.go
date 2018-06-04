@@ -2,19 +2,20 @@ package mssql
 
 import (
 	"database/sql"
+	"strings"
 
 	_ "github.com/denisenkom/go-mssqldb"
-	sqlBackend "github.com/signavio/workflow-connector/internal/pkg/backend/sql"
+	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
 var (
-	queryTemplates = map[string]string{
+	QueryTemplates = map[string]string{
 		"GetSingle": "SELECT * " +
 			"FROM {{.TableName}} AS _{{.TableName}} " +
 			"{{range .Relations}}" +
 			"   LEFT JOIN {{.Relationship.WithTable}}" +
-			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
-			"   = _{{$.TableName}}.{{.UniqueIDColumn}}" +
+			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
+			"   = _{{$.TableName}}.{{$.UniqueIDColumn}}" +
 			"{{end}}" +
 			"WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = @p1",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
@@ -49,74 +50,65 @@ var (
 		"GetTableWithRelationshipsSchema": "SELECT TOP 1 * FROM {{.TableName}} AS _{{.TableName}}" +
 			"{{range .Relations}}" +
 			" LEFT JOIN {{.Relationship.WithTable}}" +
-			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
-			" = _{{$.TableName}}.{{.UniqueIDColumn}}{{end}}",
+			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
+			" = _{{$.TableName}}.{{$.UniqueIDColumn}}{{end}}",
+	}
+	integer = []string{
+		"TINYINT",
+		"SMALLINT",
+		"INT",
+		"BIGINT",
+	}
+	text = []string{
+		"CHAR",
+		"VARCHAR",
+		"TEXT",
+		"NCHAR",
+		"NVARCHAR",
+		"NTEXT",
+		"BINARY",
+		"VARBINARY",
+		"IMAGE",
+	}
+	numeric = []string{
+		"DECIMAL",
+		"NUMERIC",
+		"SMALLMONEY",
+		"MONEY",
+		"FLOAT",
+		"REAL",
+	}
+	dateTime = []string{
+		"DATETIME",
+		"DATETIME2",
+		"DATETIMEOFFSET",
+		"SMALLDATETIME",
+		"DATE",
+		"TIME",
 	}
 )
 
-func NewMssqlBackend() (b *sqlBackend.Backend) {
-	b = sqlBackend.NewBackend()
-	b.ConvertDBSpecificDataType = convertFromMssqlDataType
-	b.Templates = queryTemplates
-	return b
-}
-
-func convertFromMssqlDataType(fieldDataType string) interface{} {
-	switch fieldDataType {
-	// Text data types
-	case "CHAR":
-		return &sql.NullString{}
-	case "VARCHAR":
-		return &sql.NullString{}
-	case "TEXT":
-		return &sql.NullString{}
-	case "NCHAR":
-		return &sql.NullString{}
-	case "NVARCHAR":
-		return &sql.NullString{}
-	case "NTEXT":
-		return &sql.NullString{}
-	case "BINARY":
-		return &sql.NullString{}
-	case "VARBINARY":
-		return &sql.NullString{}
-	case "IMAGE":
-		return &sql.NullString{}
-	// Number data types
-	case "TINYINT":
+func ConvertFromMssqlDataType(fieldDataType string) interface{} {
+	switch {
+	case isOfDataType(integer, fieldDataType):
 		return &sql.NullInt64{}
-	case "SMALLINT":
-		return &sql.NullInt64{}
-	case "INT":
-		return &sql.NullInt64{}
-	case "BIGINT":
-		return &sql.NullInt64{}
-	case "DECIMAL":
+	case isOfDataType(text, fieldDataType):
+		return &sql.NullString{}
+	case isOfDataType(numeric, fieldDataType):
 		return &sql.NullFloat64{}
-	case "NUMERIC":
-		return &sql.NullFloat64{}
-	case "SMALLMONEY":
-		return &sql.NullFloat64{}
-	case "MONEY":
-		return &sql.NullFloat64{}
-	case "FLOAT":
-		return &sql.NullFloat64{}
-	case "REAL":
-		return &sql.NullFloat64{}
-	// Date data types
-	case "DATETIME":
-		return &sqlBackend.NullTime{}
-	case "DATETIME2":
-		return &sqlBackend.NullTime{}
-	case "DATETIMEOFFSET":
-		return &sqlBackend.NullTime{}
-	case "SMALLDATETIME":
-		return &sqlBackend.NullTime{}
-	case "DATE":
-		return &sqlBackend.NullTime{}
-	case "TIME":
-		return &sqlBackend.NullTime{}
+	case isOfDataType(dateTime, fieldDataType):
+		return &util.NullTime{}
 	default:
 		return &sql.NullString{}
 	}
+}
+
+func isOfDataType(ts []string, fieldDataType string) (result bool) {
+	result = false
+	for _, t := range ts {
+		if strings.HasPrefix(strings.ToUpper(fieldDataType), t) {
+			return true
+		}
+	}
+	return
 }

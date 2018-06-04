@@ -23,7 +23,7 @@ var WorkflowAccelerator = &workflowAcceleratorFormatter{}
 // that Workflow Accelerator can interpret and understand
 func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
 	currentRoute := mux.CurrentRoute(req).GetName()
-	tableName := mux.Vars(req)["table"]
+	tableName := req.Context().Value(util.ContextKey("table")).(string)
 	if currentRoute == "GetCollectionAsOptionsFilterable" ||
 		currentRoute == "GetCollectionAsOptions" {
 		// Signavio Workflow Accelerator expects results from the options routes,
@@ -39,18 +39,18 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		return []byte("{}"), nil
 	}
 	if len(results) == 1 {
-		log.When(config.Options).Infoln("[formatter -> asWorkflowType] Format with result set == 1")
+		log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set == 1")
 		formattedResult := formatAsAWorkflowType(
 			results[0].(map[string]interface{}), tableName,
 		)
-		log.When(config.Options).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
+		log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
 		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
 		if err != nil {
 			return nil, err
 		}
 		return
 	}
-	log.When(config.Options).Infoln("[formatter -> asWorkflowType] Format with result set > 1")
+	log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set > 1")
 	var formattedResults []interface{}
 	for _, result := range results {
 		formattedResult := formatAsAWorkflowType(
@@ -58,7 +58,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		)
 		formattedResults = append(formattedResults, formattedResult)
 	}
-	log.When(config.Options).Infof(
+	log.When(config.Options.Logging).Infof(
 		"[formatter <- asWorkflowType] formattedResult (top 2): \n%+v ...\n",
 		formattedResults[0:1],
 	)
@@ -66,7 +66,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 	if err != nil {
 		return nil, err
 	}
-	log.When(config.Options).Infoln("[routeHandler <- formatter]")
+	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
 	return
 }
 
@@ -100,7 +100,18 @@ func tableHasRelationships(queryResults map[string]interface{}, table string, fi
 	return field.Relationship != nil && queryResults[table].(map[string]interface{})[field.Key] != nil
 }
 func buildAndRecursivelyResolveRelationships(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
-	if hasRelatedTables(queryResults, table, field) {
+	switch field.Relationship.Kind {
+	case "oneToMany":
+		return relationshipKindIsOneToMany(formatted, queryResults, table, field)
+	case "manyToOne", "oneToOne":
+		return relationshipKindIsXToOne(formatted, queryResults, table, field)
+	default:
+		return make(map[string]interface{})
+	}
+}
+
+func relationshipKindIsOneToMany(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
+	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
 		var results []map[string]interface{}
 		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
 		for _, r := range relatedResults {
@@ -116,7 +127,21 @@ func buildAndRecursivelyResolveRelationships(formatted, queryResults map[string]
 	return formatted
 }
 
-func hasRelatedTables(queryResults map[string]interface{}, table string, field *config.Field) bool {
+func relationshipKindIsXToOne(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
+	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
+		var result map[string]interface{}
+		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
+		result = formatAsAWorkflowType(
+			map[string]interface{}{field.Relationship.WithTable: relatedResults[0]},
+			field.Relationship.WithTable,
+		)
+		formatted[field.Key] = result
+		return formatted
+	}
+	formatted[field.Key] = make(map[string]interface{})
+	return formatted
+}
+func relatedTablesResultSetNotEmpty(queryResults map[string]interface{}, table string, field *config.Field) bool {
 	fieldKey := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})
 	fieldKeyRelationshipWithTable := fieldKey[field.Relationship.WithTable].([]map[string]interface{})
 	return len(fieldKeyRelationshipWithTable) > 0

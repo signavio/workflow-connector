@@ -92,6 +92,8 @@ func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{})
 	return
 }
 
+// NEXT func deduplicateSingleResourceForOneToOneRelationships
+
 func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []interface{} {
 	fields := util.TypeDescriptorRelationships(td)
 	for _, field := range fields {
@@ -157,7 +159,7 @@ func processRow(rows *sql.Rows, columns []string, values []interface{}) (result 
 	tableResult := make(map[string]interface{})
 	var previous = ""
 	for i := 0; i < len(columns); i++ {
-		tableNamePrefix := strings.IndexRune(columns[i], '_')
+		tableNamePrefix := strings.IndexRune(columns[i], '\x00')
 		var tableName, columnName string
 		tableName = columns[i][0:tableNamePrefix]
 		columnName = columns[i][tableNamePrefix+1 : len(columns[i])]
@@ -204,7 +206,7 @@ func switchOnValueType(tableName, columnName string, value interface{}, tableRes
 			tableResult[columnName] = nil
 			result[tableName] = tableResult
 		}
-	case *NullTime:
+	case *util.NullTime:
 		if v.Valid {
 			tableResult[columnName] = v.Time
 			result[tableName] = tableResult

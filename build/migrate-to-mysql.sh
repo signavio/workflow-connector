@@ -8,26 +8,26 @@ MYSQL_TEST_DATABASE=${MYSQL_TEST_DATABASE:=signavio_test}
 cat << __EOF__ | mysql -u root -h "${MYSQL_ROOT_HOST}" -p"${MYSQL_ROOT_PASSWORD}"
 DROP USER IF EXISTS '${MYSQL_TEST_USER}'@'${MYSQL_ROOT_HOST}';
 CREATE USER '${MYSQL_TEST_USER}'@'${MYSQL_ROOT_HOST}' IDENTIFIED BY '${MYSQL_TEST_PASSWORD}';
-DROP DATABASE IF EXISTS signavio_test;
-CREATE DATABASE signavio_test;
+DROP DATABASE IF EXISTS ${MYSQL_TEST_DATABASE};
+CREATE DATABASE ${MYSQL_TEST_DATABASE};
 GRANT ALL ON ${MYSQL_TEST_DATABASE}.* TO '${MYSQL_TEST_USER}'@'${MYSQL_ROOT_HOST}' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
+USE ${MYSQL_TEST_DATABASE}
 BEGIN;
 
-USE ${MYSQL_TEST_DATABASE};
 CREATE TABLE IF NOT EXISTS equipment (
   id INT NOT NULL AUTO_INCREMENT,
   name text,
   acquisition_cost decimal(10,5),
-  purchase_date date,
+  purchase_date datetime,
   primary key (id)
 );
 INSERT INTO equipment (name, acquisition_cost, purchase_date)
   VALUES
-  ("Stainless Steel Mash Tun (50L)", 999.00, "2017-12-12T12:00:00Z"),
-  ("HolzbierFaß (200L)", 512.23, "2017-12-12T12:00:00Z"),
-  ("Refractometer", 129.00, "2017-12-12T12:00:00Z")
+  ("Stainless Steel Mash Tun (50L)", 999.00, "2017-12-12 12:00:00"),
+  ("HolzbierFaß (200L)", 512.23, "2017-12-12 12:00:00"),
+  ("Refractometer", 129.00, "2017-12-12 12:00:00")
 ;
 
 CREATE TABLE IF NOT EXISTS person (
@@ -56,10 +56,10 @@ CREATE TABLE IF NOT EXISTS maintenance (
   primary key (id)
 );
 INSERT INTO maintenance (date_scheduled,date_performed,comments,equipment_id,maintainer_id) VALUES
-  ("2017-02-03T02:00:00Z", "2018-02-03T12:22:01Z", "It went well!", 1, 1),
-  ("2017-02-03T02:00:00Z", "2018-02-03T12:22:01Z", "It went poorly!", 2, 1),
-  ("2017-02-03T02:00:00Z", "2018-02-03T12:22:01Z", "It went okay!", 1, 2),
-  ("2017-02-03T02:00:00Z", "2018-02-03T12:22:01Z", "It went great!", 3, 2);
+  ("2017-02-03 02:00:00", "2018-02-03 12:22:01", "It went well!", 1, 1),
+  ("2017-02-03 02:00:00", "2018-02-03 12:22:01", "It went poorly!", 2, 1),
+  ("2017-02-03 02:00:00", "2018-02-03 12:22:01", "It went okay!", 1, 2),
+  ("2017-02-03 02:00:00", "2018-02-03 12:22:01", "It went great!", 3, 2);
 
 CREATE TABLE IF NOT EXISTS warranty (
   id INT NOT NULL AUTO_INCREMENT,
@@ -69,10 +69,10 @@ CREATE TABLE IF NOT EXISTS warranty (
   primary key (id)
 );
 INSERT INTO warranty (type,duration_in_weeks,date_from) VALUES
-  ("parts and labour", 104, "2017-10-02T05:00:00Z"),
-  ("parts and labour", 156, "2017-10-02T05:00:00Z"),
-  ("parts", 104, "2017-10-02T05:00:00Z"),
-  ("parts and labour", 104, "2017-10-02T05:00:00Z");
+  ("parts and labour", 104, "2017-10-02 05:00:00"),
+  ("parts and labour", 156, "2017-10-02 05:00:00"),
+  ("parts", 104, "2017-10-02 05:00:00"),
+  ("parts and labour", 104, "2017-10-02 05:00:00");
 
 CREATE TABLE IF NOT EXISTS maintenance_warranty (
   maintenance_id INT NOT NULL,

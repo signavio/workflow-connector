@@ -2,12 +2,14 @@ package util
 
 import (
 	"context"
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 )
@@ -15,10 +17,64 @@ import (
 // ContextKey is used as a key when populating a context.Context with values
 type ContextKey string
 
+type HTTPCodeMsg struct {
+	Code int
+	Msg  string
+}
+type HTTPCodeTxMsg struct {
+	Code int
+	Tx   string
+	Msg  string
+}
+type HTTPErrorCodeMsg struct {
+	Code int
+	Msg  string
+}
+type NullTime struct {
+	Time  time.Time
+	Valid bool // Valid is true if Time is not NULL
+}
+
 var (
 	ErrCardinalityMany = errors.New("Form data contained multiple input values for a single column")
 	ErrUnexpectedJSON  = errors.New("Received JSON data that we are unable to parse")
 )
+
+func (cm *HTTPCodeMsg) String() string {
+	msg := map[string]interface{}{
+		"status": map[string]interface{}{
+			"code":        cm.Code,
+			"description": cm.Msg,
+		},
+	}
+	result, _ := json.MarshalIndent(&msg, "", "  ")
+	return string(result[:])
+}
+
+func (cm *HTTPCodeTxMsg) String() string {
+	msg := map[string]interface{}{
+		"status": map[string]interface{}{
+			"code":        cm.Code,
+			"tx":          cm.Tx,
+			"description": cm.Msg,
+		},
+	}
+	result, _ := json.MarshalIndent(&msg, "", "  ")
+	return string(result[:])
+}
+
+func (cm *HTTPErrorCodeMsg) String() string {
+	msg := map[string]interface{}{
+		"errors": []map[string]interface{}{
+			{
+				"code":        cm.Code,
+				"description": cm.Msg,
+			},
+		},
+	}
+	result, _ := json.MarshalIndent(&msg, "", "  ")
+	return string(result[:])
+}
 
 // GetTypeDescriptorUsingDBTableName will return the typeDescriptor from the descriptor.json
 // file defined for the table provided in the function's second parameter
@@ -118,19 +174,26 @@ func parseFormURLEncoded(req *http.Request) (data map[string]interface{}, err er
 		}
 		data[k] = v[0]
 	}
-	fmt.Printf("DEBUG: %+v\n", req.Form) // output for debug
 	return data, nil
 }
 
 func parseApplicationJSON(req *http.Request) (data map[string]interface{}, err error) {
-	body, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer req.Body.Close()
-	data = make(map[string]interface{})
-	if err := json.Unmarshal(body, &data); err != nil {
+	if err := json.NewDecoder(req.Body).Decode(&data); err != nil {
 		return nil, fmt.Errorf(ErrUnexpectedJSON.Error()+": %v\n", err)
 	}
 	return
+}
+
+// Scan implements the Scanner interface.
+func (nt *NullTime) Scan(value interface{}) error {
+	nt.Time, nt.Valid = value.(time.Time)
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (nt NullTime) Value() (driver.Value, error) {
+	if !nt.Valid {
+		return nil, nil
+	}
+	return nt.Time, nil
 }

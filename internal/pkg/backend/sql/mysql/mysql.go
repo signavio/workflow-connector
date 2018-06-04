@@ -2,23 +2,24 @@ package mysql
 
 import (
 	"database/sql"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
-	sqlBackend "github.com/signavio/workflow-connector/internal/pkg/backend/sql"
+	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
 var (
-	queryTemplates = map[string]string{
+	QueryTemplates = map[string]string{
 		"GetSingle": "SELECT * " +
 			"FROM {{.TableName}} AS _{{.TableName}}" +
 			"{{range .Relations}}" +
 			"   LEFT JOIN {{.Relationship.WithTable}}" +
-			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
-			"   = _{{$.TableName}}.{{.UniqueIDColumn}}" +
+			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
+			"   = _{{$.TableName}}.{{$.UniqueIDColumn}}" +
 			"{{end}}" +
 			" WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = ?",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-			"FROM {{.TableName}}" +
+			"FROM {{.TableName}} " +
 			"WHERE {{.UniqueIDColumn}} = ?",
 		"GetCollection": "SELECT * " +
 			"FROM {{.TableName}}",
@@ -39,29 +40,65 @@ var (
 		"GetTableWithRelationshipsSchema": "SELECT * FROM {{.TableName}} AS _{{.TableName}}" +
 			"{{range .Relations}}" +
 			" LEFT JOIN {{.Relationship.WithTable}}" +
-			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
-			" = _{{$.TableName}}.{{.UniqueIDColumn}}{{end}} LIMIT 1",
+			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
+			" = _{{$.TableName}}.{{$.UniqueIDColumn}}{{end}} LIMIT 1",
+	}
+	integer = []string{
+		"BIGINT",
+		"INT",
+		"INTEGER",
+		"MEDIUMINT",
+		"SMALLINT",
+		"TINYINT",
+	}
+	text = []string{
+		"BLOB",
+		"TEXT",
+		"VARCHAR",
+		"CHAR",
+		"TINYBLOB",
+		"TINYTEXT",
+		"MEDIUMBLOB",
+		"MEDIUMTEXT",
+		"LARGEBLOB",
+		"LARGETEXT",
+		"ENUM",
+	}
+	numeric = []string{
+		"DECIMAL",
+		"DOUBLE",
+		"FLOAT",
+	}
+	dateTime = []string{
+		"DATE",
+		"DATETIME",
+		"TIME",
+		"TIMESTAMP",
+		"YEAR",
 	}
 )
 
-func NewMysqlBackend() (b *sqlBackend.Backend) {
-	b = sqlBackend.NewBackend()
-	b.ConvertDBSpecificDataType = convertFromMysqlDataType
-	b.Templates = queryTemplates
-	return b
-}
-
-func convertFromMysqlDataType(fieldDataType string) interface{} {
-	switch fieldDataType {
-	case "number":
+func ConvertFromMysqlDataType(fieldDataType string) interface{} {
+	switch {
+	case isOfDataType(integer, fieldDataType):
 		return &sql.NullInt64{}
-	case "text":
+	case isOfDataType(text, fieldDataType):
 		return &sql.NullString{}
-	case "real":
+	case isOfDataType(numeric, fieldDataType):
 		return &sql.NullFloat64{}
-	case "date":
-		return &sqlBackend.NullTime{}
+	case isOfDataType(dateTime, fieldDataType):
+		return &util.NullTime{}
 	default:
 		return &sql.NullString{}
 	}
+}
+
+func isOfDataType(ts []string, fieldDataType string) (result bool) {
+	result = false
+	for _, t := range ts {
+		if strings.HasPrefix(strings.ToUpper(fieldDataType), t) {
+			return true
+		}
+	}
+	return
 }

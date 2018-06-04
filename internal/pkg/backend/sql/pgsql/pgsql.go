@@ -3,9 +3,10 @@ package pgsql
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	_ "github.com/lib/pq"
-	sqlBackend "github.com/signavio/workflow-connector/internal/pkg/backend/sql"
+	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
 type lastId struct {
@@ -13,13 +14,13 @@ type lastId struct {
 }
 
 var (
-	queryTemplates = map[string]string{
+	QueryTemplates = map[string]string{
 		"GetSingle": "SELECT * " +
 			"FROM {{.TableName}} AS _{{.TableName}}" +
 			"{{range .Relations}}" +
 			"   LEFT JOIN {{.Relationship.WithTable}}" +
-			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
-			"   = _{{$.TableName}}.{{.UniqueIDColumn}}" +
+			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
+			"   = _{{$.TableName}}.{{$.UniqueIDColumn}}" +
 			"{{end}}" +
 			" WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = $1",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
@@ -55,19 +56,35 @@ var (
 		"GetTableWithRelationshipsSchema": "SELECT * FROM {{.TableName}} AS _{{.TableName}}" +
 			"{{range .Relations}}" +
 			" LEFT JOIN {{.Relationship.WithTable}}" +
-			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
-			" = _{{$.TableName}}.{{.UniqueIDColumn}}{{end}} LIMIT 1",
+			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
+			" = _{{$.TableName}}.{{$.UniqueIDColumn}}{{end}} LIMIT 1",
+	}
+	integer = []string{
+		"INT2",
+		"INT4",
+		"INT8",
+	}
+	text = []string{
+		"CHAR",
+		"VARCHAR",
+		"TEXT",
+		"BYTEA",
+	}
+	numeric = []string{
+		"NUMERIC",
+		"MONEY",
+	}
+	dateTime = []string{
+		"TIMESTAMP",
+		"TIMESTAMPTZ",
+		"DATE",
+		"TIME",
+		"TIMETZ",
+	}
+	boolean = []string{
+		"BOOL",
 	}
 )
-
-func NewPgsqlBackend() (b *sqlBackend.Backend) {
-	b = sqlBackend.NewBackend()
-	b.ConvertDBSpecificDataType = convertFromPgsqlDataType
-	b.Templates = queryTemplates
-	b.TransactDirectly = execContextDirectly
-	b.TransactWithinTx = execContextWithinTx
-	return b
-}
 
 func (l *lastId) LastInsertId() (int64, error) {
 	return l.id, nil
@@ -77,7 +94,7 @@ func (l *lastId) RowsAffected() (int64, error) {
 	return 0, nil
 }
 
-func execContextDirectly(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
+func ExecContextDirectly(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
 	var id int64
 	if err = db.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
 		return nil, err
@@ -85,7 +102,7 @@ func execContextDirectly(ctx context.Context, db *sql.DB, query string, args ...
 	result = &lastId{id}
 	return result, nil
 }
-func execContextWithinTx(ctx context.Context, tx *sql.Tx, query string, args ...interface{}) (result sql.Result, err error) {
+func ExecContextWithinTx(ctx context.Context, tx *sql.Tx, query string, args ...interface{}) (result sql.Result, err error) {
 	var id int64
 	if err = tx.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
 		return nil, err
@@ -93,43 +110,29 @@ func execContextWithinTx(ctx context.Context, tx *sql.Tx, query string, args ...
 	result = &lastId{id}
 	return result, nil
 }
-func convertFromPgsqlDataType(fieldDataType string) interface{} {
-	switch fieldDataType {
-	// Text data types
-	case "CHAR":
-		return &sql.NullString{}
-	case "VARCHAR":
-		return &sql.NullString{}
-	case "TEXT":
-		return &sql.NullString{}
-	case "BYTEA":
-		return &sql.NullString{}
-	// Number data types
-	case "INT2":
+func ConvertFromPgsqlDataType(fieldDataType string) interface{} {
+	switch {
+	case isOfDataType(integer, fieldDataType):
 		return &sql.NullInt64{}
-	case "INT4":
-		return &sql.NullInt64{}
-	case "INT8":
-		return &sql.NullInt64{}
-	case "NUMERIC":
+	case isOfDataType(text, fieldDataType):
+		return &sql.NullString{}
+	case isOfDataType(numeric, fieldDataType):
 		return &sql.NullFloat64{}
-	case "MONEY":
-		return &sql.NullFloat64{}
-	// Date data types
-	case "TIMESTAMP":
-		return &sqlBackend.NullTime{}
-	case "TIMESTAMPTZ":
-		return &sqlBackend.NullTime{}
-	case "DATE":
-		return &sqlBackend.NullTime{}
-	case "TIME":
-		return &sqlBackend.NullTime{}
-	case "TIMETZ":
-		return &sqlBackend.NullTime{}
-	// Other data types
-	case "BOOL":
+	case isOfDataType(dateTime, fieldDataType):
+		return &util.NullTime{}
+	case isOfDataType(boolean, fieldDataType):
 		return &sql.NullBool{}
 	default:
 		return &sql.NullString{}
 	}
+}
+
+func isOfDataType(ts []string, fieldDataType string) (result bool) {
+	result = false
+	for _, t := range ts {
+		if strings.HasPrefix(strings.ToUpper(fieldDataType), t) {
+			return true
+		}
+	}
+	return
 }

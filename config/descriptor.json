@@ -48,6 +48,18 @@
             "name" : "date",
             "kind": "date"
           }
+        },
+        {
+          "key" : "maintenance",
+          "name" : "Maintenance Performed",
+          "type" : {
+            "name": "text"
+          },
+          "relationship": {
+            "kind": "oneToMany",
+            "withTable": "maintenance",
+            "foreignTableUniqueIdColumn": "equipment_id"
+          }
         }
       ],
       "optionsAvailable" : true,
@@ -96,6 +108,14 @@
       "uniqueIdColumn": "id",
       "fields" : [
         {
+          "key" : "id",
+          "name" : "Maintenance ID",
+          "fromColumn" : "id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
           "key" : "dateScheduled",
           "name" : "Date Scheduled",
           "fromColumn" : "date_scheduled",
@@ -119,6 +139,11 @@
           "fromColumn" : "equipment_id",
           "type" : {
             "name" : "text"
+          },
+          "relationship": {
+            "kind": "manyToOne",
+            "withTable": "equipment",
+            "foreignTableUniqueIdColumn": "id"
           }
         },
         {
@@ -127,6 +152,11 @@
           "fromColumn" : "maintainer_id",
           "type" : {
             "name" : "text"
+          },
+          "relationship": {
+            "kind": "manyToOne",
+            "withTable": "person",
+            "foreignTableUniqueIdColumn": "id"
           }
         },
         {

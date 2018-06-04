@@ -48,8 +48,9 @@ type WorkflowType struct {
 }
 
 type Relationship struct {
-	WithTable  string
-	ForeignKey string
+	Kind                       string
+	WithTable                  string
+	ForeignTableUniqueIDColumn string
 }
 
 // ParseDescriptorFile will parse the descriptor.json file and make sure

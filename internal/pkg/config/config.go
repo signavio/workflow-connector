@@ -17,10 +17,10 @@ var configPaths = []string{
 	"/etc/workflow-connector/",
 	"config/",
 	"./",
-	os.Getenv("WORKFLOW_CONFIG"),
+	os.Getenv("WFC_CONFIG"),
 }
 
-// Options is populated by the packages init() function
+// Options is populated by this package's init() function
 // TODO It should be a singleton
 var Options Config
 
@@ -28,7 +28,7 @@ var Options Config
 // in the config.yaml file and other relevant data structures
 type Config struct {
 	Port     string
-	Database struct {
+	Endpoint struct {
 		Driver string
 		URL    string
 		Tables []*Table
@@ -40,7 +40,7 @@ type Config struct {
 	}
 	Descriptor *Descriptor
 	Auth       *Auth
-	Logging    string
+	Logging    bool
 }
 
 // Table defines the name of the database table that will be queried
@@ -59,11 +59,10 @@ type Auth struct {
 	PasswordHash string
 }
 
-// useRealDB is a command line flag that will make the tests run on the database
-// specified in the config file, instead of using sqlmock
-type useRealDB struct {
+// db is a command line flag that takes a comma seperated list of databases to test
+type db struct {
 	name string
-	val  bool
+	val  string
 }
 
 // Initialize configuration file from typical directory locations and parse it
@@ -72,20 +71,21 @@ func init() {
 	for _, p := range configPaths {
 		viper.AddConfigPath(p)
 	}
+	viper.SetEnvPrefix("wfc")
+	viper.AutomaticEnv()
 	// Nested keys use a single underscore `_` as seperator when
 	// imported as environment variables.
-	viper.AutomaticEnv()
 	replacer := strings.NewReplacer(".", "_")
 	viper.SetEnvKeyReplacer(replacer)
 	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("Can not parse config file: %s", err))
 	}
 	if err := viper.Unmarshal(&Options); err != nil {
-		panic(fmt.Errorf("Unabled to decode config file into struct: %s", err))
+		panic(fmt.Errorf("Unable to decode config file into struct: %s", err))
 	}
-	useRealDB := &useRealDB{name: "useRealDB", val: false}
-	flag.BoolVar(&useRealDB.val, "useRealDB", false, "run tests on the real DB")
-	viper.BindFlagValue("useRealDB", useRealDB)
+	db := &db{name: "db", val: ""}
+	flag.StringVar(&db.val, "db", "", "run tests on the real test databases")
+	viper.BindFlagValue("db", db)
 	flag.Parse()
 	descriptorFile, err := locationsForDescriptorFile()
 	if err != nil {
@@ -93,7 +93,7 @@ func init() {
 	}
 	Options.Descriptor = ParseDescriptorFile(descriptorFile)
 	for _, td := range Options.Descriptor.TypeDescriptors {
-		Options.Database.Tables = append(Options.Database.Tables,
+		Options.Endpoint.Tables = append(Options.Endpoint.Tables,
 			&Table{td.TableName, td.ColumnAsOptionName})
 	}
 }
@@ -124,7 +124,7 @@ func locationsForDescriptorFile() (descriptorFile *os.File, err error) {
 		absPaths,
 	)
 }
-func (f useRealDB) HasChanged() bool    { return false }
-func (f useRealDB) Name() string        { return f.name }
-func (f useRealDB) ValueString() string { return fmt.Sprintf("%v", f.val) }
-func (f useRealDB) ValueType() string   { return "bool" }
+func (f db) HasChanged() bool    { return false }
+func (f db) Name() string        { return f.name }
+func (f db) ValueString() string { return f.val }
+func (f db) ValueType() string   { return "string" }

@@ -5,17 +5,17 @@ import (
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
-	sqlBackend "github.com/signavio/workflow-connector/internal/pkg/backend/sql"
+	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
 var (
-	queryTemplates = map[string]string{
+	QueryTemplates = map[string]string{
 		"GetSingle": "SELECT * " +
 			"FROM {{.TableName}} AS _{{.TableName}} " +
 			"{{range .Relations}}" +
 			"   LEFT JOIN {{.Relationship.WithTable}}" +
-			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
-			"   = _{{$.TableName}}.{{.UniqueIDColumn}}" +
+			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
+			"   = _{{$.TableName}}.{{$.UniqueIDColumn}}" +
 			"{{end}}" +
 			" WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = ?",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
@@ -40,11 +40,10 @@ var (
 		"GetTableWithRelationshipsSchema": "SELECT * FROM {{.TableName}} AS _{{.TableName}} " +
 			"{{range .Relations}}" +
 			" LEFT JOIN {{.Relationship.WithTable}}" +
-			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignKey}}" +
-			" = _{{$.TableName}}.{{.UniqueIDColumn}}{{end}} LIMIT 1",
+			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
+			" = _{{$.TableName}}.{{$.UniqueIDColumn}}{{end}} LIMIT 1",
 	}
 	integer = []string{
-		"BIGINT",
 		"BIGINT",
 		"INT",
 		"INT2",
@@ -57,39 +56,32 @@ var (
 	}
 	text = []string{
 		"CHARACTER",
-		"VARCHAR",
-		"VARYING CHARACTER",
-		"NCHAR",
+		"CLOB",
 		"NATIVE CHARACTER",
+		"NCHAR",
 		"NVARCHAR",
 		"TEXT",
-		"CLOB",
+		"VARCHAR",
+		"VARYING CHARACTER",
 	}
 	real = []string{
-		"REAL",
-		"DOUBLE",
 		"DOUBLE PRECISION",
+		"DOUBLE",
 		"FLOAT",
+		"REAL",
 	}
 	numeric = []string{
-		"NUMERIC",
-		"DECIMAL",
 		"BOOLEAN",
+		"DECIMAL",
+		"NUMERIC",
 	}
-	time = []string{
+	dateTime = []string{
 		"DATE",
 		"DATETIME",
 	}
 )
 
-func NewSqliteBackend() (b *sqlBackend.Backend) {
-	b = sqlBackend.NewBackend()
-	b.ConvertDBSpecificDataType = convertFromSqliteDataType
-	b.Templates = queryTemplates
-	return b
-}
-
-func convertFromSqliteDataType(fieldDataType string) interface{} {
+func ConvertFromSqliteDataType(fieldDataType string) interface{} {
 	switch {
 	case isOfDataType(integer, fieldDataType):
 		return &sql.NullInt64{}
@@ -99,8 +91,8 @@ func convertFromSqliteDataType(fieldDataType string) interface{} {
 		return &sql.NullFloat64{}
 	case isOfDataType(numeric, fieldDataType):
 		return &sql.NullFloat64{}
-	case isOfDataType(time, fieldDataType):
-		return &sqlBackend.NullTime{}
+	case isOfDataType(dateTime, fieldDataType):
+		return &util.NullTime{}
 	default:
 		return &sql.NullString{}
 	}

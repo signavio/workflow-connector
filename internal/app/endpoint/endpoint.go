@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/mssql"
-	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/mysql"
-	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/pgsql"
-	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/sqlite"
+	"github.com/signavio/workflow-connector/internal/pkg/backend/sql"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 )
 
@@ -50,17 +47,17 @@ var (
 )
 
 func NewEndpoint(cfg config.Config) (Endpoint, error) {
-	switch cfg.Database.Driver {
+	switch cfg.Endpoint.Driver {
 	case "sqlserver":
-		return mssql.NewMssqlBackend(), nil
+		return sql.NewBackend("sqlserver"), nil
 	case "sqlite3":
-		return sqlite.NewSqliteBackend(), nil
+		return sql.NewBackend("sqlite3"), nil
 	case "mysql":
-		return mysql.NewMysqlBackend(), nil
+		return sql.NewBackend("mysql"), nil
 	case "postgres":
-		return pgsql.NewPgsqlBackend(), nil
+		return sql.NewBackend("pgsql"), nil
 	default:
-		return nil, fmt.Errorf("Database driver: %s, not supported", cfg.Database.Driver)
+		return nil, fmt.Errorf("Database driver: %s, not supported", cfg.Endpoint.Driver)
 
 	}
 }
