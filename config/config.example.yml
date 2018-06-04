@@ -35,6 +35,8 @@ logging: true
 port: 8080
 endpoint:
   driver: postgres
+  # You can find the list of supported parameters
+  # at TODO
   url: postgres://bob:l120arSgHz@172.17.8.2/test?sslmode=verify-full
 tls:
   enabled: false
@@ -52,7 +54,9 @@ port: 8080
 endpoint:
   driver: mysql
   # url = username:password@protocol(address)/dbname?param=value
-  url: bob:l120arSgHz@tcp(172.17.8.2:3306)/test?timeout=90s&collation=utf8mb4_unicode_ci
+  # You can find the list of supported parameters
+  # at https://github.com/go-sql-driver/mysql
+  url: bob:l120arSgHz@tcp(172.17.8.2:3306)/test?parseTime=true
 tls:
   enabled: false
   publicKey: ./config/server.crt
