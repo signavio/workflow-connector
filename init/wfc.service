@@ -1,0 +1,10 @@
+[Unit]
+Description=Signavio Workflow Accelerator Connector
+
+[Service]
+Type=simple
+Environment="WFC_PORT=443"
+ExecStart=%h/bin/wfc --config-dir %h/.config/workflow-connector
+
+[Install]
+WantedBy=multi-user.target
