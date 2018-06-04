@@ -9,8 +9,14 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
 	"sync"
+	"testing"
 
 	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/mssql"
@@ -19,6 +25,7 @@ import (
 	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/sqlite"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
+	"github.com/signavio/workflow-connector/internal/pkg/middleware"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
@@ -137,6 +144,10 @@ func NewBackend(driver string) (b *Backend) {
 
 // Open a connection to the backend database
 func (b *Backend) Open(args ...interface{}) error {
+	log.When(config.Options.Logging).Infof(
+		"[backend] open connection to database %v\n",
+		config.Options.Database.Driver,
+	)
 	driver := args[0].(string)
 	url := args[1].(string)
 	log.When(config.Options.Logging).Infof(
@@ -200,6 +211,10 @@ func (b *Backend) SaveTableSchemas() (err error) {
 			}
 		}
 	}
+	log.When(config.Options.Logging).Infof(
+		"[backend] the following table schemas were retrieved:\n%#+v\n",
+		b.TableSchemas,
+	)
 	return nil
 }
 
@@ -496,4 +511,224 @@ func (h handler) interpolateExecTemplates(ctx context.Context, requestData map[s
 	)
 	return query.String(), args, nil
 
+}
+
+func RunTests(t *testing.T, args ...interface{}) {
+	t.Run("GetSingle", func(t *testing.T) {
+		for _, tc := range TestCasesGetSingle {
+			Run(t, tc, args...)
+		}
+	})
+	t.Run("GetSingleAsOption", func(t *testing.T) {
+		for _, tc := range TestCasesGetSingleAsOption {
+			Run(t, tc, args...)
+		}
+	})
+	t.Run("GetCollection", func(t *testing.T) {
+		for _, tc := range TestCasesGetCollection {
+			Run(t, tc, args...)
+		}
+	})
+	t.Run("GetCollectionAsOptions", func(t *testing.T) {
+		for _, tc := range TestCasesGetCollectionAsOptions {
+			Run(t, tc, args...)
+		}
+	})
+	t.Run("GetCollectionAsOptionsFilterable", func(t *testing.T) {
+		for _, tc := range TestCasesGetCollectionAsOptionsFilterable {
+			Run(t, tc, args...)
+		}
+	})
+	t.Run("UpdateSingle", func(t *testing.T) {
+		for _, tc := range TestCasesUpdateSingle {
+			Run(t, tc, args...)
+		}
+	})
+	t.Run("CreateSingle", func(t *testing.T) {
+		for _, tc := range TestCasesCreateSingle {
+			Run(t, tc, args...)
+		}
+	})
+	t.Run("DeleteSingle", func(t *testing.T) {
+		for _, tc := range TestCasesDeleteSingle {
+			Run(t, tc, args...)
+		}
+	})
+}
+func Run(t *testing.T, tc TestCase, args ...interface{}) {
+	if tc.Kind == "success" {
+		tc.Run = itSucceeds
+		tc.Run(t, tc, args...)
+	} else if tc.Kind == "failure" {
+		tc.Run = itFails
+		tc.Run(t, tc, args...)
+	} else {
+		t.Errorf("testcase should either be success or failure kind")
+	}
+}
+func itFails(t *testing.T, tc TestCase, args ...interface{}) {
+	var backend *Backend
+	var err error
+	var mock sqlmock.Sqlmock
+	usingMockedDB := true
+	if len(args) > 0 {
+		usingMockedDB = false
+	}
+	if usingMockedDB {
+		// The config.Descriptor in config.Options needs to be mocked
+		mockedDescriptorFile, err := mockDescriptorFile(tc.DescriptorFields)
+		if err != nil {
+			t.Errorf("Expected no error, instead we received: %s", err)
+		}
+		config.Options.Descriptor = config.ParseDescriptorFile(mockedDescriptorFile)
+		backend, mock, err = setupBackendWithMockedDB()
+		if err != nil {
+			t.Errorf("Expected no error, instead we received: %s", err)
+		}
+		// initialize mock database
+		tc.ExpectedQueries(mock, tc.ColumnNames, tc.RowsAsCsv)
+		// mock the database table schema
+		backend.TableSchemas["equipment"] = tc.TableSchema
+	} else {
+		driver := args[0]
+		url := args[1]
+		setupBackendFn := args[2].(func() *Backend)
+		backend = setupBackendFn()
+		err = backend.Open(
+			driver,
+			url,
+		)
+		if err != nil {
+			t.Errorf("Expected no error, instead we received: %s", err)
+		}
+	}
+	ts := setupTestServer(backend)
+	defer ts.Close()
+	tc.Request.URL, err = url.Parse(ts.URL + tc.Request.URL.String())
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	tc.Request.SetBasicAuth(config.Options.Auth.Username, "Foobar")
+	client := ts.Client()
+	res, err := client.Do(tc.Request)
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	got, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	if res.StatusCode != 404 {
+		t.Errorf("Expected 404 Not Found, instead we received: %v", res.StatusCode)
+	}
+	if string(got[:]) != tc.ExpectedResults {
+		t.Errorf("Response doesn't match hat we expected\nResponse:\n%s\nExpected:\n%s\n",
+			got, tc.ExpectedResults)
+	}
+	if usingMockedDB {
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+
+	}
+}
+func itSucceeds(t *testing.T, tc TestCase, args ...interface{}) {
+	var backend *Backend
+	var err error
+	var mock sqlmock.Sqlmock
+	usingMockedDB := true
+	if len(args) > 0 {
+		usingMockedDB = false
+	}
+	if usingMockedDB {
+		// The config.Descriptor in config.Options needs to be mocked
+		mockedDescriptorFile, err := mockDescriptorFile(tc.DescriptorFields)
+		if err != nil {
+			t.Errorf("Expected no error, instead we received: %s", err)
+		}
+		config.Options.Descriptor = config.ParseDescriptorFile(mockedDescriptorFile)
+		backend, mock, err = setupBackendWithMockedDB()
+		if err != nil {
+			t.Errorf("Expected no error, instead we received: %s", err)
+		}
+		// initialize mock database
+		tc.ExpectedQueries(mock, tc.ColumnNames, tc.RowsAsCsv)
+		// mock the database table schema
+		backend.TableSchemas["equipment"] = tc.TableSchema
+	} else {
+		driver := args[0]
+		url := args[1]
+		setupBackendFn := args[2].(func() *Backend)
+		backend = setupBackendFn()
+		err = backend.Open(
+			driver,
+			url,
+		)
+		if err != nil {
+			t.Errorf("Expected no error, instead we received: %s", err)
+		}
+	}
+	ts := setupTestServer(backend)
+	fmt.Printf("back templ: %#+v\n", ts)
+	defer ts.Close()
+	tc.Request.URL, err = url.Parse(ts.URL + tc.Request.URL.String())
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	tc.Request.SetBasicAuth(config.Options.Auth.Username, "Foobar")
+	client := ts.Client()
+	res, err := client.Do(tc.Request)
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	got, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+	if err != nil {
+		t.Errorf("Expected no error, instead we received: %s", err)
+	}
+	if strings.HasPrefix(string(res.StatusCode), "2") {
+		t.Errorf("Expected HTTP 2xx, instead we received: %d", res.StatusCode)
+	}
+	if string(got[:]) != tc.ExpectedResults {
+		t.Errorf("Response doesn't match what we expected\nResponse:\n%q\nExpected:\n%q\n",
+			got, tc.ExpectedResults)
+	}
+	if usingMockedDB {
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+
+	}
+}
+func setupBackendWithMockedDB() (b *Backend, mock sqlmock.Sqlmock, err error) {
+	b = NewBackend()
+	b.Templates = queryTemplates
+	b.DB, mock, err = sqlmock.New()
+	if err != nil {
+		return nil, mock, fmt.Errorf(
+			"an error '%s' was not expected when opening a stub database connection",
+			err,
+		)
+	}
+	return
+}
+func setupTestServer(b *Backend) *httptest.Server {
+	router := b.GetHandler().(*mux.Router)
+	ts := httptest.NewUnstartedServer(router)
+	router.Use(middleware.BasicAuth)
+	router.Use(middleware.RequestInjector)
+	router.Use(middleware.ResponseInjector)
+	server := &http.Server{}
+	server.Handler = router
+	ts.Config = server
+	ts.Start()
+	return ts
+}
+func mockDescriptorFile(testCaseDescriptorFields string) (io.Reader, error) {
+	mockedDescriptorFile := fmt.Sprintf(
+		descriptorFileBase,
+		testCaseDescriptorFields,
+	)
+	return strings.NewReader(mockedDescriptorFile), nil
 }

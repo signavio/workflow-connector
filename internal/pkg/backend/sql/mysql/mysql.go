@@ -76,6 +76,39 @@ var (
 		"TIMESTAMP",
 		"YEAR",
 	}
+	integer = []string{
+		"BIGINT",
+		"INT",
+		"INTEGER",
+		"MEDIUMINT",
+		"SMALLINT",
+		"TINYINT",
+	}
+	text = []string{
+		"BLOB",
+		"TEXT",
+		"VARCHAR",
+		"CHAR",
+		"TINYBLOB",
+		"TINYTEXT",
+		"MEDIUMBLOB",
+		"MEDIUMTEXT",
+		"LARGEBLOB",
+		"LARGETEXT",
+		"ENUM",
+	}
+	numeric = []string{
+		"DECIMAL",
+		"DOUBLE",
+		"FLOAT",
+	}
+	time = []string{
+		"DATE",
+		"DATETIME",
+		"TIME",
+		"TIMESTAMP",
+		"YEAR",
+	}
 )
 
 func ConvertFromMysqlDataType(fieldDataType string) interface{} {
