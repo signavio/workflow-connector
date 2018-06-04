@@ -67,6 +67,17 @@ go build -o workflow-connector cmd/wfadb/main.go
 copy $GOPATH/github.com/signavio/workflow-connector/workflow-connector ~/binj/
 ```
 
+7. If you have TLS enabled (highly recommended) and want to listen on port 443 without running the executable as root, you can set the proper permissions using the `setcap` command
+
+```sh
+setcap 'cap_net_bind_service=+ep' ~/bin/wfc
+```
+8. You can then run the executable with `systemd-run` as a non-root user and track the status of the workflow-connector process using the regular systemd tooling.
+
+```sh
+export WFC_PORT=443 && systemd-run --user ~/bin/wfc
+```
+
 #### Configuration ####
 
 ##### config.yaml #####
