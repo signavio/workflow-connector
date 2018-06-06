@@ -2,14 +2,13 @@
 Description=Signavio Workflow Accelerator Connector
 Documentation=https://github.com/signavio/workflow-connector
 After=network.target
-AssertPathExists=/%h/bin
 AssertPathExists=/%h/.config/workflow-connector
 
 [Service]
 Type=simple
 Environment="WFC_PORT=443"
 LimitNOFILE=4096
-ExecStart=/%h/bin/wfc --config-dir /%h/.config/workflow-connector
+ExecStart=/usr/local/bin/wfc --config-dir /%h/.config/workflow-connector
 Restart=on-failure
 StartLimitInterval=600
 
