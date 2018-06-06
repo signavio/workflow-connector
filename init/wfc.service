@@ -6,7 +6,6 @@ AssertPathExists=/%h/.config/workflow-connector
 
 [Service]
 Type=simple
-Environment="WFC_PORT=443"
 LimitNOFILE=4096
 ExecStart=/usr/local/bin/wfc --config-dir /%h/.config/workflow-connector
 Restart=on-failure

@@ -1,6 +1,6 @@
 # Using a SQLite database
 ---
-port: 8080
+port: 443
 endpoint:
   driver: sqlite3
   url: test.db 
@@ -16,7 +16,7 @@ logging: true
 ...
 # Using a Microsoft SQL Server database
 ---
-port: 8080
+port: 443
 endpoint:
   driver: sqlserver
   url: sqlserver://john:84mj29rSgHz@172.17.8.2?database=test
@@ -32,7 +32,7 @@ logging: true
 ...
 # Using a Postgres database
 ---
-port: 8080
+port: 443
 endpoint:
   driver: postgres
   # You can find the list of supported parameters
@@ -50,7 +50,7 @@ logging: true
 ...
 # Using a mysql database
 ---
-port: 8080
+port: 443
 endpoint:
   driver: mysql
   # url = username:password@protocol(address)/dbname?param=value

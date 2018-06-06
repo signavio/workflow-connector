@@ -1,4 +1,4 @@
-port: 8080
+port: 443
 endpoint:
   driver: sqlite3
   url: test.db 
