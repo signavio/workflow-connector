@@ -2,6 +2,8 @@
 Description=Signavio Workflow Accelerator Connector
 Documentation=https://github.com/signavio/workflow-connector
 After=network.target
+AssertPathExists=/%h/bin
+AssertPathExists=/%h/.config/workflow-connector
 
 [Service]
 Type=simple
