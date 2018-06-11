@@ -97,7 +97,7 @@ The workflow connector also needs to know the schema of the data it will receive
 
 ##### HTTP basic auth #####
 
-The webservice will only respond to clients using HTTP basic auth. This can be enabled by setting `tls.enabled = true` and providing valid TLS certificates in the `config.yaml` file. The username for HTTP basic auth is stored in as plain text in `config.yaml` but the password is stored salted and hashed using [argon2](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.argon2.html). You can use the following commands to generate a argon2 password hash.
+The webservice will only respond to clients using HTTP basic auth. This can be enabled by setting `tls.enabled = true` and providing valid TLS certificates in the `config.yaml` file. The username for HTTP basic auth is stored in as plain text in `config.yaml` but the password is stored salted and hashed using [argon2](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.argon2.html). You can use the following commands to generate a argon2 password hash using python.
 
 1. Install passlib using python `pip`
 
@@ -105,11 +105,11 @@ The webservice will only respond to clients using HTTP basic auth. This can be e
 pip install passlib
 ```
 
-2. Use the python shell in the command line to generate an argon2 password hash
+2. Use the python shell in the command line to generate an argon2 password hash with a digest size of 32 bytes
 
 ```python
 from passlib.hash import argon2
-argon2.hash("password")
+argon2.using(digest_size=32).hash("password")
 ```
 
 #### Testing ####
