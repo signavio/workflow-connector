@@ -68,7 +68,7 @@ func init() {
 	viper.BindFlagValue("db", db)
 	configDir := &configDir{name: "config-dir", val: ""}
 	flag.StringVar(&configDir.val, "config-dir", "", "specify location to config directory")
-	viper.BindFlagValue("config-dir", configDir)
+	viper.BindFlagValue("configDir", configDir)
 	flag.Parse()
 	viper.SetConfigName("config")
 	if configDir.ValueString() == "" {
