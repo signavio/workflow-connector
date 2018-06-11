@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -61,8 +62,6 @@ func ParseDescriptorFile(file io.Reader) (descriptor *Descriptor) {
 	if err != nil {
 		panic(fmt.Errorf("Unable to read descriptor.json file: %v", err))
 	}
-	fmt.Printf("DEBUG: %s\n", content) // output for debug
-
 	err = json.Unmarshal(content, &descriptor)
 	if err != nil {
 		panic(fmt.Errorf("Unable to unmarshal descriptor.json: %v", err))
@@ -101,8 +100,15 @@ func performSanityChecks(descriptor *Descriptor) error {
 	errCurrencyHasDefaultValue := "Unable to parse descriptor.json: " +
 		"%s.%s specifies a default currency value" +
 		"*and* a fromColumn. You must specify *only* one."
+	errMandatoryFields := "Unable to parse descriptor.json: " +
+		"field attributes 'key', 'name', 'fromColumn' and 'type.name' " +
+		"must be filled out"
 	for _, td := range descriptor.TypeDescriptors {
 		for _, field := range td.Fields {
+			if field.Key == "" && field.Name == "" &&
+				field.FromColumn == "" && field.Type.Name == "" {
+				return errors.New(errMandatoryFields)
+			}
 			if field.Type.Name == "money" {
 				if field.Type.Currency.Value != "" &&
 					field.Type.Currency.FromColumn != "" {

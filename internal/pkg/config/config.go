@@ -71,7 +71,11 @@ func init() {
 	viper.BindFlagValue("config-dir", configDir)
 	flag.Parse()
 	viper.SetConfigName("config")
-	viper.AddConfigPath(configDir.val)
+	if configDir.ValueString() == "" {
+		viper.AddConfigPath("config")
+	} else {
+		viper.AddConfigPath(configDir.ValueString())
+	}
 	viper.SetEnvPrefix("wfc")
 	viper.AutomaticEnv()
 	// Nested keys use a single underscore `_` as seperator when

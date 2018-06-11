@@ -47,6 +47,10 @@ var (
 			Name("UpdateSingle").
 			Methods("PATCH").
 			Queries("tx", "{tx}")
+		r.HandleFunc("/{table}", b.GetCollectionFilterable).
+			Name("GetCollectionFilterable").
+			Methods("GET").
+			Queries("filter", "{filter}")
 		r.HandleFunc("/{table}", b.GetCollection).
 			Name("GetCollection").
 			Methods("GET")

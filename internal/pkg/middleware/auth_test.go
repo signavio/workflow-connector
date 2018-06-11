@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/signavio/workflow-connector/internal/pkg/config"
 )
 
 // Key Derivation Function = argon2i
@@ -24,23 +26,23 @@ const argon2Password = `Foobar`
 const username = `wfauser`
 
 func TestBasicAuth(t *testing.T) {
-	cfg := &Config{
-		Auth: &Auth{
+	config.Options = config.Config{
+		Auth: &config.Auth{
 			Username:     username,
 			PasswordHash: argon2PasswordDigest,
 		},
 	}
-	authMiddleware := BasicAuth(cfg)
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "User authenticated successfully!")
 	})
+	authMiddleware := BasicAuth(next)
 	t.Run("test basic auth", func(t *testing.T) {
 		t.Parallel()
 		t.Run("success cases", func(t *testing.T) {
 			ts := httptest.NewServer(
 				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					authMiddleware(w, r, next)
+					authMiddleware.ServeHTTP(w, r)
 				}))
 			defer ts.Close()
 			req, err := http.NewRequest("GET", ts.URL, nil)
@@ -60,7 +62,7 @@ func TestBasicAuth(t *testing.T) {
 		t.Run("failure cases", func(t *testing.T) {
 			ts := httptest.NewServer(
 				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					authMiddleware(w, r, next)
+					authMiddleware.ServeHTTP(w, r)
 				}))
 			defer ts.Close()
 			req, err := http.NewRequest("GET", ts.URL, nil)

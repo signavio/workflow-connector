@@ -213,6 +213,9 @@ var (
 			"WHERE {{.UniqueIDColumn}} = ?",
 		"GetCollection": "SELECT * " +
 			"FROM {{.TableName}}",
+		"GetCollectionFilterable": "SELECT * " +
+			"FROM {{.TableName}} " +
+			"WHERE {{.FilterOnColumn}} {{.Operator}} ?",
 		"GetCollectionAsOptions": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}}",
 		"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
@@ -279,6 +282,7 @@ func TestHandlers(t *testing.T) {
 		"GetSingleHandler":                        testCasesGetSingle,
 		"GetSingleAsOptionHandler":                testCasesGetSingleAsOption,
 		"GetCollectionHandler":                    testCasesGetCollection,
+		"GetCollectionHandlerFilterable":          testCasesGetCollectionFilterable,
 		"GetCollectionAsOptionsHandler":           testCasesGetCollectionAsOptions,
 		"GetCollectionAsOptionsFilterableHandler": testCasesGetCollectionAsOptionsFilterable,
 		"UpdateSingleHandler":                     testCasesUpdateSingle,
