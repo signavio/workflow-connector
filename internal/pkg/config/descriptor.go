@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -97,28 +96,42 @@ func addIDFieldIfNotExists(descriptor *Descriptor) *Descriptor {
 }
 
 func performSanityChecks(descriptor *Descriptor) error {
-	errCurrencyHasDefaultValue := "Unable to parse descriptor.json: " +
-		"%s.%s specifies a default currency value" +
-		"*and* a fromColumn. You must specify *only* one."
-	errMandatoryFields := "Unable to parse descriptor.json: " +
-		"field attributes 'key', 'name', 'fromColumn' and 'type.name' " +
-		"must be filled out"
 	for _, td := range descriptor.TypeDescriptors {
 		for _, field := range td.Fields {
-			if field.Key == "" && field.Name == "" &&
-				field.FromColumn == "" && field.Type.Name == "" {
-				return errors.New(errMandatoryFields)
+			if err := errCurrencyHasDefaultValue(field, td.Key); err != nil {
+				return err
 			}
-			if field.Type.Name == "money" {
-				if field.Type.Currency.Value != "" &&
-					field.Type.Currency.FromColumn != "" {
-					return fmt.Errorf(
-						errCurrencyHasDefaultValue,
-						td.Key,
-						field.Key,
-					)
-				}
+			if err := errFromColumnPropertyIsMissing(field); err != nil {
+				return err
 			}
+		}
+	}
+	return nil
+}
+
+func errCurrencyHasDefaultValue(field *config.Field, td string) error {
+	msg := "Unable to parse descriptor.json: " +
+		"%s.%s specifies a default currency value" +
+		"*and* a fromColumn. You must specify *only* one."
+	if field.Type.Name == "money" {
+		if field.Type.Currency.Value != "" &&
+			field.Type.Currency.FromColumn != "" {
+			return fmt.Errorf(
+				msg,
+				td,
+				field.Key,
+			)
+		}
+	}
+	return nil
+}
+
+func errFromColumnPropertyIsMissing(field *Config.Field) error {
+	msg := "Unable to parse descriptor.json: " +
+		"field of type '%s' should contain a fromColumn property"
+	if field.Type.Name != "money" {
+		if field.Type.FromColumn == "" {
+			return fmt.Errorf(msg, field.Type.Name)
 		}
 	}
 	return nil

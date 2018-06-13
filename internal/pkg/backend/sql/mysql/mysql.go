@@ -23,6 +23,9 @@ var (
 			"WHERE {{.UniqueIDColumn}} = ?",
 		"GetCollection": "SELECT * " +
 			"FROM {{.TableName}}",
+		"GetCollectionFilterable": "SELECT * " +
+			"FROM {{.TableName}} " +
+			"WHERE {{.FilterOnColumn}} {{.Operator}} ?",
 		"GetCollectionAsOptions": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}}",
 		"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
