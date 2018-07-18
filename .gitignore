@@ -25,6 +25,3 @@ vendor/*/
 
 # emacs specific
 /.projectile
-
-# dep lock file
-Gopkg.lock
