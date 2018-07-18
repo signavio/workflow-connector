@@ -109,7 +109,7 @@ func performSanityChecks(descriptor *Descriptor) error {
 	return nil
 }
 
-func errCurrencyHasDefaultValue(field *config.Field, td string) error {
+func errCurrencyHasDefaultValue(field *Field, td string) error {
 	msg := "Unable to parse descriptor.json: " +
 		"%s.%s specifies a default currency value" +
 		"*and* a fromColumn. You must specify *only* one."
@@ -126,11 +126,11 @@ func errCurrencyHasDefaultValue(field *config.Field, td string) error {
 	return nil
 }
 
-func errFromColumnPropertyIsMissing(field *Config.Field) error {
+func errFromColumnPropertyIsMissing(field *Field) error {
 	msg := "Unable to parse descriptor.json: " +
 		"field of type '%s' should contain a fromColumn property"
 	if field.Type.Name != "money" {
-		if field.Type.FromColumn == "" {
+		if field.FromColumn == "" {
 			return fmt.Errorf(msg, field.Type.Name)
 		}
 	}
