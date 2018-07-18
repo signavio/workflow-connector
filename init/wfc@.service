@@ -2,12 +2,13 @@
 Description=Signavio Workflow Accelerator Connector
 Documentation=https://github.com/signavio/workflow-connector
 After=network.target
-AssertPathExists=/%h/.config/workflow-connector
+AssertPathExists=/home/%i/.config/workflow-connector
 
 [Service]
 Type=simple
+User=%i
 LimitNOFILE=4096
-ExecStart=/usr/local/bin/wfc --config-dir /%h/.config/workflow-connector
+ExecStart=/usr/local/bin/wfc --config-dir /home/%i/.config/workflow-connector
 Restart=on-failure
 StartLimitInterval=600
 
