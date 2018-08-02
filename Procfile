@@ -1,2 +1,2 @@
-#release: ./build/migrate-table-schemas.sh
-web: workflow-connector
+#release: ./build/migrate-to-postgresql.sh
+web: workflow-connector --config-dir config
