@@ -76,7 +76,6 @@ func init() {
 	} else {
 		viper.AddConfigPath(configDir.ValueString())
 	}
-	viper.SetEnvPrefix("wfc")
 	viper.AutomaticEnv()
 	// Nested keys use a single underscore `_` as seperator when
 	// imported as environment variables.

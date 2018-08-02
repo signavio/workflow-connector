@@ -129,7 +129,7 @@ func errCurrencyHasDefaultValue(field *Field, td string) error {
 func errFromColumnPropertyIsMissing(field *Field) error {
 	msg := "Unable to parse descriptor.json: " +
 		"field of type '%s' should contain a fromColumn property"
-	if field.Type.Name != "money" {
+	if field.Type.Name != "money" && field.Relationship == nil {
 		if field.FromColumn == "" {
 			return fmt.Errorf(msg, field.Type.Name)
 		}
