@@ -32,7 +32,7 @@ var (
 			"FROM {{.TableName}}",
 		"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
-			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT LIKE $1",
+			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT LIKE $1)",
 		"UpdateSingle": "UPDATE {{.TableName}} " +
 			"SET {{.ColumnNames | head}} = $1" +
 			"{{range $index, $element := .ColumnNames | tail}}," +
