@@ -21,5 +21,3 @@ GO_VERSION=${GO_VERSION#go}
 )
 echo "PATH=\$PATH:/usr/local/go/bin:${GOPATH}/bin" >> "${HOME}"/.bashrc
 source "${HOME}"/.bashrc
-# dependency management tool
-go get -v -u github.com/golang/dep/cmd/dep
