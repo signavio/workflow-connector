@@ -66,13 +66,15 @@ func init() {
 	db := &db{name: "db", val: ""}
 	flag.StringVar(&db.val, "db", "", "run tests on the real test databases")
 	viper.BindFlagValue("db", db)
-	configDir := &configDir{name: "config-dir", val: ""}
+	configDir := &configDir{name: "config-dir", val: "config"}
 	flag.StringVar(&configDir.val, "config-dir", "", "specify location to config directory")
 	viper.BindFlagValue("configDir", configDir)
 	flag.Parse()
 	viper.SetConfigName("config")
 	if configDir.ValueString() == "" {
 		viper.AddConfigPath("config")
+		viper.AddConfigPath(filepath.Join("../../../", "config"))
+		viper.AddConfigPath(filepath.Join("../../../../", "config"))
 	} else {
 		viper.AddConfigPath(configDir.ValueString())
 	}
@@ -82,15 +84,12 @@ func init() {
 	replacer := strings.NewReplacer(".", "_")
 	viper.SetEnvKeyReplacer(replacer)
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalln(
-			"Can not parse config file: you must specify the path to the " +
-				"config directory using the --config-dir flag",
-		)
+		log.Fatalf("Can not parse config file: %v\n", err)
 	}
 	if err := viper.Unmarshal(&Options); err != nil {
 		log.Fatalf("Unable to decode config file into struct: %s", err)
 	}
-	descriptorFile, err := os.Open(filepath.Join(configDir.val, "descriptor.json"))
+	descriptorFile, err := os.Open(descriptorFilePath())
 	if err != nil {
 		log.Fatalf("Unable to open descriptor.json file: %v\n", err)
 	}
@@ -99,6 +98,11 @@ func init() {
 		Options.Endpoint.Tables = append(Options.Endpoint.Tables,
 			&Table{td.TableName, td.ColumnAsOptionName})
 	}
+}
+func descriptorFilePath() string {
+	configFile := viper.ConfigFileUsed()
+	configDir := filepath.Dir(configFile)
+	return filepath.Join(configDir, "descriptor.json")
 }
 
 func (f db) HasChanged() bool           { return false }

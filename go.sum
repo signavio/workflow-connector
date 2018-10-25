@@ -1,3 +1,4 @@
+github.com/DATA-DOG/go-sqlmock v1.3.0 h1:ljjRxlddjfChBJdFKJs5LuCwCWPLaC1UZLwAo3PBBMk=
 github.com/DATA-DOG/go-sqlmock v1.3.0/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/denisenkom/go-mssqldb v0.0.0-20180521163914-c4e5513e46d4 h1:8ShRnXzuMUtkTSzimN5xuC/qU/uCHyroCTNAU2f734s=
 github.com/denisenkom/go-mssqldb v0.0.0-20180521163914-c4e5513e46d4/go.mod h1:xN/JuLBIz4bjkxNmByTiV1IbhfnYb6oo99phBn4Eqhc=

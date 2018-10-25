@@ -11,66 +11,65 @@ CREATE TABLE IF NOT EXISTS equipment (
 );
 INSERT INTO 'equipment' ('name','acquisition_cost','purchase_date')
   VALUES
-  ('Stainless Steel Mash Tun (50L)', 999.00,'2017-12-12T12:00:00Z'),
-  ('HolzbierFaß (200L)', 512.23,'2017-12-12T12:00:00Z'),
-  ('Refractometer', 129.00,'2017-12-12T12:00:00Z')
-;
+  ('Bialetti Moka Express 6 cup', 25.95, '2017-12-12T12:00:00Z'),
+  ('Hario V60 Ceramic Coffee Dripper', 19.73,'2017-12-12T12:00:00Z'),
+  ('Buntfink SteelKettle', 39.95,'2017-12-12T12:00:00Z'),
+  ('Copper Coffee Pot Cezve', 49.95,'2017-12-12T12:00:00Z'),
+  ('Sanremo Café Racer', 8477.85,'2017-12-12T12:00:00Z');
 
-CREATE TABLE IF NOT EXISTS person (
+CREATE TABLE IF NOT EXISTS ingredients (
   id integer primary key autoincrement,
-  preferred_name text,
-  family_name text,
-  email_address text unique not null
+  name text,
+  description text
 );
-INSERT INTO 'person' ('preferred_name','family_name','email_address')
+INSERT INTO 'ingredients' ('name', 'description')
   VALUES
-  ('Jane','Feather','jane.feather@example.com'),
-  ('Jack','Calm','jack.calm@example.com'),
-  ('Bob','White','bob.white@example.com'),
-  ('Joe','Frei','joe.frei@example.com');
+  ('V60 paper filter', 'The best paper filter on the market'),
+  ('Caffé Borbone Beans - Miscela Blu', 'Excellent beans for espresso'),
+  ('Caffé Borbone Beans - Miscela Oro', 'Well balanced beans'),
+  ('Filtered Water', 'Contains the perfect water hardness for espresso');
 
-CREATE TABLE IF NOT EXISTS maintenance (
+CREATE TABLE IF NOT EXISTS inventory (
+  ingredient_id integer primary key,
+  quantity real,
+  unit_of_measure text,
+  foreign key (ingredient_id) references ingredients(id)
+);
+INSERT INTO 'inventory' ('ingredient_id','quantity','unit_of_measure')
+  VALUES
+  (1, 100, 'Each'),
+  (2, 10000, 'Gram'),
+  (3, 5000, 'Gram'),
+  (4, 100, 'Liter');
+
+CREATE TABLE IF NOT EXISTS recipes (
   id integer primary key autoincrement,
-  date_scheduled datetime,
-  date_performed datetime,
-  equipment_id integer,
-  maintainer_id integer,
-  comments text,
-  foreign key (equipment_id) references equipment(id),
-  foreign key (maintainer_id) references person(id)
+  equipment integer,
+  name text,
+  instructions text,
+  foreign key (equipment) references equipment(id)
 );
-INSERT INTO 'maintenance' ('date_scheduled','date_performed','comments','equipment_id','maintainer_id') VALUES
-  ('2017-02-03T02:00:00Z', '2018-02-03T12:22:01Z', 'It went well!', 1, 1),
-  ('2017-02-03T02:00:00Z', '2018-02-03T12:22:01Z', 'It went poorly!', 2, 1),
-  ('2017-02-03T02:00:00Z', '2018-02-03T12:22:01Z', 'It went okay!', 1, 2),
-  ('2017-02-03T02:00:00Z', '2018-02-03T12:22:01Z', 'It went great!', 3, 2);
+INSERT INTO 'recipes' ('name', 'instructions', 'equipment')
+  VALUES
+  ('Espresso single shot','do this', 5),
+  ('Ibrik (turkish) coffee', 'do that', 4),
+  ('Filter coffee', 'do bar', 2);
 
-CREATE TABLE IF NOT EXISTS warranty (
-  id integer primary key autoincrement,
-  type text,
-  duration_in_weeks integer,
-  date_from datetime
+CREATE TABLE IF NOT EXISTS ingredient_recipe (
+  id integer not null,
+  ingredient_id integer,
+  recipe_id integer,
+  quantity text,
+  unit_of_measure text,
+  primary key (ingredient_id, recipe_id)
 );
-INSERT INTO 'warranty' ('type','duration_in_weeks','date_from') VALUES
-  ('parts and labour', 104, '2017-10-02T05:00:00Z'),
-  ('parts and labour', 156, '2017-10-02T05:00:00Z'),
-  ('parts', 104, '2017-10-02T05:00:00Z'),
-  ('parts and labour', 104, '2017-10-02T05:00:00Z');
-
-CREATE TABLE IF NOT EXISTS maintenance_warranty (
-  maintenance_id integer,
-  warranty_id integer,
-  foreign key (maintenance_id) references maintenance(id),
-  foreign key (warranty_id) references warranty(id),
-  primary key(maintenance_id, warranty_id)
-);
-INSERT INTO 'maintenance_warranty' ('maintenance_id', 'warranty_id') VALUES
-  (1, 1),
-  (2, 2),
-  (3, 3),
-  (1, 2);
+INSERT INTO 'ingredient_recipe' ('id', 'ingredient_id', 'recipe_id', 'quantity', 'unit_of_measure')
+  VALUES
+  (1, 2, 3, '30', 'Gram'),
+  (2, 1, 3, '1', 'Each'),
+  (3, 4, 3, '0.5', 'Liter'),
+  (4, 3, 2, '20', 'Gram'),
+  (5, 4, 2, '0.15', 'Liter');
 
 COMMIT;
 __EOF__
-
-

@@ -51,6 +51,7 @@ type Relationship struct {
 	Kind                       string
 	WithTable                  string
 	ForeignTableUniqueIDColumn string
+	LocalTableUniqueIDColumn   string
 }
 
 // ParseDescriptorFile will parse the descriptor.json file and make sure

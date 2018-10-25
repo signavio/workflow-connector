@@ -110,7 +110,7 @@ func extractColumnNameFromFilterQueryParam(filter string, td *config.TypeDescrip
 	parts := strings.Split(queryString, " ")
 	for _, field := range td.Fields {
 		if parts[0] == field.Key {
-			columnName = parts[0]
+			columnName = field.FromColumn
 			return columnName, nil
 		}
 	}

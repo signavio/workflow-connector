@@ -1,7 +1,7 @@
 {
-  "key": "MaintenanceSchedulingConnector",
-  "name": "Maintenance Scheduling Connector",
-  "description": "Signavio Workflow Accelerator integration with a SQL database to help automate keeping track of equipment maintenance",
+  "key": "CoffeeConnector",
+  "name": "Coffee Connector",
+  "description": "Signavio Workflow Accelerator integration with a SQL database to automate coffee making",
   "typeDescriptors": [
     {
       "key" : "equipment",
@@ -48,50 +48,38 @@
             "name" : "date",
             "kind": "date"
           }
-        },
-        {
-          "key" : "maintenance",
-          "name" : "Maintenance Performed",
-          "type" : {
-            "name": "text"
-          },
-          "relationship": {
-            "kind": "oneToMany",
-            "withTable": "maintenance",
-            "foreignTableUniqueIdColumn": "equipment_id"
-          }
         }
       ],
       "optionsAvailable" : true,
       "fetchOneAvailable" : true
     },
     {
-      "key" : "person",
-      "name" : "Person",
-      "tableName": "person",
-      "columnAsOptionName": "family_name",
-      "uniqueIdColumn": "id",
+      "key" : "inventory",
+      "name" : "Inventory",
+      "tableName": "inventory",
+      "columnAsOptionName": "ingredient_id",
+      "uniqueIdColumn": "ingredient_id",
       "fields" : [
         {
-          "key" : "preferredName",
-          "name" : "Preferred Name",
-          "fromColumn" : "preferred_name",
+          "key" : "ingredientId",
+          "name" : "Ingredient ID",
+          "fromColumn" : "ingredient_id",
           "type" : {
             "name" : "text"
           }
         },
         {
-          "key" : "familyName",
-          "name" : "Family Name",
-          "fromColumn" : "family_name",
+          "key" : "quantity",
+          "name" : "Quantity",
+          "fromColumn" : "quantity",
           "type" : {
-            "name" : "text"
+            "name" : "number"
           }
         },
         {
-          "key" : "emailAddress",
-          "name" : "Email Address",
-          "fromColumn" : "email_address",
+          "key" : "unitOfMeasure",
+          "name" : "Unit of measure",
+          "fromColumn" : "unit_of_measure",
           "type" : {
             "name" : "text"
           }
@@ -101,70 +89,47 @@
       "fetchOneAvailable" : true
     },
     {
-      "key" : "maintenance",
-      "name" : "Maintenance",
-      "tableName": "maintenance",
-      "columnAsOptionName": "comments",
+      "key" : "ingredient",
+      "name" : "Ingredient",
+      "tableName": "ingredients",
+      "columnAsOptionName": "name",
       "uniqueIdColumn": "id",
       "fields" : [
         {
           "key" : "id",
-          "name" : "Maintenance ID",
+          "name" : "Ingredient ID",
           "fromColumn" : "id",
           "type" : {
             "name" : "text"
           }
         },
         {
-          "key" : "dateScheduled",
-          "name" : "Date Scheduled",
-          "fromColumn" : "date_scheduled",
+          "key" : "name",
+          "name" : "Name",
+          "fromColumn" : "name",
           "type" : {
-            "name" : "date",
-            "kind": "datetime"
+            "name" : "text"
           }
         },
         {
-          "key" : "datePerformed",
-          "name" : "Date Performed",
-          "fromColumn" : "date_performed",
+          "key" : "description",
+          "name" : "Description",
+          "fromColumn" : "description",
           "type" : {
-            "name" : "date",
-            "kind": "datetime"
+            "name" : "text"
           }
         },
         {
-          "key" : "equipmentId",
-          "name" : "Equipment ID",
-          "fromColumn" : "equipment_id",
+          "key" : "inventory",
+          "name" : "Quantity in stock",
           "type" : {
             "name" : "text"
           },
           "relationship": {
-            "kind": "manyToOne",
-            "withTable": "equipment",
-            "foreignTableUniqueIdColumn": "id"
-          }
-        },
-        {
-          "key" : "maintainerId",
-          "name" : "Maintainer Id",
-          "fromColumn" : "maintainer_id",
-          "type" : {
-            "name" : "text"
-          },
-          "relationship": {
-            "kind": "manyToOne",
-            "withTable": "person",
-            "foreignTableUniqueIdColumn": "id"
-          }
-        },
-        {
-          "key" : "comments",
-          "name" : "Comments",
-          "fromColumn" : "comments",
-          "type" : {
-            "name" : "text"
+              "kind": "oneToOne",
+              "withTable": "inventory",
+              "localTableUniqueIdColumn": "id",
+              "foreignTableUniqueIdColumn": "ingredient_id"
           }
         }
      ],
@@ -172,35 +137,76 @@
       "fetchOneAvailable" : true
     },
     {
-      "key" : "warranty",
-      "name" : "Warranty",
-      "tableName": "warranty",
-      "columnAsOptionName": "type",
+      "key" : "ingredientRecipe",
+      "name" : "Ingredient-recipe pivot table",
+      "tableName": "ingredient_recipe",
+      "columnAsOptionName": "id",
       "uniqueIdColumn": "id",
       "fields" : [
         {
-          "key" : "type",
-          "name" : "Type",
-          "fromColumn" : "type",
+          "key" : "id",
+          "name" : "Identifier",
+          "fromColumn" : "id",
           "type" : {
             "name" : "text"
           }
         },
         {
-          "key" : "durationInWeeks",
-          "name" : "Duration [in weeks]",
-          "fromColumn" : "duration_in_weeks",
+          "key" : "ingredientId",
+          "name" : "Ingredient ID",
+          "fromColumn" : "ingredient_id",
           "type" : {
-            "name" : "number"
+            "name" : "text"
           }
         },
         {
-          "key" : "dateFrom",
-          "name" : "Date From",
-          "fromColumn" : "date_from",
+          "key" : "ingredient",
+          "name" : "Ingredient",
           "type" : {
-            "name" : "date",
-            "kind" : "datetime"
+            "name" : "text"
+          },
+          "relationship": {
+              "kind": "manyToOne",
+              "withTable": "ingredients",
+              "localTableUniqueIdColumn": "ingredient_id",
+              "foreignTableUniqueIdColumn": "id"
+          }
+        },
+        {
+          "key" : "recipe",
+          "name" : "Recipe",
+          "type" : {
+            "name" : "text"
+          },
+          "relationship": {
+              "kind": "manyToOne",
+              "withTable": "recipes",
+              "localTableUniqueIdColumn": "recipe_id",
+              "foreignTableUniqueIdColumn": "id"
+          }
+        },
+        {
+          "key" : "recipeId",
+          "name" : "Recipe ID",
+          "fromColumn" : "recipe_id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "quantity",
+          "name" : "Quantity",
+          "fromColumn" : "quantity",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "quantityUnitOfMeasure",
+          "name" : "Quantity (unit of measure)",
+          "fromColumn" : "quantity_unit_of_measure",
+          "type" : {
+            "name" : "text"
           }
         }
      ],
@@ -208,30 +214,52 @@
       "fetchOneAvailable" : true
     },
     {
-      "key" : "maintenanceWarranty",
-      "name" : "Maintenance/Warranty Mapping Table",
-      "tableName": "maintenance_warranty",
-      "columnAsOptionName": "maintenance_id",
+      "key" : "recipe",
+      "name" : "Recipe",
+      "tableName": "recipes",
+      "columnAsOptionName": "name",
+      "uniqueIdColumn": "id",
       "fields" : [
         {
-          "key" : "maintenanceId",
-          "name" : "Maintenance ID",
-          "fromColumn" : "maintenance_id",
+          "key" : "id",
+          "name" : "Recipe ID",
+          "fromColumn" : "id",
           "type" : {
             "name" : "text"
           }
         },
         {
-          "key" : "warrantyId",
-          "name" : "Warranty ID",
-          "fromColumn" : "warranty_id",
+          "key" : "equipment",
+          "name" : "Equipment",
+          "type" : {
+            "name" : "text"
+          },
+          "relationship": {
+            "kind": "oneToMany",
+            "withTable": "equipment",
+            "localTableUniqueIdColumn": "id",
+            "foreignTableUniqueIdColumn": "id"
+          }
+        },
+        {
+          "key" : "name",
+          "name" : "Name",
+          "fromColumn" : "name",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "instructions",
+          "name" : "Instructions",
+          "fromColumn" : "instructions",
           "type" : {
             "name" : "text"
           }
         }
      ],
-      "optionsAvailable" : false,
-      "fetchOneAvailable" : false
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
     }
   ],
   "version": 1,
