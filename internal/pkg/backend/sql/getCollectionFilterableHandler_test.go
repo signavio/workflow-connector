@@ -26,14 +26,14 @@ var testCasesGetCollectionFilterable = []testCase{
 			"equipment\x00acquisition_cost",
 			"equipment\x00purchase_date",
 		},
-		RowsAsCsv: "3,Refractometer,129,2017-12-12T12:00:00Z",
+		RowsAsCsv: "3,Buntfink SteelKettle,39.95,2017-12-12T12:00:00Z",
 		ExpectedResults: `{
   "acquisitionCost": {
-    "amount": 129,
+    "amount": 39.95,
     "currency": "EUR"
   },
   "id": "3",
-  "name": "Refractometer",
+  "name": "Buntfink SteelKettle",
   "purchaseDate": "2017-12-12T12:00:00Z"
 }`,
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
@@ -43,7 +43,7 @@ var testCasesGetCollectionFilterable = []testCase{
 				WillReturnRows(rows)
 		},
 		Request: func() *http.Request {
-			req, _ := http.NewRequest("GET", "/equipment?filter=name+eq+Refractometer", nil)
+			req, _ := http.NewRequest("GET", "/equipment?filter=name+eq+Buntfink+SteelKettle", nil)
 			return req
 		},
 	},
@@ -57,16 +57,16 @@ func TestExtractColumnNameFromFilterQueryParam(t *testing.T) {
 	}{
 		{
 			kind:     "success",
-			filter:   url.QueryEscape("name eq Refractometer"),
+			filter:   url.QueryEscape("name eq Buntfink SteelKettle"),
 			expected: "name",
 		},
 		{
 			kind:   "failure",
-			filter: url.QueryEscape("name+eq+Refractometer"),
+			filter: url.QueryEscape("name+eq+Buntfink+SteelKettle"),
 		},
 		{
 			kind:   "failure",
-			filter: url.QueryEscape("foobar eq Refractometer"),
+			filter: url.QueryEscape("foobar eq Buntfink SteelKettle"),
 		},
 	}
 	for _, tc := range testCases {
@@ -101,12 +101,14 @@ func TestExtractOperatorFromFilterQueryParam(t *testing.T) {
 	}{
 		{
 			kind:     "success",
-			filter:   url.QueryEscape("name eq Refractometer"),
+			filter:   url.QueryEscape("name eq Buntfink SteelKettle"),
 			expected: "=",
 		},
 		{
+			// Should fail if the user tries to use an operator
+			// that is not yet implemented
 			kind:   "failure",
-			filter: url.QueryEscape("name lt Refractometer"),
+			filter: url.QueryEscape("name lt Buntfink SteelKettle"),
 		},
 	}
 	for _, tc := range testCases {

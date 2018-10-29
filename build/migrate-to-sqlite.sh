@@ -12,10 +12,9 @@ CREATE TABLE IF NOT EXISTS equipment (
 INSERT INTO 'equipment' ('name','acquisition_cost','purchase_date')
   VALUES
   ('Bialetti Moka Express 6 cup', 25.95, '2017-12-12T12:00:00Z'),
-  ('Hario V60 Ceramic Coffee Dripper', 19.73,'2017-12-12T12:00:00Z'),
+  ('Sanremo Café Racer', 8477.85,'2017-12-12T12:00:00Z'),
   ('Buntfink SteelKettle', 39.95,'2017-12-12T12:00:00Z'),
-  ('Copper Coffee Pot Cezve', 49.95,'2017-12-12T12:00:00Z'),
-  ('Sanremo Café Racer', 8477.85,'2017-12-12T12:00:00Z');
+  ('Copper Coffee Pot Cezve', 49.95,'2017-12-12T12:00:00Z');
 
 CREATE TABLE IF NOT EXISTS ingredients (
   id integer primary key autoincrement,
@@ -51,7 +50,7 @@ CREATE TABLE IF NOT EXISTS recipes (
 );
 INSERT INTO 'recipes' ('name', 'instructions', 'equipment')
   VALUES
-  ('Espresso single shot','do this', 5),
+  ('Espresso single shot','do this', 2),
   ('Ibrik (turkish) coffee', 'do that', 4),
   ('Filter coffee', 'do bar', 2);
 

@@ -13,7 +13,7 @@ var testCasesDeleteSingle = []testCase{
 		Name: "it succeeds in deleting an existing resource",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{
@@ -47,7 +47,7 @@ var testCasesDeleteSingle = []testCase{
 		Name: "it fails and returns 404 NOT FOUND when trying to delete a non existent id",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{

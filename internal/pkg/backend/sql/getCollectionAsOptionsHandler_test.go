@@ -20,21 +20,26 @@ var testCasesGetCollectionAsOptions = []testCase{
 			"equipment\x00id",
 			"equipment\x00name",
 		},
-		RowsAsCsv: "1,Stainless Steel Mash Tun (50L)\n" +
-			"2,HolzbierFaß (200L)\n" +
-			"3,Refractometer",
+		RowsAsCsv: "1,Bialetti Moka Express 6 cup\n" +
+			"2,Sanremo Café Racer\n" +
+			"3,Buntfink SteelKettle\n" +
+			"4,Copper Coffee Pot Cezve",
 		ExpectedResults: `[
   {
     "id": "1",
-    "name": "Stainless Steel Mash Tun (50L)"
+    "name": "Bialetti Moka Express 6 cup"
   },
   {
     "id": "2",
-    "name": "HolzbierFaß (200L)"
+    "name": "Sanremo Café Racer"
   },
   {
     "id": "3",
-    "name": "Refractometer"
+    "name": "Buntfink SteelKettle"
+  },
+  {
+    "id": "4",
+    "name": "Copper Coffee Pot Cezve"
   }
 ]`,
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {

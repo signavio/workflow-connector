@@ -14,7 +14,7 @@ var testCasesCreateSingle = []testCase{
 		Name: "it succeeds when provided with valid parameters as URL parameters",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{
@@ -30,9 +30,9 @@ var testCasesCreateSingle = []testCase{
     "currency": "EUR"
   },
   "id": "4",
-  "maintenance": [%s],
   "name": "Cooling Spiral",
-  "purchaseDate": "2017-03-02T00:00:00Z"
+  "purchaseDate": "2017-03-02T00:00:00Z",
+  "recipes": [%s]
 }`,
 		ExpectedResultsRelationships: []interface{}{""},
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {

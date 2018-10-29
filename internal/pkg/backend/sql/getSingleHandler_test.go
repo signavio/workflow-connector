@@ -13,7 +13,7 @@ var testCasesGetSingle = []testCase{
 		Name: "it succeeds when equipment table contains more than one column",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{
@@ -22,35 +22,25 @@ var testCasesGetSingle = []testCase{
 			"equipment\x00acquisition_cost",
 			"equipment\x00purchase_date",
 		},
-		RowsAsCsv: "1,Stainless Steel Mash Tun (50L),999,2017-12-12T12:00:00Z",
+		RowsAsCsv: "2,Sanremo Café Racer,8477.85,2017-12-12T12:00:00Z",
 		ExpectedResults: `{
   "acquisitionCost": {
-    "amount": 999,
+    "amount": 8477.85,
     "currency": "EUR"
   },
-  "id": "1",
-  "maintenance": [%s],
-  "name": "Stainless Steel Mash Tun (50L)",
-  "purchaseDate": "2017-12-12T12:00:00Z"
+  "id": "2",
+  "name": "Sanremo Café Racer",
+  "purchaseDate": "2017-12-12T12:00:00Z",
+  "recipes": [%s]
 }`,
 		ExpectedResultsRelationships: []interface{}{`
-    {
-      "comments": "It went well!",
-      "datePerformed": "2018-02-03T12:22:01Z",
-      "dateScheduled": "2017-02-03T02:00:00Z",
-      "equipmentId": 1,
-      "id": "1",
-      "maintainerId": 1
-    },
-    {
-      "comments": "It went okay!",
-      "datePerformed": "2018-02-03T12:22:01Z",
-      "dateScheduled": "2017-02-03T02:00:00Z",
-      "equipmentId": 1,
-      "id": "3",
-      "maintainerId": 2
-    }
-  `},
+	    {
+	      "equipment": "2"
+	      "id": "1",
+	      "instructions": "do this",
+	      "name": "Espresso single shot"
+	    }
+	  `},
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 			rows := sqlmock.NewRows(columns).
 				FromCSVString(rowsAsCsv)
@@ -69,7 +59,7 @@ var testCasesGetSingle = []testCase{
 		Name: "it fails and returns 404 NOT FOUND when querying a non existent equipment id",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{
@@ -95,44 +85,34 @@ var testCasesGetSingle = []testCase{
 	},
 	{
 		Kind: "success",
-		Name: "it succeeds when maintenance table contains more than one column",
+		Name: "it succeeds when recipes table contains more than one column",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
-		TableSchema: commonMaintenanceTableSchema,
+		TableSchema: commonRecipesTableSchema,
 		ColumnNames: []string{
-			"maintenance\x00id",
-			"maintenance\x00date_scheduled",
-			"maintenance\x00date_performed",
-			"maintenance\x00equipment_id",
-			"maintenance\x00maintainer_id",
-			"maintenance\x00comments",
+			"recipes\x00id",
+			"recipes\x00equipment",
+			"recipes\x00name",
+			"recipes\x00instructions",
 		},
-		RowsAsCsv: "1,2017-02-03T02:00:00Z,2018-02-03T12:22:01Z,1,1,It went well!",
+		RowsAsCsv: "1,2,Espresso single shot,do this",
 		ExpectedResults: `{
-  "comments": "It went well!",
-  "datePerformed": "2018-02-03T12:22:01Z",
-  "dateScheduled": "2017-02-03T02:00:00Z",
-  "equipmentId": {%s},
+  "equipment": {%s},
   "id": "1",
-  "maintainerId": {%s}
+  "instructions": "do this",
+  "name": "Espresso single shot"
 }`,
 		ExpectedResultsRelationships: []interface{}{`
     "acquisitionCost": {
-      "amount": 999,
+      "amount": 8477.85,
       "currency": "EUR"
     },
-    "id": "1",
-    "name": "Stainless Steel Mash Tun (50L)",
+    "id": "2",
+    "name": "Sanremo Café Racer",
     "purchaseDate": "2017-12-12T12:00:00Z"
-  `, `
-    "emailAddress": "jane.feather@example.com",
-    "familyName": "Feather",
-    "id": "1",
-    "preferredName": "Jane"
-  `,
-		},
+  `},
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 			rows := sqlmock.NewRows(columns).
 				FromCSVString(rowsAsCsv)
@@ -141,7 +121,7 @@ var testCasesGetSingle = []testCase{
 				WillReturnRows(rows)
 		},
 		Request: func() *http.Request {
-			req, _ := http.NewRequest("GET", "/maintenance/1", nil)
+			req, _ := http.NewRequest("GET", "/recipes/1", nil)
 			return req
 		},
 	},

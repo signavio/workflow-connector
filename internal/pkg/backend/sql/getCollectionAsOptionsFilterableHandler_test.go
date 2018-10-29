@@ -20,10 +20,10 @@ var testCasesGetCollectionAsOptionsFilterable = []testCase{
 			"equipment\x00id",
 			"equipment\x00name",
 		},
-		RowsAsCsv: "1,Stainless Steel Mash Tun (50L)",
+		RowsAsCsv: "1,Bialetti Moka Express 6 cup",
 		ExpectedResults: `{
   "id": "1",
-  "name": "Stainless Steel Mash Tun (50L)"
+  "name": "Bialetti Moka Express 6 cup"
 }`,
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 			rows := sqlmock.NewRows(columns).
@@ -32,7 +32,7 @@ var testCasesGetCollectionAsOptionsFilterable = []testCase{
 				WillReturnRows(rows)
 		},
 		Request: func() *http.Request {
-			req, _ := http.NewRequest("GET", "/equipment/options?filter=stain", nil)
+			req, _ := http.NewRequest("GET", "/equipment/options?filter=moka", nil)
 			return req
 		},
 	},

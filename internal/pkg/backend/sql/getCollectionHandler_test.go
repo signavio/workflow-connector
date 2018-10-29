@@ -22,35 +22,45 @@ var testCasesGetCollection = []testCase{
 			"equipment\x00acquisition_cost",
 			"equipment\x00purchase_date",
 		},
-		RowsAsCsv: "1,Stainless Steel Mash Tun (50L),999,2017-12-12T12:00:00Z\n" +
-			"2,HolzbierFaß (200L),512.23,2017-12-12T12:00:00Z\n" +
-			"3,Refractometer,129,2017-12-12T12:00:00Z",
+		RowsAsCsv: "1,Bialetti Moka Express 6 cup,25.95,2017-12-12T12:00:00Z\n" +
+			"2,Sanremo Café Racer,8477.95,2017-12-12T12:00:00Z\n" +
+			"3,Buntfink SteelKettle,39.95,2017-12-12T12:00:00Z\n" +
+			"4,Copper Coffee Pot Cezve,49.95,2017-12-12T12:00:00Z",
 		ExpectedResults: `[
   {
     "acquisitionCost": {
-      "amount": 999,
+      "amount": 25.95,
       "currency": "EUR"
     },
     "id": "1",
-    "name": "Stainless Steel Mash Tun (50L)",
+    "name": "Bialetti Moka Express 6 cup",
     "purchaseDate": "2017-12-12T12:00:00Z"
   },
   {
     "acquisitionCost": {
-      "amount": 512.23,
+      "amount": 8477.95,
       "currency": "EUR"
     },
     "id": "2",
-    "name": "HolzbierFaß (200L)",
+    "name": "Sanremo Café Racer",
     "purchaseDate": "2017-12-12T12:00:00Z"
   },
   {
     "acquisitionCost": {
-      "amount": 129,
+      "amount": 39.95,
       "currency": "EUR"
     },
     "id": "3",
-    "name": "Refractometer",
+    "name": "Buntfink SteelKettle",
+    "purchaseDate": "2017-12-12T12:00:00Z"
+  },
+  {
+    "acquisitionCost": {
+      "amount": 49.95,
+      "currency": "EUR"
+    },
+    "id": "4",
+    "name": "Copper Coffee Pot Cezve",
     "purchaseDate": "2017-12-12T12:00:00Z"
   }
 ]`,

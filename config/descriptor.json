@@ -48,6 +48,19 @@
             "name" : "date",
             "kind": "date"
           }
+        },
+        {
+          "key" : "recipes",
+          "name" : "Used in recipes",
+          "type" : {
+            "name" : "text"
+          },
+          "relationship": {
+              "kind": "oneToMany",
+              "withTable": "recipes",
+              "localTableUniqueIdColumn": "id",
+              "foreignTableUniqueIdColumn": "id"
+          }
         }
       ],
       "optionsAvailable" : true,

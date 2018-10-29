@@ -52,6 +52,21 @@ var (
 			&sql.NullString{String: "", Valid: true},
 		},
 	}
+	commonRecipesTableSchema = &TableSchema{
+		[]string{
+			"recipes\x00id",
+			"recipes\x00equipment",
+			"recipes\x00name",
+			"recipes\x00instructions",
+		},
+		[]interface{}{
+			&sql.NullString{String: "", Valid: true},
+			&sql.NullString{String: "", Valid: true},
+			&sql.NullString{String: "", Valid: true},
+			&sql.NullString{String: "", Valid: true},
+		},
+	}
+
 	descriptorFileBase = `
 {
   "key": "test",
@@ -71,10 +86,10 @@ var (
       "fetchOneAvailable" : true
     },
     {
-      "key" : "maintenance",
-      "name" : "Maintenance",
-      "tableName": "maintenance",
-      "columnAsOptionName": "comments",
+      "key" : "recipes",
+      "name" : "Recipes",
+      "tableName": "recipes",
+      "columnAsOptionName": "name",
       "uniqueIdColumn": "id",
       "fields" : [
         %s
@@ -126,17 +141,19 @@ var (
   }
 },
 {
-  "key" : "maintenance",
-  "name" : "Maintenance Performed",
+  "key" : "recipes",
+  "name" : "Associated recipes",
   "type" : {
-    "name": "text"
+  	"name": "text"
   },
   "relationship": {
-    "kind": "oneToMany",
-    "withTable": "maintenance",
-    "foreignTableUniqueIdColumn": "equipment_id"
+  	"kind": "oneToMany",
+  	"withTable": "recipes",
+  	"localTableUniqueIdColumn": "id",
+  	"foreignTableUniqueIdColumn": "id"
   }
 }`
+
 	commonMaintenanceDescriptorFields = `
 {
   "key" : "id",
@@ -174,6 +191,7 @@ var (
   "relationship": {
     "kind": "manyToOne",
     "withTable": "equipment",
+    "localTableUniqueIdColumn": "id",
     "foreignTableUniqueIdColumn": "id"
   }
 },
@@ -187,6 +205,7 @@ var (
   "relationship": {
     "kind": "manyToOne",
     "withTable": "person",
+    "localTableUniqueIdColumn": "id",
     "foreignTableUniqueIdColumn": "id"
   }
 },
@@ -199,13 +218,51 @@ var (
   }
 }`
 
+	commonRecipesDescriptorFields = `
+{
+  "key" : "id",
+  "name" : "Recipe ID",
+  "fromColumn": "id",
+  "type" : {
+	"name" : "text"
+  }
+},
+{
+  "key" : "name",
+  "name" : "Recipe name",
+  "fromColumn": "name",
+  "type" : {
+	"name" : "text"
+  }
+},
+{
+  "key" : "instructions",
+  "name" : "Instructions",
+  "fromColumn": "instructions",
+  "type" : {
+	"name" : "text"
+  }
+},
+{
+  "key" : "equipment",
+  "name" : "Equipment",
+  "type" : {
+    "name": "text"
+  },
+  "relationship": {
+    "kind": "manyToOne",
+    "withTable": "equipment",
+    "localTableUniqueIdColumn": "id",
+    "foreignTableUniqueIdColumn": "id"
+  }
+}`
 	queryTemplates = map[string]string{
 		"GetSingle": "SELECT * " +
 			"  FROM {{.TableName}} AS _{{.TableName}} " +
 			"  {{range .Relations}}" +
 			"     LEFT JOIN {{.Relationship.WithTable}}" +
 			"     ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-			"     = _{{$.TableName}}.{{$.UniqueIDColumn}}" +
+			"     = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}" +
 			"  {{end}}" +
 			"  WHERE _{{$.TableName}}.{{$.UniqueIDColumn}} = ?",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
@@ -235,7 +292,7 @@ var (
 			"{{range .Relations}}" +
 			" LEFT JOIN {{.Relationship.WithTable}}" +
 			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-			" = _{{$.TableName}}.{{$.UniqueIDColumn}}{{end}} LIMIT 1",
+			" = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}{{end}} LIMIT 1",
 	}
 )
 
@@ -316,6 +373,8 @@ func TestHandlers(t *testing.T) {
 					backend.TableSchemas["equipment\x00relationships"] = tc.TableSchema
 					backend.TableSchemas["maintenance"] = tc.TableSchema
 					backend.TableSchemas["maintenance\x00relationships"] = tc.TableSchema
+					backend.TableSchemas["recipes"] = tc.TableSchema
+					backend.TableSchemas["recipes\x00relationships"] = tc.TableSchema
 
 					// initialize mock database
 					tc.ExpectedQueries(mock, tc.ColumnNames, tc.RowsAsCsv)
