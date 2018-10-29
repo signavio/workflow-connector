@@ -15,7 +15,7 @@ var (
 			"{{range .Relations}}" +
 			"   LEFT JOIN {{.Relationship.WithTable}}" +
 			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-			"   = _{{$.TableName}}.{{$.UniqueIDColumn}}" +
+			"   = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}" +
 			"{{end}}" +
 			"WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = @p1",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
@@ -51,7 +51,7 @@ var (
 			"{{range .Relations}}" +
 			" LEFT JOIN {{.Relationship.WithTable}}" +
 			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-			" = _{{$.TableName}}.{{$.UniqueIDColumn}}{{end}}",
+			" = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}{{end}}",
 	}
 	integer = []string{
 		"TINYINT",
