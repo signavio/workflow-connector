@@ -13,9 +13,9 @@ then
 fi
 if [ -n "${MYSQL_ROOT_PASSWORD}" ]
 then
-    MYSQL_CMD='mysql -u root -h '"${MYSQL_HOST}"' -p'"${MYSQL_ROOT_PASSWORD}"''
+    MYSQL_CMD='mysql -v -u root -h '"${MYSQL_HOST}"' -p'"${MYSQL_ROOT_PASSWORD}"''
 else
-    MYSQL_CMD="mysql -u root -h ${MYSQL_HOST}"
+    MYSQL_CMD="mysql -v -u root -h ${MYSQL_HOST}"
 fi
 cat << __EOF__ | ${MYSQL_CMD}
 DROP USER IF EXISTS '${MYSQL_USER}'@'${MYSQL_ROOT_HOST}';
