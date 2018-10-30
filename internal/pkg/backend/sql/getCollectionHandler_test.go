@@ -13,7 +13,7 @@ var testCasesGetCollection = []testCase{
 		Name: "it succeeds when equipment table contains more than one column",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{
@@ -23,7 +23,7 @@ var testCasesGetCollection = []testCase{
 			"equipment\x00purchase_date",
 		},
 		RowsAsCsv: "1,Bialetti Moka Express 6 cup,25.95,2017-12-12T12:00:00Z\n" +
-			"2,Sanremo Café Racer,8477.95,2017-12-12T12:00:00Z\n" +
+			"2,Sanremo Café Racer,8477.85,2017-12-12T12:00:00Z\n" +
 			"3,Buntfink SteelKettle,39.95,2017-12-12T12:00:00Z\n" +
 			"4,Copper Coffee Pot Cezve,49.95,2017-12-12T12:00:00Z",
 		ExpectedResults: `[
@@ -38,7 +38,7 @@ var testCasesGetCollection = []testCase{
   },
   {
     "acquisitionCost": {
-      "amount": 8477.95,
+      "amount": 8477.85,
       "currency": "EUR"
     },
     "id": "2",

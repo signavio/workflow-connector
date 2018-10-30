@@ -1,5 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
+source ./.env
 MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST:=localhost}
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:=root}
 MYSQL_TEST_USER=${MYSQL_TEST_USER:=test}
@@ -25,67 +26,70 @@ CREATE TABLE IF NOT EXISTS equipment (
 );
 INSERT INTO equipment (name, acquisition_cost, purchase_date)
   VALUES
-  ("Stainless Steel Mash Tun (50L)", 999.00, "2017-12-12 12:00:00"),
-  ("HolzbierFaß (200L)", 512.23, "2017-12-12 12:00:00"),
-  ("Refractometer", 129.00, "2017-12-12 12:00:00")
-;
+  ("Bialetti Moka Express 6 cup", 25.95, "2017-12-12 12:00:00"),
+  ("Sanremo Café Racer", 8477.85,"2017-12-12 12:00:00"),
+  ("Buntfink SteelKettle", 39.95,"2017-12-12 12:00:00"),
+  ("Copper Coffee Pot Cezve", 49.95,"2017-12-12 12:00:00");
 
-CREATE TABLE IF NOT EXISTS person (
+CREATE TABLE IF NOT EXISTS ingredients (
   id INT NOT NULL AUTO_INCREMENT,
-  preferred_name text,
-  family_name text,
-  email_address varchar(128) unique not null,
+  name text,
+  description text,
   primary key (id)
 );
-INSERT INTO person (preferred_name,family_name,email_address)
+INSERT INTO ingredients (name,description)
   VALUES
-  ("Jane","Feather", "jane.feather@example.com"),
-  ("Jack","Calm", "jack.calm@example.com"),
-  ("Bob","White", "bob.white@example.com"),
-  ("Joe","Frei", "joe.frei@example.com");
+  ("V60 paper filter", "The best paper filter on the market"),
+  ("Caffé Borbone Beans - Miscela Blu", "Excellent beans for espresso"),
+  ("Caffé Borbone Beans - Miscela Oro", "Well balanced beans"),
+  ("Filtered Water", "Contains the perfect water hardness for espresso");
 
-CREATE TABLE IF NOT EXISTS maintenance (
+CREATE TABLE IF NOT EXISTS inventory (
+  ingredient_id INT NOT NULL,
+  quantity real,
+  unit_of_measure text,
+  foreign key (ingredient_id) references ingredients(id),
+  primary key (ingredient_id)
+);
+INSERT INTO inventory (ingredient_id, quantity, unit_of_measure)
+  VALUES
+  (1, 100, "Each"),
+  (2, 10000, "Gram"),
+  (3, 5000, "Gram"),
+  (4, 100, "Liter");
+
+CREATE TABLE IF NOT EXISTS recipes (
   id INT NOT NULL AUTO_INCREMENT,
-  date_scheduled datetime,
-  date_performed datetime,
   equipment_id integer,
-  maintainer_id integer,
-  comments text,
+  name text,
+  instructions text,
   foreign key (equipment_id) references equipment(id),
-  foreign key (maintainer_id) references person(id),
   primary key (id)
 );
-INSERT INTO maintenance (date_scheduled,date_performed,comments,equipment_id,maintainer_id) VALUES
-  ("2017-02-03 02:00:00", "2018-02-03 12:22:01", "It went well!", 1, 1),
-  ("2017-02-03 02:00:00", "2018-02-03 12:22:01", "It went poorly!", 2, 1),
-  ("2017-02-03 02:00:00", "2018-02-03 12:22:01", "It went okay!", 1, 2),
-  ("2017-02-03 02:00:00", "2018-02-03 12:22:01", "It went great!", 3, 2);
+INSERT INTO recipes (name, instructions, equipment_id)
+  VALUES
+  ("Espresso single shot","do this", 2),
+  ("Ibrik (turkish) coffee", "do that", 4),
+  ("Filter coffee", "do bar", 3);
 
-CREATE TABLE IF NOT EXISTS warranty (
+CREATE TABLE IF NOT EXISTS ingredient_recipe (
   id INT NOT NULL AUTO_INCREMENT,
-  type text,
-  duration_in_weeks integer,
-  date_from datetime,
-  primary key (id)
+  ingredient_id INT NOT NULL,
+  recipe_id INT NOT NULL,
+  quantity real,
+  unit_of_measure text,
+  index (id),
+  foreign key (ingredient_id) references ingredients(id),
+  foreign key (recipe_id) references recipes(id),
+  primary key (ingredient_id, recipe_id)
 );
-INSERT INTO warranty (type,duration_in_weeks,date_from) VALUES
-  ("parts and labour", 104, "2017-10-02 05:00:00"),
-  ("parts and labour", 156, "2017-10-02 05:00:00"),
-  ("parts", 104, "2017-10-02 05:00:00"),
-  ("parts and labour", 104, "2017-10-02 05:00:00");
-
-CREATE TABLE IF NOT EXISTS maintenance_warranty (
-  maintenance_id INT NOT NULL,
-  warranty_id INT NOT NULL,
-  foreign key (maintenance_id) references maintenance(id),
-  foreign key (warranty_id) references warranty(id),
-  primary key(maintenance_id, warranty_id)
-);
-INSERT INTO maintenance_warranty (maintenance_id, warranty_id) VALUES
-  (1, 1),
-  (2, 2),
-  (3, 3),
-  (1, 2);
+INSERT INTO ingredient_recipe (id, ingredient_id, recipe_id, quantity, unit_of_measure)
+  VALUES
+  (1, 2, 3, "30", "Gram"),
+  (2, 1, 3, "1", "Each"),
+  (3, 4, 3, "0.5", "Liter"),
+  (4, 3, 2, "20", "Gram"),
+  (5, 4, 2, "0.15", "Liter");
 
 COMMIT;
 __EOF__

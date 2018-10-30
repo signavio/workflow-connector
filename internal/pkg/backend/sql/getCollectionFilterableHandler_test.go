@@ -17,7 +17,7 @@ var testCasesGetCollectionFilterable = []testCase{
 		Name: "it succeeds when filtering equipment table using column name",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{

@@ -23,5 +23,8 @@ vendor/*/
 /.container-*
 /.dockerfile-*
 
+# environment file containing sensitive credentials
+#
+.env
 # emacs specific
 /.projectile

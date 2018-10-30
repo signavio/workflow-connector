@@ -59,7 +59,7 @@
               "kind": "oneToMany",
               "withTable": "recipes",
               "localTableUniqueIdColumn": "id",
-              "foreignTableUniqueIdColumn": "id"
+              "foreignTableUniqueIdColumn": "equipment_id"
           }
         }
       ],
@@ -102,7 +102,7 @@
       "fetchOneAvailable" : true
     },
     {
-      "key" : "ingredient",
+      "key" : "ingredients",
       "name" : "Ingredient",
       "tableName": "ingredients",
       "columnAsOptionName": "name",
@@ -227,7 +227,7 @@
       "fetchOneAvailable" : true
     },
     {
-      "key" : "recipe",
+      "key" : "recipes",
       "name" : "Recipe",
       "tableName": "recipes",
       "columnAsOptionName": "name",
@@ -242,15 +242,23 @@
           }
         },
         {
+          "key" : "equipmentId",
+          "name" : "Equipment ID",
+          "fromColumn" : "equipment_id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
           "key" : "equipment",
-          "name" : "Equipment",
+          "name" : "Equipment needed",
           "type" : {
             "name" : "text"
           },
           "relationship": {
-            "kind": "oneToMany",
+            "kind": "manyToOne",
             "withTable": "equipment",
-            "localTableUniqueIdColumn": "id",
+            "localTableUniqueIdColumn": "equipment_id",
             "foreignTableUniqueIdColumn": "id"
           }
         },

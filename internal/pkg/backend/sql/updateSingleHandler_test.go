@@ -41,7 +41,7 @@ var testCasesUpdateSingle = []testCase{
 }`,
 		ExpectedResultsRelationships: []interface{}{`
     {
-      "equipment": "2",
+      "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
       "name": "Espresso single shot"
@@ -80,10 +80,10 @@ var testCasesUpdateSingle = []testCase{
 			"equipment\x00acquisition_cost",
 			"equipment\x00purchase_date",
 		},
-		RowsAsCsv: "2,Sanremo Café Racer,9283.99,2017-12-12T12:00:00Z",
+		RowsAsCsv: "2,Sanremo Café Racer,8477.85,2017-12-12T12:00:00Z",
 		ExpectedResults: `{
   "acquisitionCost": {
-    "amount": 9283.99,
+    "amount": 8477.85,
     "currency": "EUR"
   },
   "id": "2",
@@ -93,16 +93,16 @@ var testCasesUpdateSingle = []testCase{
 }`,
 		ExpectedResultsRelationships: []interface{}{`
     {
-      "equipment": "2",
+      "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
       "name": "Espresso single shot"
     }
-	  `},
+  `},
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 			mock.ExpectBegin()
 			mock.ExpectExec("UPDATE (.+) SET name = ., acquisition_cost = . WHERE (.+) = .").
-				WithArgs("Sanremo Café Racer", 9283.99, "2").
+				WithArgs("Sanremo Café Racer", 8477.85, "2").
 				WillReturnResult(sqlmock.NewResult(2, 1))
 			mock.ExpectCommit()
 			rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)
@@ -112,7 +112,7 @@ var testCasesUpdateSingle = []testCase{
 		},
 		Request: func() *http.Request {
 			body := strings.NewReader(
-				`{"name": "Sanremo Café Racer", "acquisitionCost": 9283.99}`,
+				`{"name": "Sanremo Café Racer", "acquisitionCost": 8477.85}`,
 			)
 			req, _ := http.NewRequest(
 				"PATCH",
@@ -129,7 +129,7 @@ var testCasesUpdateSingle = []testCase{
 		Name: "it fails and returns 404 NOT FOUND when trying to update a non existent id",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{
@@ -144,7 +144,7 @@ var testCasesUpdateSingle = []testCase{
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 			mock.ExpectBegin()
 			mock.ExpectExec("UPDATE (.+) SET name = ., acquisition_cost = . WHERE (.+) = .").
-				WithArgs("HolzbierFaß (200L)", "512.23", "42").
+				WithArgs("Sanremo Café Racer", "512.23", "42").
 				WillReturnResult(sqlmock.NewResult(0, 0))
 			mock.ExpectCommit()
 			rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)
@@ -154,7 +154,7 @@ var testCasesUpdateSingle = []testCase{
 		},
 		Request: func() *http.Request {
 			postData := url.Values{}
-			postData.Set("name", "HolzbierFaß (200L)")
+			postData.Set("name", "Sanremo Café Racer")
 			postData.Set("acquisitionCost", "512.23")
 			req, _ := http.NewRequest("PATCH", "/equipment/42?"+postData.Encode(), nil)
 			return req

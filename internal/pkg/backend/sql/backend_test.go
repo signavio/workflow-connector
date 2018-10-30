@@ -34,34 +34,16 @@ var (
 			&sql.NullString{String: "", Valid: true},
 		},
 	}
-	commonMaintenanceTableSchema = &TableSchema{
-		[]string{
-			"maintenance\x00id",
-			"maintenance\x00date_scheduled",
-			"maintenance\x00date_performed",
-			"maintenance\x00equipment_id",
-			"maintenance\x00maintainer_id",
-			"maintenance\x00comments",
-		},
-		[]interface{}{
-			&sql.NullString{String: "", Valid: true},
-			&sql.NullString{String: "", Valid: true},
-			&sql.NullString{String: "", Valid: true},
-			&sql.NullString{String: "", Valid: true},
-			&sql.NullString{String: "", Valid: true},
-			&sql.NullString{String: "", Valid: true},
-		},
-	}
 	commonRecipesTableSchema = &TableSchema{
 		[]string{
 			"recipes\x00id",
-			"recipes\x00equipment",
+			"recipes\x00equipment_id",
 			"recipes\x00name",
 			"recipes\x00instructions",
 		},
 		[]interface{}{
 			&sql.NullString{String: "", Valid: true},
-			&sql.NullString{String: "", Valid: true},
+			&sql.NullFloat64{Float64: 0, Valid: true},
 			&sql.NullString{String: "", Valid: true},
 			&sql.NullString{String: "", Valid: true},
 		},
@@ -150,74 +132,9 @@ var (
   	"kind": "oneToMany",
   	"withTable": "recipes",
   	"localTableUniqueIdColumn": "id",
-  	"foreignTableUniqueIdColumn": "id"
+  	"foreignTableUniqueIdColumn": "equipment_id"
   }
 }`
-
-	commonMaintenanceDescriptorFields = `
-{
-  "key" : "id",
-  "name" : "ID",
-  "fromColumn": "id",
-  "type" : {
-	"name" : "text"
-  }
-},
-{
-  "key" : "dateScheduled",
-  "name" : "Date Scheduled",
-  "fromColumn" : "date_scheduled",
-  "type" : {
-    "name" : "date",
-    "kind": "datetime"
-  }
-},
-{
-  "key" : "datePerformed",
-  "name" : "Date Performed",
-  "fromColumn" : "date_performed",
-  "type" : {
-    "name" : "date",
-    "kind": "datetime"
-  }
-},
-{
-  "key" : "equipmentId",
-  "name" : "Equipment ID",
-  "fromColumn" : "equipment_id",
-  "type" : {
-    "name" : "text"
-  },
-  "relationship": {
-    "kind": "manyToOne",
-    "withTable": "equipment",
-    "localTableUniqueIdColumn": "id",
-    "foreignTableUniqueIdColumn": "id"
-  }
-},
-{
-  "key" : "maintainerId",
-  "name" : "Maintainer ID",
-  "fromColumn" : "maintainer_id",
-  "type" : {
-    "name" : "text"
-  },
-  "relationship": {
-    "kind": "manyToOne",
-    "withTable": "person",
-    "localTableUniqueIdColumn": "id",
-    "foreignTableUniqueIdColumn": "id"
-  }
-},
-{
-  "key" : "comments",
-  "name" : "Comments",
-  "fromColumn" : "comments",
-  "type" : {
-    "name" : "text"
-  }
-}`
-
 	commonRecipesDescriptorFields = `
 {
   "key" : "id",
@@ -244,6 +161,14 @@ var (
   }
 },
 {
+  "key" : "equipmentId",
+  "name" : "Equipment ID",
+  "fromColumn": "equipment_id",
+  "type" : {
+	"name" : "text"
+  }
+},
+{
   "key" : "equipment",
   "name" : "Equipment",
   "type" : {
@@ -252,7 +177,7 @@ var (
   "relationship": {
     "kind": "manyToOne",
     "withTable": "equipment",
-    "localTableUniqueIdColumn": "id",
+    "localTableUniqueIdColumn": "equipment_id",
     "foreignTableUniqueIdColumn": "id"
   }
 }`
@@ -336,10 +261,10 @@ type handlerTests map[string][]testCase
 
 func TestHandlers(t *testing.T) {
 	handlerTests := handlerTests{
-		"GetSingleHandler":                        testCasesGetSingle,
-		"GetSingleAsOptionHandler":                testCasesGetSingleAsOption,
-		"GetCollectionHandler":                    testCasesGetCollection,
-		"GetCollectionHandlerFilterable":          testCasesGetCollectionFilterable,
+		"GetSingleHandler":         testCasesGetSingle,
+		"GetSingleAsOptionHandler": testCasesGetSingleAsOption,
+		"GetCollectionHandler":     testCasesGetCollection,
+		//	"GetCollectionHandlerFilterable":          testCasesGetCollectionFilterable,
 		"GetCollectionAsOptionsHandler":           testCasesGetCollectionAsOptions,
 		"GetCollectionAsOptionsFilterableHandler": testCasesGetCollectionAsOptionsFilterable,
 		"UpdateSingleHandler":                     testCasesUpdateSingle,
@@ -371,8 +296,6 @@ func TestHandlers(t *testing.T) {
 					backend.TableSchemas = make(map[string]*TableSchema)
 					backend.TableSchemas["equipment"] = tc.TableSchema
 					backend.TableSchemas["equipment\x00relationships"] = tc.TableSchema
-					backend.TableSchemas["maintenance"] = tc.TableSchema
-					backend.TableSchemas["maintenance\x00relationships"] = tc.TableSchema
 					backend.TableSchemas["recipes"] = tc.TableSchema
 					backend.TableSchemas["recipes\x00relationships"] = tc.TableSchema
 
@@ -395,7 +318,6 @@ func TestHandlers(t *testing.T) {
 			})
 		}
 	})
-
 	if strings.Contains(testUsingDB, "sqlite3") &&
 		viper.IsSet("db.test.sqlite3.url") {
 		// The default config.Descriptor should be used for real databases
@@ -429,12 +351,45 @@ func TestHandlers(t *testing.T) {
 	if strings.Contains(testUsingDB, "mysql") &&
 		viper.IsSet("db.test.mysql.url") {
 		backend := NewBackend("mysql")
+		// The default config.Descriptor should be used for real databases
+		config.Options = defaultConfigOptions
 		err := backend.Open("mysql", viper.Get("db.test.mysql.url").(string))
 		if err != nil {
 			t.Errorf(err.Error())
 			return
 		}
 		t.Run("Using mysql database", func(t *testing.T) {
+			ts := newTestServer(backend)
+			defer ts.Close()
+			for handlerName, testCases := range handlerTests {
+				t.Run(handlerName, func(t *testing.T) {
+					for _, tc := range testCases {
+						ts := newTestServer(backend)
+						defer ts.Close()
+						t.Run(tc.Name, func(t *testing.T) {
+							tc.setExpectedResults(handlerName, false)
+							err := run(tc, ts)
+							if err != nil {
+								t.Errorf(err.Error())
+								return
+							}
+						})
+					}
+				})
+			}
+		})
+	}
+	if strings.Contains(testUsingDB, "pgsql") &&
+		viper.IsSet("db.test.pgsql.url") {
+		// The default config.Descriptor should be used for real databases
+		config.Options = defaultConfigOptions
+		backend := NewBackend("postgres")
+		err := backend.Open("postgres", viper.Get("db.test.pgsql.url").(string))
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		t.Run("Using pgsql database", func(t *testing.T) {
 			ts := newTestServer(backend)
 			defer ts.Close()
 			for handlerName, testCases := range handlerTests {
@@ -598,11 +553,11 @@ func newTestServer(b *Backend) *httptest.Server {
 }
 func mockDescriptorFile(testCaseDescriptorFields ...string) (io.Reader, error) {
 	equipmentDescriptorFields := testCaseDescriptorFields[0]
-	maintenanceDescriptorFields := testCaseDescriptorFields[1]
+	recipesDescriptorFields := testCaseDescriptorFields[1]
 	mockedDescriptorFile := fmt.Sprintf(
 		descriptorFileBase,
 		equipmentDescriptorFields,
-		maintenanceDescriptorFields,
+		recipesDescriptorFields,
 	)
 	return strings.NewReader(mockedDescriptorFile), nil
 }

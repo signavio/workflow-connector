@@ -43,16 +43,16 @@ INSERT INTO 'inventory' ('ingredient_id','quantity','unit_of_measure')
 
 CREATE TABLE IF NOT EXISTS recipes (
   id integer primary key autoincrement,
-  equipment integer,
+  equipment_id integer,
   name text,
   instructions text,
-  foreign key (equipment) references equipment(id)
+  foreign key (equipment_id) references equipment(id)
 );
-INSERT INTO 'recipes' ('name', 'instructions', 'equipment')
+INSERT INTO 'recipes' ('name', 'instructions', 'equipment_id')
   VALUES
   ('Espresso single shot','do this', 2),
   ('Ibrik (turkish) coffee', 'do that', 4),
-  ('Filter coffee', 'do bar', 2);
+  ('Filter coffee', 'do bar', 3);
 
 CREATE TABLE IF NOT EXISTS ingredient_recipe (
   id integer not null,
@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS ingredient_recipe (
   recipe_id integer,
   quantity text,
   unit_of_measure text,
+  foreign key (ingredient_id) references ingredients(id),
+  foreign key (recipe_id) references recipes(id),
   primary key (ingredient_id, recipe_id)
 );
 INSERT INTO 'ingredient_recipe' ('id', 'ingredient_id', 'recipe_id', 'quantity', 'unit_of_measure')

@@ -34,22 +34,22 @@ var testCasesGetSingle = []testCase{
   "recipes": [%s]
 }`,
 		ExpectedResultsRelationships: []interface{}{`
-	    {
-	      "equipment": "2"
-	      "id": "1",
-	      "instructions": "do this",
-	      "name": "Espresso single shot"
-	    }
-	  `},
+    {
+      "equipmentId": 2,
+      "id": "1",
+      "instructions": "do this",
+      "name": "Espresso single shot"
+    }
+  `},
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 			rows := sqlmock.NewRows(columns).
 				FromCSVString(rowsAsCsv)
 			mock.ExpectQuery("SELECT . FROM (.+) WHERE (.+) = (.+)").
-				WithArgs("1").
+				WithArgs("2").
 				WillReturnRows(rows)
 		},
 		Request: func() *http.Request {
-			req, _ := http.NewRequest("GET", "/equipment/1", nil)
+			req, _ := http.NewRequest("GET", "/equipment/2", nil)
 			return req
 		},
 	},
@@ -93,13 +93,14 @@ var testCasesGetSingle = []testCase{
 		TableSchema: commonRecipesTableSchema,
 		ColumnNames: []string{
 			"recipes\x00id",
-			"recipes\x00equipment",
+			"recipes\x00equipment_id",
 			"recipes\x00name",
 			"recipes\x00instructions",
 		},
 		RowsAsCsv: "1,2,Espresso single shot,do this",
 		ExpectedResults: `{
   "equipment": {%s},
+  "equipmentId": 2,
   "id": "1",
   "instructions": "do this",
   "name": "Espresso single shot"

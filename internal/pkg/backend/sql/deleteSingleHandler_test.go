@@ -26,18 +26,18 @@ var testCasesDeleteSingle = []testCase{
 		ExpectedResults: `{
   "status": {
     "code": 200,
-    "description": "Resource with uniqueID '4' successfully deleted from equipment table"
+    "description": "Resource with uniqueID '5' successfully deleted from equipment table"
   }
 }`,
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 			mock.ExpectBegin()
 			mock.ExpectExec("DELETE FROM (.+) WHERE (.+) = (.+)").
-				WithArgs("4").
+				WithArgs("5").
 				WillReturnResult(sqlmock.NewResult(4, 1))
 			mock.ExpectCommit()
 		},
 		Request: func() *http.Request {
-			req, _ := http.NewRequest("DELETE", "/equipment/4", nil)
+			req, _ := http.NewRequest("DELETE", "/equipment/5", nil)
 			return req
 		},
 	},

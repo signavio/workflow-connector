@@ -13,7 +13,7 @@ var testCasesGetCollectionAsOptions = []testCase{
 		Name: "it succeeds when equipment table contains more than one column",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{

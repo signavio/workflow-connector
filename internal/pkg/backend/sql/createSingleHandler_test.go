@@ -23,15 +23,15 @@ var testCasesCreateSingle = []testCase{
 			"equipment\x00acquisition_cost",
 			"equipment\x00purchase_date",
 		},
-		RowsAsCsv: "4,Cooling Spiral,99.99,2017-03-02T00:00:00Z",
+		RowsAsCsv: "5,French Press,35.99,2017-04-02T00:00:00Z",
 		ExpectedResults: `{
   "acquisitionCost": {
-    "amount": 99.99,
+    "amount": 35.99,
     "currency": "EUR"
   },
-  "id": "4",
-  "name": "Cooling Spiral",
-  "purchaseDate": "2017-03-02T00:00:00Z",
+  "id": "5",
+  "name": "French Press",
+  "purchaseDate": "2017-04-02T00:00:00Z",
   "recipes": [%s]
 }`,
 		ExpectedResultsRelationships: []interface{}{""},
@@ -43,20 +43,20 @@ var testCasesCreateSingle = []testCase{
 				// the test database in such a way that the state of the database
 				// before running the tests *is equal to* the state after
 				// runnning the tests
-				WithArgs("4", "Cooling Spiral", "99.99", "2017-03-02T00:00:00Z").
-				WillReturnResult(sqlmock.NewResult(4, 1))
+				WithArgs("5", "French Press", "35.99", "2017-04-02T00:00:00Z").
+				WillReturnResult(sqlmock.NewResult(5, 1))
 			mock.ExpectCommit()
 			rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)
 			mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
-				WithArgs("4").
+				WithArgs("5").
 				WillReturnRows(rows)
 		},
 		Request: func() *http.Request {
 			postData := url.Values{}
-			postData.Set("id", "4")
-			postData.Set("name", "Cooling Spiral")
-			postData.Set("acquisitionCost", "99.99")
-			postData.Set("purchaseDate", "2017-03-02T00:00:00Z")
+			postData.Set("id", "5")
+			postData.Set("name", "French Press")
+			postData.Set("acquisitionCost", "35.99")
+			postData.Set("purchaseDate", "2017-04-02T00:00:00Z")
 			req, _ := http.NewRequest("POST", "/equipment?"+postData.Encode(), nil)
 			return req
 		},

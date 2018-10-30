@@ -13,7 +13,7 @@ var testCasesGetSingleAsOption = []testCase{
 		Name: "it succeeds when equipment table contains more than one column",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{
@@ -42,7 +42,7 @@ var testCasesGetSingleAsOption = []testCase{
 		Name: "it fails and returns 404 NOT FOUND when querying a non existent id",
 		DescriptorFields: []string{
 			commonEquipmentDescriptorFields,
-			commonMaintenanceDescriptorFields,
+			commonRecipesDescriptorFields,
 		},
 		TableSchema: commonEquipmentTableSchema,
 		ColumnNames: []string{
