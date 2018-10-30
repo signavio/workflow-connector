@@ -318,18 +318,18 @@ func TestHandlers(t *testing.T) {
 			})
 		}
 	})
-	if strings.Contains(testUsingDB, "sqlite3") &&
-		viper.IsSet("db.test.sqlite3.url") {
+	if strings.Contains(testUsingDB, "sqlite") &&
+		viper.IsSet("sqlite.database.url") {
 		// The default config.Descriptor should be used for real databases
 		config.Options = defaultConfigOptions
-		backend := NewBackend("sqlite3")
-		err := backend.Open("sqlite3", viper.Get("db.test.sqlite3.url").(string))
+		backend := NewBackend("sqlite")
+		err := backend.Open("sqlite3", viper.Get("sqlite.database.url").(string))
 		if err != nil {
 			t.Errorf(err.Error())
 			return
 		}
 
-		t.Run("Using sqlite3 database", func(t *testing.T) {
+		t.Run("Using sqlite database", func(t *testing.T) {
 			ts := newTestServer(backend)
 			defer ts.Close()
 			for handlerName, testCases := range handlerTests {
@@ -349,11 +349,11 @@ func TestHandlers(t *testing.T) {
 		})
 	}
 	if strings.Contains(testUsingDB, "mysql") &&
-		viper.IsSet("db.test.mysql.url") {
+		viper.IsSet("mysql.database.url") {
 		backend := NewBackend("mysql")
 		// The default config.Descriptor should be used for real databases
 		config.Options = defaultConfigOptions
-		err := backend.Open("mysql", viper.Get("db.test.mysql.url").(string))
+		err := backend.Open("mysql", viper.Get("mysql.database.url").(string))
 		if err != nil {
 			t.Errorf(err.Error())
 			return
@@ -379,17 +379,17 @@ func TestHandlers(t *testing.T) {
 			}
 		})
 	}
-	if strings.Contains(testUsingDB, "pgsql") &&
-		viper.IsSet("db.test.pgsql.url") {
+	if strings.Contains(testUsingDB, "postgres") &&
+		viper.IsSet("postgres.database.url") {
 		// The default config.Descriptor should be used for real databases
 		config.Options = defaultConfigOptions
 		backend := NewBackend("postgres")
-		err := backend.Open("postgres", viper.Get("db.test.pgsql.url").(string))
+		err := backend.Open("postgres", viper.Get("postgres.database.url").(string))
 		if err != nil {
 			t.Errorf(err.Error())
 			return
 		}
-		t.Run("Using pgsql database", func(t *testing.T) {
+		t.Run("Using postgres database", func(t *testing.T) {
 			ts := newTestServer(backend)
 			defer ts.Close()
 			for handlerName, testCases := range handlerTests {

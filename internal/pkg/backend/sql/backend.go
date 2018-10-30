@@ -13,10 +13,10 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/mssql"
 	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/mysql"
-	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/pgsql"
+	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/postgres"
 	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/sqlite"
+	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/sqlserver"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
@@ -110,10 +110,10 @@ func NewBackend(driver string) (b *Backend) {
 	switch driver {
 	case "sqlserver":
 		b.TableSchemas = make(map[string]*TableSchema)
-		b.ConvertDBSpecificDataType = mssql.ConvertFromMssqlDataType
-		b.Templates = mssql.QueryTemplates
+		b.ConvertDBSpecificDataType = sqlserver.ConvertFromSqlserverDataType
+		b.Templates = sqlserver.QueryTemplates
 		return
-	case "sqlite3":
+	case "sqlite":
 		b.TableSchemas = make(map[string]*TableSchema)
 		b.ConvertDBSpecificDataType = sqlite.ConvertFromSqliteDataType
 		b.Templates = sqlite.QueryTemplates
@@ -123,12 +123,12 @@ func NewBackend(driver string) (b *Backend) {
 		b.ConvertDBSpecificDataType = mysql.ConvertFromMysqlDataType
 		b.Templates = mysql.QueryTemplates
 		return
-	case "pgsql":
+	case "postgres":
 		b.TableSchemas = make(map[string]*TableSchema)
-		b.ConvertDBSpecificDataType = pgsql.ConvertFromPgsqlDataType
-		b.Templates = pgsql.QueryTemplates
-		b.TransactDirectly = pgsql.ExecContextDirectly
-		b.TransactWithinTx = pgsql.ExecContextWithinTx
+		b.ConvertDBSpecificDataType = postgres.ConvertFromPostgresDataType
+		b.Templates = postgres.QueryTemplates
+		b.TransactDirectly = postgres.ExecContextDirectly
+		b.TransactWithinTx = postgres.ExecContextWithinTx
 		return
 	case "sqlmock":
 		// When using a sqlmock just return an empty backend

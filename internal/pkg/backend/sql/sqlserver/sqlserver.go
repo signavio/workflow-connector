@@ -1,116 +1,94 @@
-package pgsql
+package sqlserver
 
 import (
-	"context"
 	"database/sql"
 	"strings"
 
-	_ "github.com/lib/pq"
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
-
-type lastId struct {
-	id int64
-}
 
 var (
 	QueryTemplates = map[string]string{
 		"GetSingle": "SELECT * " +
-			"FROM {{.TableName}} AS _{{.TableName}}" +
+			"FROM {{.TableName}} AS _{{.TableName}} " +
 			"{{range .Relations}}" +
 			"   LEFT JOIN {{.Relationship.WithTable}}" +
 			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
 			"   = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}" +
 			"{{end}}" +
-			" WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = $1",
+			"WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = @p1",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
-			"WHERE id = $1",
-		"GetCollection": "SELECT * " +
+			"WHERE id = @p1",
+		"GetCollection": "SELECT *" +
 			"FROM {{.TableName}}",
 		"GetCollectionAsOptions": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}}",
 		"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
-			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) LIKE $1",
+			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) LIKE @p1",
 		"UpdateSingle": "UPDATE {{.TableName}} " +
-			"SET {{.ColumnNames | head}} = $1" +
+			"SET {{.ColumnNames | head}} = @p1" +
 			"{{range $index, $element := .ColumnNames | tail}}," +
-			"  {{$element}} = ${{(add2 $index)}}" +
+			"  {{$element}} = @p{{(add2 $index)}}" +
 			"{{end}} " +
-			"WHERE {{.UniqueIDColumn}}= ${{(lenPlus1 .ColumnNames)}}",
+			"WHERE {{.UniqueIDColumn}}= @p{{(lenPlus1 .ColumnNames)}}",
 		"CreateSingle": "INSERT INTO {{.TableName}}" +
 			"({{.ColumnNames | head}}" +
 			"{{range .ColumnNames | tail}}," +
 			"  {{.}}" +
 			"{{end}}) " +
-			"VALUES($1" +
+			"VALUES(@p1" +
 			"{{range $index, $element := .ColumnNames | tail}}," +
-			"  ${{$index | add2}}" +
+			"  @p{{$index | add2}}" +
 			"{{end}}) " +
 			"RETURNING {{.UniqueIDColumn}}",
 		"DeleteSingle": "DELETE FROM {{.TableName}} WHERE {{.UniqueIDColumn}} = ?",
-		"GetTableSchema": "SELECT * " +
-			"FROM {{.TableName}} " +
-			"LIMIT 1",
-		"GetTableWithRelationshipsSchema": "SELECT * FROM {{.TableName}} AS _{{.TableName}}" +
+		"GetTableSchema": "SELECT TOP 1 * " +
+			"FROM {{.TableName}}",
+		"GetTableWithRelationshipsSchema": "SELECT TOP 1 * FROM {{.TableName}} AS _{{.TableName}}" +
 			"{{range .Relations}}" +
 			" LEFT JOIN {{.Relationship.WithTable}}" +
 			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-			" = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}{{end}} LIMIT 1",
+			" = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}{{end}}",
 	}
 	integer = []string{
-		"INT2",
-		"INT4",
-		"INT8",
+		"TINYINT",
+		"SMALLINT",
+		"INT",
+		"BIGINT",
 	}
 	text = []string{
 		"CHAR",
 		"VARCHAR",
 		"TEXT",
-		"BYTEA",
+		"NCHAR",
+		"NVARCHAR",
+		"NTEXT",
+		"BINARY",
+		"VARBINARY",
+		"IMAGE",
 	}
 	numeric = []string{
+		"DECIMAL",
 		"NUMERIC",
+		"SMALLMONEY",
 		"MONEY",
+		"FLOAT",
+		"REAL",
 	}
 	dateTime = []string{
-		"TIMESTAMP",
-		"TIMESTAMPTZ",
+		"DATETIME",
+		"DATETIME2",
+		"DATETIMEOFFSET",
+		"SMALLDATETIME",
 		"DATE",
 		"TIME",
-		"TIMETZ",
-	}
-	boolean = []string{
-		"BOOL",
 	}
 )
 
-func (l *lastId) LastInsertId() (int64, error) {
-	return l.id, nil
-}
-
-func (l *lastId) RowsAffected() (int64, error) {
-	return 0, nil
-}
-
-func ExecContextDirectly(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
-	var id int64
-	if err = db.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
-		return nil, err
-	}
-	result = &lastId{id}
-	return result, nil
-}
-func ExecContextWithinTx(ctx context.Context, tx *sql.Tx, query string, args ...interface{}) (result sql.Result, err error) {
-	var id int64
-	if err = tx.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
-		return nil, err
-	}
-	result = &lastId{id}
-	return result, nil
-}
-func ConvertFromPgsqlDataType(fieldDataType string) interface{} {
+func ConvertFromSqlserverDataType(fieldDataType string) interface{} {
 	switch {
 	case isOfDataType(integer, fieldDataType):
 		return &sql.NullInt64{}
@@ -120,8 +98,6 @@ func ConvertFromPgsqlDataType(fieldDataType string) interface{} {
 		return &sql.NullFloat64{}
 	case isOfDataType(dateTime, fieldDataType):
 		return &util.NullTime{}
-	case isOfDataType(boolean, fieldDataType):
-		return &sql.NullBool{}
 	default:
 		return &sql.NullString{}
 	}

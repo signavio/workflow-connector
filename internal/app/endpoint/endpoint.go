@@ -50,12 +50,12 @@ func NewEndpoint(cfg config.Config) (Endpoint, error) {
 	switch cfg.Endpoint.Driver {
 	case "sqlserver":
 		return sql.NewBackend("sqlserver"), nil
-	case "sqlite3":
-		return sql.NewBackend("sqlite3"), nil
+	case "sqlite":
+		return sql.NewBackend("sqlite"), nil
 	case "mysql":
 		return sql.NewBackend("mysql"), nil
 	case "postgres":
-		return sql.NewBackend("pgsql"), nil
+		return sql.NewBackend("postgres"), nil
 	default:
 		return nil, fmt.Errorf("Database driver: %s, not supported", cfg.Endpoint.Driver)
 

@@ -1,6 +1,6 @@
 port: 443
 endpoint:
-  driver: sqlite3
+  driver: sqlite
   url: test.db 
 tls:
   enabled: false

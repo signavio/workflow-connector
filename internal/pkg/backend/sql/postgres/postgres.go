@@ -1,94 +1,116 @@
-package mssql
+package postgres
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 
-	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/lib/pq"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
+
+type lastId struct {
+	id int64
+}
 
 var (
 	QueryTemplates = map[string]string{
 		"GetSingle": "SELECT * " +
-			"FROM {{.TableName}} AS _{{.TableName}} " +
+			"FROM {{.TableName}} AS _{{.TableName}}" +
 			"{{range .Relations}}" +
 			"   LEFT JOIN {{.Relationship.WithTable}}" +
 			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
 			"   = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}" +
 			"{{end}}" +
-			"WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = @p1",
+			" WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = $1",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
-			"WHERE id = @p1",
-		"GetCollection": "SELECT *" +
+			"WHERE id = $1",
+		"GetCollection": "SELECT * " +
 			"FROM {{.TableName}}",
 		"GetCollectionAsOptions": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}}",
 		"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
-			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) LIKE @p1",
+			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) LIKE $1",
 		"UpdateSingle": "UPDATE {{.TableName}} " +
-			"SET {{.ColumnNames | head}} = @p1" +
+			"SET {{.ColumnNames | head}} = $1" +
 			"{{range $index, $element := .ColumnNames | tail}}," +
-			"  {{$element}} = @p{{(add2 $index)}}" +
+			"  {{$element}} = ${{(add2 $index)}}" +
 			"{{end}} " +
-			"WHERE {{.UniqueIDColumn}}= @p{{(lenPlus1 .ColumnNames)}}",
+			"WHERE {{.UniqueIDColumn}}= ${{(lenPlus1 .ColumnNames)}}",
 		"CreateSingle": "INSERT INTO {{.TableName}}" +
 			"({{.ColumnNames | head}}" +
 			"{{range .ColumnNames | tail}}," +
 			"  {{.}}" +
 			"{{end}}) " +
-			"VALUES(@p1" +
+			"VALUES($1" +
 			"{{range $index, $element := .ColumnNames | tail}}," +
-			"  @p{{$index | add2}}" +
+			"  ${{$index | add2}}" +
 			"{{end}}) " +
 			"RETURNING {{.UniqueIDColumn}}",
 		"DeleteSingle": "DELETE FROM {{.TableName}} WHERE {{.UniqueIDColumn}} = ?",
-		"GetTableSchema": "SELECT TOP 1 * " +
-			"FROM {{.TableName}}",
-		"GetTableWithRelationshipsSchema": "SELECT TOP 1 * FROM {{.TableName}} AS _{{.TableName}}" +
+		"GetTableSchema": "SELECT * " +
+			"FROM {{.TableName}} " +
+			"LIMIT 1",
+		"GetTableWithRelationshipsSchema": "SELECT * FROM {{.TableName}} AS _{{.TableName}}" +
 			"{{range .Relations}}" +
 			" LEFT JOIN {{.Relationship.WithTable}}" +
 			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-			" = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}{{end}}",
+			" = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}{{end}} LIMIT 1",
 	}
 	integer = []string{
-		"TINYINT",
-		"SMALLINT",
-		"INT",
-		"BIGINT",
+		"INT2",
+		"INT4",
+		"INT8",
 	}
 	text = []string{
 		"CHAR",
 		"VARCHAR",
 		"TEXT",
-		"NCHAR",
-		"NVARCHAR",
-		"NTEXT",
-		"BINARY",
-		"VARBINARY",
-		"IMAGE",
+		"BYTEA",
 	}
 	numeric = []string{
-		"DECIMAL",
 		"NUMERIC",
-		"SMALLMONEY",
 		"MONEY",
-		"FLOAT",
-		"REAL",
 	}
 	dateTime = []string{
-		"DATETIME",
-		"DATETIME2",
-		"DATETIMEOFFSET",
-		"SMALLDATETIME",
+		"TIMESTAMP",
+		"TIMESTAMPTZ",
 		"DATE",
 		"TIME",
+		"TIMETZ",
+	}
+	boolean = []string{
+		"BOOL",
 	}
 )
 
-func ConvertFromMssqlDataType(fieldDataType string) interface{} {
+func (l *lastId) LastInsertId() (int64, error) {
+	return l.id, nil
+}
+
+func (l *lastId) RowsAffected() (int64, error) {
+	return 0, nil
+}
+
+func ExecContextDirectly(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
+	var id int64
+	if err = db.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
+		return nil, err
+	}
+	result = &lastId{id}
+	return result, nil
+}
+func ExecContextWithinTx(ctx context.Context, tx *sql.Tx, query string, args ...interface{}) (result sql.Result, err error) {
+	var id int64
+	if err = tx.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
+		return nil, err
+	}
+	result = &lastId{id}
+	return result, nil
+}
+func ConvertFromPostgresDataType(fieldDataType string) interface{} {
 	switch {
 	case isOfDataType(integer, fieldDataType):
 		return &sql.NullInt64{}
@@ -98,6 +120,8 @@ func ConvertFromMssqlDataType(fieldDataType string) interface{} {
 		return &sql.NullFloat64{}
 	case isOfDataType(dateTime, fieldDataType):
 		return &util.NullTime{}
+	case isOfDataType(boolean, fieldDataType):
+		return &sql.NullBool{}
 	default:
 		return &sql.NullString{}
 	}
