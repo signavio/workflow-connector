@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 
-source ./.env
+# Source sensitive environment variables from .env
+# shellcheck source=.env
+. ./.env
 POSTGRES_ROOT_HOST=${POSTGRES_ROOT_HOST:=localhost}
 POSTGRES_ROOT_PASSWORD=${POSTGRES_ROOT_PASSWORD:=root}
 POSTGRES_USER=${POSTGRES_USER:=test}

@@ -1,13 +1,21 @@
 #!/usr/bin/env sh
 
-source ./.env
+# Source sensitive environment variables from .env
+# shellcheck source=.env
+. ./.env
 MYSQL_HOST=${MYSQL_HOST:=localhost}
 MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST:="%"}
-MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:=root}
 MYSQL_USER=${MYSQL_USER:=test}
 MYSQL_PASSWORD=${MYSQL_PASSWORD:=test}
 MYSQL_DATABASE=${MYSQL_DATABASE:=signavio_test}
-cat << __EOF__ | mysql -u root -h "${MYSQL_HOST}" -p"${MYSQL_ROOT_PASSWORD}"
+if [ -z "${MYSQL_ROOT_PASSWORD}" ]
+then
+    MYSQL_CMD="mysql -u root -h ${MYSQL_HOST}"
+else
+    MYSQL_CMD="mysql -u root -h ${MYSQL_HOST} -p ${MYSQL_ROOT_PASSWORD}"
+fi
+MYSQL_CMD=
+cat << __EOF__ | $(${MYSQL_CMD})
 DROP USER IF EXISTS '${MYSQL_USER}'@'${MYSQL_ROOT_HOST}';
 CREATE USER '${MYSQL_USER}'@'${MYSQL_ROOT_HOST}' IDENTIFIED BY '${MYSQL_PASSWORD}';
 DROP DATABASE IF EXISTS ${MYSQL_DATABASE};
