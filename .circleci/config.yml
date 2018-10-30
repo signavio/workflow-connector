@@ -26,8 +26,8 @@ jobs:
       - run:
           name: Resolve mysql prerequisites
           command: |
-            apt-get update
-            apt-get install mysql-client
+            sudo apt-get update
+            sudo apt-get install mysql-client
       - run:
           name: Migrate coffee example to mysql database
           environment:
