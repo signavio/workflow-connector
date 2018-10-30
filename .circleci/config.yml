@@ -6,10 +6,13 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.11
-        environment:
-          MYSQL_DATABASE_URL="signavio:"
       # Run tests on these databases
       - image: circleci/mysql:8.0-ram
+        environment:
+          MYSQL_DATABASE: circle_test
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_ROOT_HOST: %
+          MYSQL_USER: root
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -17,6 +20,10 @@ jobs:
     working_directory: ~/github.com/signavio/workflow-connector
 
     environment:
+      MYSQL_DATABASE_URL: "root:@tcp(localhost:3306)/circle_test?parseTime=true"
     steps:
       - checkout
-      - run: go test -v ./...
+      # The following command will run our test cases on the following database:
+      # - sqlmock database
+      # - mysql database
+      - run: go test -v ./... -args -db mysql
