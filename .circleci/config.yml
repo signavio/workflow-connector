@@ -11,7 +11,7 @@ jobs:
         environment:
           MYSQL_DATABASE: circle_test
           MYSQL_HOST: 127.0.0.1
-          MYSQL_ROOT_HOST: %
+          MYSQL_ROOT_HOST: "%"
           MYSQL_USER: root
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
