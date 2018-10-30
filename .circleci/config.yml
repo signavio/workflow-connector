@@ -6,7 +6,6 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.11
-      # Run tests on these databases
       - image: circleci/mysql:5.7-ram
         environment:
           MYSQL_DATABASE: circle_test
@@ -19,11 +18,21 @@ jobs:
       # - image: circleci/postgres:9.4
     working_directory: ~/github.com/signavio/workflow-connector
 
-    environment:
-      MYSQL_DATABASE_URL: "root:@tcp(localhost:3306)/circle_test?parseTime=true"
     steps:
       - checkout
-      # The following command will run our test cases on the following database:
-      # - sqlmock database
-      # - mysql database
-      - run: go test -v ./... -args -db mysql
+      - run:
+          name: Run tests using a mock database
+          command: go test -v ./...
+      - run:
+          name: Migrate coffee example to mysql database
+          environment:
+            MYSQL_DATABASE: circle_test
+            MYSQL_HOST: 127.0.0.1
+            MYSQL_ROOT_HOST: "%"
+            MYSQL_USER: root
+          command: build/migrate-to-mysql.sh
+      - run:
+          name: Run tests on a mysql database
+          environment:
+            MYSQL_DATABASE_URL: "root:@tcp(localhost:3306)/circle_test?parseTime=true"
+          command: go test -v ./... -args -db mysql
