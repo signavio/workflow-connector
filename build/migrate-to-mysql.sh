@@ -2,8 +2,7 @@
 
 MYSQL_HOST=${MYSQL_HOST:=localhost}
 MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST:="%"}
-MYSQL_USER=${MYSQL_USER:=test}
-MYSQL_PASSWORD=${MYSQL_PASSWORD:=test}
+MYSQL_USER=${MYSQL_USER:=signavio}
 MYSQL_DATABASE=${MYSQL_DATABASE:=signavio_test}
 # Source sensitive environment variables from .env
 if [ -f .env ]
@@ -11,19 +10,15 @@ then
     # shellcheck source=.env
     . ./.env
 fi
-if [ -n "${MYSQL_ROOT_PASSWORD}" ]
+if [ -n "${MYSQL_PASSWORD}" ]
 then
-    MYSQL_CMD='mysql -v -u root -h '"${MYSQL_HOST}"' -p'"${MYSQL_ROOT_PASSWORD}"''
+    MYSQL_CMD='mysql -v -u '"${MYSQL_USER}"' -h '"${MYSQL_HOST}"' -p'"${MYSQL_PASSWORD}"''
 else
-    MYSQL_CMD="mysql -v -u root -h ${MYSQL_HOST}"
+    MYSQL_CMD="mysql -v -u '"${MYSQL_USER}"' -h ${MYSQL_HOST}"
 fi
 cat << __EOF__ | ${MYSQL_CMD}
-DROP USER IF EXISTS '${MYSQL_USER}'@'${MYSQL_ROOT_HOST}';
-CREATE USER '${MYSQL_USER}'@'${MYSQL_ROOT_HOST}' IDENTIFIED BY '${MYSQL_PASSWORD}';
 DROP DATABASE IF EXISTS ${MYSQL_DATABASE};
 CREATE DATABASE ${MYSQL_DATABASE};
-GRANT ALL ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'${MYSQL_ROOT_HOST}' WITH GRANT OPTION;
-FLUSH PRIVILEGES;
 
 USE ${MYSQL_DATABASE}
 BEGIN;
