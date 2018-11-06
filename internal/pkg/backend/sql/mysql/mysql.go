@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 
@@ -80,6 +81,21 @@ var (
 		"YEAR",
 	}
 )
+
+func ExecContextDirectly(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
+	result, err = db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return
+}
+func ExecContextWithinTx(ctx context.Context, tx *sql.Tx, query string, args ...interface{}) (result sql.Result, err error) {
+	result, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return
+}
 
 func ConvertFromMysqlDataType(fieldDataType string) interface{} {
 	switch {

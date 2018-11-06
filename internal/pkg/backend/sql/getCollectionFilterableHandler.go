@@ -76,9 +76,12 @@ func (b *Backend) GetCollectionFilterable(rw http.ResponseWriter, req *http.Requ
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options.Logging).Infoln(queryString)
 
-	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
+	log.When(config.Options.Logging).Infof(
+		"[handler -> db] sending the following to db\nquery string: %#v\nwith parameter: %#v\n",
+		queryString,
+		value,
+	)
 	results, err := b.queryContext(req.Context(), queryString, value)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
@@ -137,6 +140,9 @@ func extractValueFromFilterQueryParam(filter string) (value string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("error unescaping query parameter: %s", err)
 	}
-	value = strings.Split(queryString, " ")[2]
+	value = everythingAfterTheOperator(strings.Split(queryString, " "))
 	return
+}
+func everythingAfterTheOperator(queryStringSplitted []string) string {
+	return strings.Join(queryStringSplitted[2:], " ")
 }

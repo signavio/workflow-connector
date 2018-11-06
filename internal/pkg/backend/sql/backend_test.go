@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
@@ -261,10 +262,10 @@ type handlerTests map[string][]testCase
 
 func TestHandlers(t *testing.T) {
 	handlerTests := handlerTests{
-		"GetSingleHandler":         testCasesGetSingle,
-		"GetSingleAsOptionHandler": testCasesGetSingleAsOption,
-		"GetCollectionHandler":     testCasesGetCollection,
-		//	"GetCollectionHandlerFilterable":          testCasesGetCollectionFilterable,
+		"GetSingleHandler":                        testCasesGetSingle,
+		"GetSingleAsOptionHandler":                testCasesGetSingleAsOption,
+		"GetCollectionHandler":                    testCasesGetCollection,
+		"GetCollectionHandlerFilterable":          testCasesGetCollectionFilterable,
 		"GetCollectionAsOptionsHandler":           testCasesGetCollectionAsOptions,
 		"GetCollectionAsOptionsFilterableHandler": testCasesGetCollectionAsOptionsFilterable,
 		"UpdateSingleHandler":                     testCasesUpdateSingle,
@@ -276,48 +277,56 @@ func TestHandlers(t *testing.T) {
 	if viper.IsSet("db") {
 		testUsingDB = viper.Get("db").(string)
 	}
-	t.Run("Using mocked database", func(t *testing.T) {
-		ts, backend, mock, err := testOnMockedDB()
-		if err != nil {
-			t.Errorf(err.Error())
-		}
-		defer ts.Close()
-		for handlerName, testCases := range handlerTests {
-			t.Run(handlerName, func(t *testing.T) {
-				for _, tc := range testCases {
-					// The config.Descriptor in config.Options needs to be mocked
-					mockedDescriptorFile, err := mockDescriptorFile(tc.DescriptorFields...)
-					if err != nil {
-						t.Errorf("unexpected error: %v", err)
-						return
-					}
-					config.Options.Descriptor = config.ParseDescriptorFile(mockedDescriptorFile)
-					// mock the database table schema
-					backend.TableSchemas = make(map[string]*TableSchema)
-					backend.TableSchemas["equipment"] = tc.TableSchema
-					backend.TableSchemas["equipment\x00relationships"] = tc.TableSchema
-					backend.TableSchemas["recipes"] = tc.TableSchema
-					backend.TableSchemas["recipes\x00relationships"] = tc.TableSchema
-
-					// initialize mock database
-					tc.ExpectedQueries(mock, tc.ColumnNames, tc.RowsAsCsv)
-					t.Run(tc.Name, func(t *testing.T) {
-						tc.setExpectedResults(handlerName, true)
-						err := run(tc, ts)
+	if strings.Contains(testUsingDB, "mock") {
+		t.Run("Using mocked database", func(t *testing.T) {
+			ts, backend, mock, err := testOnMockedDB()
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			defer ts.Close()
+			for handlerName, testCases := range handlerTests {
+				t.Run(handlerName, func(t *testing.T) {
+					for _, tc := range testCases {
+						// The config.Descriptor in config.Options needs to be mocked
+						mockedDescriptorFile, err := mockDescriptorFile(tc.DescriptorFields...)
 						if err != nil {
-							t.Errorf(err.Error())
+							t.Errorf("unexpected error: %v", err)
 							return
 						}
-						if mockErr := mock.ExpectationsWereMet(); mockErr != nil {
-							t.Errorf("there were unfulfilled expectations: %s", mockErr)
+						config.Options.Descriptor = config.ParseDescriptorFile(mockedDescriptorFile)
+						// mock the database table schema
+						backend.TableSchemas = make(map[string]*TableSchema)
+						backend.TableSchemas["equipment"] = tc.TableSchema
+						backend.TableSchemas["equipment\x00relationships"] = tc.TableSchema
+						backend.TableSchemas["recipes"] = tc.TableSchema
+						backend.TableSchemas["recipes\x00relationships"] = tc.TableSchema
+						backend.TransactDirectly = func(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
+							result, err = db.ExecContext(ctx, query, args...)
+							if err != nil {
+								return nil, err
+							}
 							return
 						}
+						// initialize mock database
+						tc.ExpectedQueries(mock, tc.ColumnNames, tc.RowsAsCsv)
+						t.Run(tc.Name, func(t *testing.T) {
+							tc.setExpectedResults(handlerName, true)
+							err := run(tc, ts)
+							if err != nil {
+								t.Errorf(err.Error())
+								return
+							}
+							if mockErr := mock.ExpectationsWereMet(); mockErr != nil {
+								t.Errorf("there were unfulfilled expectations: %s", mockErr)
+								return
+							}
 
-					})
-				}
-			})
-		}
-	})
+						})
+					}
+				})
+			}
+		})
+	}
 	if strings.Contains(testUsingDB, "sqlite") &&
 		viper.IsSet("sqlite.database.url") {
 		// The default config.Descriptor should be used for real databases
@@ -328,6 +337,7 @@ func TestHandlers(t *testing.T) {
 			t.Errorf(err.Error())
 			return
 		}
+		fmt.Printf("Backend DB: %#+v", backend.DB)
 
 		t.Run("Using sqlite database", func(t *testing.T) {
 			ts := newTestServer(backend)

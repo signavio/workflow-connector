@@ -27,12 +27,17 @@ var (
 			"FROM {{.TableName}} " +
 			"WHERE id = $1",
 		"GetCollection": "SELECT * " +
-			"FROM {{.TableName}}",
+			"FROM {{.TableName}} " +
+			"ORDER BY {{.UniqueIDColumn}} ASC",
+		"GetCollectionFilterable": "SELECT * " +
+			"FROM {{.TableName}} " +
+			"WHERE {{.FilterOnColumn}} {{.Operator}} $1",
 		"GetCollectionAsOptions": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-			"FROM {{.TableName}}",
+			"FROM {{.TableName}} " +
+			"ORDER BY {{.UniqueIDColumn}} ASC",
 		"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
-			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) LIKE $1",
+			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) ILIKE $1",
 		"UpdateSingle": "UPDATE {{.TableName}} " +
 			"SET {{.ColumnNames | head}} = $1" +
 			"{{range $index, $element := .ColumnNames | tail}}," +
@@ -49,7 +54,7 @@ var (
 			"  ${{$index | add2}}" +
 			"{{end}}) " +
 			"RETURNING {{.UniqueIDColumn}}",
-		"DeleteSingle": "DELETE FROM {{.TableName}} WHERE {{.UniqueIDColumn}} = ?",
+		"DeleteSingle": "DELETE FROM {{.TableName}} WHERE {{.UniqueIDColumn}} = $1",
 		"GetTableSchema": "SELECT * " +
 			"FROM {{.TableName}} " +
 			"LIMIT 1",

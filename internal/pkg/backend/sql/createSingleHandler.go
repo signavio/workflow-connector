@@ -2,6 +2,7 @@ package sql
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 
@@ -16,6 +17,7 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 	table := req.Context().Value(util.ContextKey("table")).(string)
 	requestTx := mux.Vars(req)["tx"]
 	queryTemplate := b.Templates[routeName]
+	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
 	requestData, err := util.ParseDataForm(req)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
@@ -36,11 +38,13 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 	handler := &handler{
 		vars: []string{queryTemplate},
 		templateData: struct {
-			TableName   string
-			ColumnNames []string
+			TableName      string
+			ColumnNames    []string
+			UniqueIDColumn string
 		}{
-			TableName:   table,
-			ColumnNames: columnNames,
+			TableName:      table,
+			ColumnNames:    columnNames,
+			UniqueIDColumn: uniqueIDColumn,
 		},
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
@@ -54,6 +58,7 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryString)
 	log.When(config.Options.Logging).Infof("will be called with these args:\n%s\n", args)
 
+	var result sql.Result
 	// Check that user provided tx is already in backend.Transactions
 	if requestTx != "" {
 		tx, ok := b.Transactions.Load(requestTx)
@@ -69,11 +74,19 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 		log.When(config.Options.Logging).Infof("Query will execute within user specified transaction:\n%s\n", tx)
-	}
-	result, err := b.execContext(req.Context(), queryString, args...)
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
+		// We have to wrap an exec in TransactWithinTx and TransactDirectly since postgresql
+		// doesn't natively support sql.Result.LastInsertId()
+		result, err = b.TransactWithinTx(req.Context(), tx.(*sql.Tx), queryString, args...)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		result, err = b.TransactDirectly(req.Context(), b.DB, queryString, args...)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n", result)
 
@@ -84,7 +97,7 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 		// Since we can not return the newly created resource to the user,
 		// we instead return an empty body and a 204 No Content
 		log.When(config.Options.Logging).Infof(
-			"[handler] Returning newly updated resource not supported by %s database\n",
+			"[handler] returning newly updated resource not supported by %s database\n",
 			config.Options.Endpoint.Driver,
 		)
 		rw.WriteHeader(http.StatusNoContent)

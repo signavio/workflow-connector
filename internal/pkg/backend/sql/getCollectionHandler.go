@@ -14,12 +14,15 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 	routeName := mux.CurrentRoute(req).GetName()
 	table := req.Context().Value(util.ContextKey("table")).(string)
 	queryTemplate := b.Templates[routeName]
+	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
 	handler := &handler{
 		vars: []string{queryTemplate},
 		templateData: struct {
-			TableName string
+			TableName      string
+			UniqueIDColumn string
 		}{
-			TableName: table,
+			TableName:      table,
+			UniqueIDColumn: uniqueIDColumn,
 		},
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)

@@ -122,6 +122,8 @@ func NewBackend(driver string) (b *Backend) {
 		b.TableSchemas = make(map[string]*TableSchema)
 		b.ConvertDBSpecificDataType = mysql.ConvertFromMysqlDataType
 		b.Templates = mysql.QueryTemplates
+		b.TransactDirectly = mysql.ExecContextDirectly
+		b.TransactWithinTx = mysql.ExecContextWithinTx
 		return
 	case "postgres":
 		b.TableSchemas = make(map[string]*TableSchema)

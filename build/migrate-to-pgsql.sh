@@ -8,17 +8,19 @@ then
 fi
 POSTGRES_ROOT_HOST=${POSTGRES_ROOT_HOST:=localhost}
 POSTGRES_ROOT_PASSWORD=${POSTGRES_ROOT_PASSWORD:=root}
-POSTGRES_USER=${POSTGRES_USER:=test}
+POSTGRES_USER=${POSTGRES_USER:=signavio}
+POSTGRES_ROOT_USER=${POSTGRES_ROOT_USER:=postgres}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD:=test}
 POSTGRES_DATABASE=${POSTGRES_DATABASE:=signavio_test}
-cat << __EOF__ | psql -U postgres
+cat << __EOF__ | psql -a -U ${POSTGRES_ROOT_USER}
 DROP USER IF EXISTS ${POSTGRES_USER};
 CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';
 DROP DATABASE IF EXISTS ${POSTGRES_DATABASE};
 CREATE DATABASE ${POSTGRES_DATABASE};
+ALTER DATABASE ${POSTGRES_DATABASE} OWNER TO ${POSTGRES_USER};
 GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DATABASE} TO ${POSTGRES_USER};
-
 \connect ${POSTGRES_DATABASE};
+SET ROLE ${POSTGRES_USER};
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS equipment (
@@ -64,17 +66,17 @@ INSERT INTO inventory (ingredient_id, quantity, unit_of_measure)
 
 CREATE TABLE IF NOT EXISTS recipes (
   id serial,
-  equipment integer,
+  equipment_id integer,
   name text,
   instructions text,
-  foreign key (equipment) references equipment(id),
+  foreign key (equipment_id) references equipment(id),
   primary key (id)
 );
-INSERT INTO recipes (name, instructions, equipment)
+INSERT INTO recipes (name, instructions, equipment_id)
   VALUES
   ('Espresso single shot','do this', 2),
   ('Ibrik (turkish) coffee', 'do that', 4),
-  ('Filter coffee', 'do bar', 2);
+  ('Filter coffee', 'do bar', 3);
 
 CREATE TABLE IF NOT EXISTS ingredient_recipe (
   id serial,

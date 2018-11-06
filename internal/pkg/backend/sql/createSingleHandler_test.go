@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"net/http"
 	"net/url"
+	"strings"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 )
@@ -57,7 +58,8 @@ var testCasesCreateSingle = []testCase{
 			postData.Set("name", "French Press")
 			postData.Set("acquisitionCost", "35.99")
 			postData.Set("purchaseDate", "2017-04-02T00:00:00Z")
-			req, _ := http.NewRequest("POST", "/equipment?"+postData.Encode(), nil)
+			req, _ := http.NewRequest("POST", "/equipment", strings.NewReader(postData.Encode()))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			return req
 		},
 	},
