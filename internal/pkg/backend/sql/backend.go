@@ -145,7 +145,7 @@ func NewBackend(driver string) (b *Backend) {
 func (b *Backend) Open(args ...interface{}) error {
 	log.When(config.Options.Logging).Infof(
 		"[backend] open connection to database %v\n",
-		config.Options.Endpoint.Driver,
+		config.Options.Database.Driver,
 	)
 	driver := args[0].(string)
 	url := args[1].(string)
@@ -174,7 +174,7 @@ func (b *Backend) SaveTableSchemas() (err error) {
 	log.When(config.Options.Logging).Infoln(
 		"[backend] query database and save table schemas",
 	)
-	for _, table := range config.Options.Endpoint.Tables {
+	for _, table := range config.Options.Database.Tables {
 		// table has no relationships defined in descriptor.json
 		log.When(config.Options.Logging).Infof(
 			"[backend] schema for table %v:\n",
@@ -186,7 +186,7 @@ func (b *Backend) SaveTableSchemas() (err error) {
 		}
 		log.When(config.Options.Logging).Infof("%#+v\n", b.TableSchemas)
 	}
-	for _, table := range config.Options.Endpoint.Tables {
+	for _, table := range config.Options.Database.Tables {
 		if util.TableHasRelationships(config.Options, table.Name) {
 			log.When(config.Options.Logging).Infof(
 				"[backend] schema for table %v:\n",

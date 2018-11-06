@@ -18,7 +18,7 @@ var Options Config
 // in the config.yaml file and other relevant data structures
 type Config struct {
 	Port     string
-	Endpoint struct {
+	Database struct {
 		Driver string
 		URL    string
 		Tables []*Table
@@ -95,7 +95,7 @@ func init() {
 	}
 	Options.Descriptor = ParseDescriptorFile(descriptorFile)
 	for _, td := range Options.Descriptor.TypeDescriptors {
-		Options.Endpoint.Tables = append(Options.Endpoint.Tables,
+		Options.Database.Tables = append(Options.Database.Tables,
 			&Table{td.TableName, td.ColumnAsOptionName})
 	}
 }

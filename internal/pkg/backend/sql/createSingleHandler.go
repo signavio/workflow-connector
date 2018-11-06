@@ -98,7 +98,7 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 		// we instead return an empty body and a 204 No Content
 		log.When(config.Options.Logging).Infof(
 			"[handler] returning newly updated resource not supported by %s database\n",
-			config.Options.Endpoint.Driver,
+			config.Options.Database.Driver,
 		)
 		rw.WriteHeader(http.StatusNoContent)
 		return

@@ -19,8 +19,8 @@ func main() {
 	}
 	log.When(true).Infoln("[endpoint] initialize backend")
 	err = endpoint.Open(
-		config.Options.Endpoint.Driver,
-		config.Options.Endpoint.URL,
+		config.Options.Database.Driver,
+		config.Options.Database.URL,
 	)
 	if err != nil {
 		log.Fatalln(err)

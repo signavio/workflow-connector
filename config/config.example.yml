@@ -1,7 +1,7 @@
 # Using a SQLite database
 ---
 port: 443
-endpoint:
+database:
   driver: sqlite
   url: test.db 
 tls:
@@ -17,7 +17,7 @@ logging: true
 # Using a Microsoft SQL Server database
 ---
 port: 443
-endpoint:
+database:
   driver: sqlserver
   url: sqlserver://john:84mj29rSgHz@172.17.8.2?database=test
 tls:
@@ -33,7 +33,7 @@ logging: true
 # Using a Postgres database
 ---
 port: 443
-endpoint:
+database:
   driver: postgres
   # You can find the list of supported parameters
   # at TODO
@@ -51,7 +51,7 @@ logging: true
 # Using a mysql database
 ---
 port: 443
-endpoint:
+database:
   driver: mysql
   # url = username:password@protocol(address)/dbname?param=value
   # You can find the list of supported parameters
