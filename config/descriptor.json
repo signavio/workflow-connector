@@ -215,9 +215,9 @@
           }
         },
         {
-          "key" : "quantityUnitOfMeasure",
-          "name" : "Quantity (unit of measure)",
-          "fromColumn" : "quantity_unit_of_measure",
+          "key" : "unitOfMeasure",
+          "name" : "Unit of measure",
+          "fromColumn" : "unit_of_measure",
           "type" : {
             "name" : "text"
           }
