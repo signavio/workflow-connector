@@ -8,12 +8,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"sync"
+	"text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/mysql"
+	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/oracle"
 	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/postgres"
 	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/sqlite"
 	"github.com/signavio/workflow-connector/internal/pkg/backend/sql/sqlserver"
@@ -84,13 +85,15 @@ var (
 )
 
 type Backend struct {
-	ConvertDBSpecificDataType func(string) interface{}
-	DB                        *sql.DB
-	TableSchemas              map[string]*TableSchema
-	Templates                 map[string]string
-	Transactions              sync.Map
-	TransactDirectly          func(context.Context, *sql.DB, string, ...interface{}) (sql.Result, error)
-	TransactWithinTx          func(context.Context, *sql.Tx, string, ...interface{}) (sql.Result, error)
+	ConvertDBSpecificDataType    func(string) interface{}
+	DB                           *sql.DB
+	DriverSpecificInitialization func(context.Context, *sql.DB) (sql.Result, error)
+	InjectFormattingFuncs        func(string, []string, []*config.Field) string
+	TableSchemas                 map[string]*TableSchema
+	Templates                    map[string]string
+	TransactDirectly             func(context.Context, *sql.DB, string, ...interface{}) (sql.Result, error)
+	TransactWithinTx             func(context.Context, *sql.Tx, string, ...interface{}) (sql.Result, error)
+	Transactions                 sync.Map
 }
 
 // TableSchema stores the schema of the database in use
@@ -112,11 +115,13 @@ func NewBackend(driver string) (b *Backend) {
 		b.TableSchemas = make(map[string]*TableSchema)
 		b.ConvertDBSpecificDataType = sqlserver.ConvertFromSqlserverDataType
 		b.Templates = sqlserver.QueryTemplates
+		b.InjectFormattingFuncs = sqlserver.InjectFormattingFuncs
 		return
 	case "sqlite":
 		b.TableSchemas = make(map[string]*TableSchema)
 		b.ConvertDBSpecificDataType = sqlite.ConvertFromSqliteDataType
 		b.Templates = sqlite.QueryTemplates
+		b.InjectFormattingFuncs = sqlite.InjectFormattingFuncs
 		return
 	case "mysql":
 		b.TableSchemas = make(map[string]*TableSchema)
@@ -124,6 +129,7 @@ func NewBackend(driver string) (b *Backend) {
 		b.Templates = mysql.QueryTemplates
 		b.TransactDirectly = mysql.ExecContextDirectly
 		b.TransactWithinTx = mysql.ExecContextWithinTx
+		b.InjectFormattingFuncs = mysql.InjectFormattingFuncs
 		return
 	case "postgres":
 		b.TableSchemas = make(map[string]*TableSchema)
@@ -131,6 +137,16 @@ func NewBackend(driver string) (b *Backend) {
 		b.Templates = postgres.QueryTemplates
 		b.TransactDirectly = postgres.ExecContextDirectly
 		b.TransactWithinTx = postgres.ExecContextWithinTx
+		b.InjectFormattingFuncs = postgres.InjectFormattingFuncs
+		return
+	case "goracle":
+		b.TableSchemas = make(map[string]*TableSchema)
+		b.ConvertDBSpecificDataType = oracle.ConvertFromOracleDataType
+		b.Templates = oracle.QueryTemplates
+		b.TransactDirectly = oracle.ExecContextDirectly
+		b.TransactWithinTx = oracle.ExecContextWithinTx
+		b.DriverSpecificInitialization = oracle.DriverSpecificInitialization
+		b.InjectFormattingFuncs = oracle.InjectFormattingFuncs
 		return
 	case "sqlmock":
 		// When using a sqlmock just return an empty backend
@@ -161,6 +177,12 @@ func (b *Backend) Open(args ...interface{}) error {
 	err = b.SaveTableSchemas()
 	if err != nil {
 		return fmt.Errorf("Error saving table schema: %s", err)
+	}
+	if b.DriverSpecificInitialization != nil {
+		_, err := b.DriverSpecificInitialization(context.Background(), b.DB)
+		if err != nil {
+			return fmt.Errorf("Error performing driver specific initialization: %s", err)
+		}
 	}
 	return nil
 }
@@ -503,7 +525,10 @@ func (h handler) interpolateExecTemplates(ctx context.Context, requestData map[s
 	if err != nil {
 		return "", nil, err
 	}
-	args = buildExecQueryArgs(ctx, requestData)
+	args, err = buildExecQueryArgs(ctx, requestData)
+	if err != nil {
+		return "", nil, err
+	}
 	log.When(config.Options.Logging).Infof(
 		"[handler <- db] buildExecQueryArgsWithID(): returned following args:\n%s\n",
 		args,

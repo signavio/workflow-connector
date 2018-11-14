@@ -420,6 +420,37 @@ func TestHandlers(t *testing.T) {
 			}
 		})
 	}
+	if strings.Contains(testUsingDB, "oracle") &&
+		viper.IsSet("oracle.database.url") {
+		// The default config.Descriptor should be used for real databases
+		config.Options = defaultConfigOptions
+		backend := NewBackend("goracle")
+		err := backend.Open("goracle", viper.Get("oracle.database.url").(string))
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+		t.Run("Using oracle database", func(t *testing.T) {
+			ts := newTestServer(backend)
+			defer ts.Close()
+			for handlerName, testCases := range handlerTests {
+				t.Run(handlerName, func(t *testing.T) {
+					for _, tc := range testCases {
+						ts := newTestServer(backend)
+						defer ts.Close()
+						t.Run(tc.Name, func(t *testing.T) {
+							tc.setExpectedResults(handlerName, false)
+							err := run(tc, ts)
+							if err != nil {
+								t.Errorf(err.Error())
+								return
+							}
+						})
+					}
+				})
+			}
+		})
+	}
 }
 
 func (tc *testCase) setExpectedResults(handlerName string, isMockDB bool) {

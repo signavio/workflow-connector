@@ -21,10 +21,12 @@ var testCasesGetCollectionAsOptionsFilterable = []testCase{
 			"equipment\x00name",
 		},
 		RowsAsCsv: "1,Bialetti Moka Express 6 cup",
-		ExpectedResults: `{
-  "id": "1",
-  "name": "Bialetti Moka Express 6 cup"
-}`,
+		ExpectedResults: `[
+  {
+    "id": "1",
+    "name": "Bialetti Moka Express 6 cup"
+  }
+]`,
 		ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 			rows := sqlmock.NewRows(columns).
 				FromCSVString(rowsAsCsv)

@@ -56,6 +56,8 @@ func NewEndpoint(cfg config.Config) (Endpoint, error) {
 		return sql.NewBackend("mysql"), nil
 	case "postgres":
 		return sql.NewBackend("postgres"), nil
+	case "goracle":
+		return sql.NewBackend("goracle"), nil
 	default:
 		return nil, fmt.Errorf("Database driver: %s, not supported", cfg.Database.Driver)
 

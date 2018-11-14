@@ -55,8 +55,16 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryString)
-	log.When(config.Options.Logging).Infof("will be called with these args:\n%s\n", args)
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		table,
+	)
+	queryStringWithFormatting := b.InjectFormattingFuncs(
+		queryString,
+		columnNames,
+		typeDescriptor.Fields,
+	)
+	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryStringWithFormatting)
 
 	var result sql.Result
 	// Check that user provided tx is already in backend.Transactions
@@ -74,8 +82,6 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 		log.When(config.Options.Logging).Infof("Query will execute within user specified transaction:\n%s\n", tx)
-		// We have to wrap an exec in TransactWithinTx and TransactDirectly since postgresql
-		// doesn't natively support sql.Result.LastInsertId()
 		result, err = b.TransactWithinTx(req.Context(), tx.(*sql.Tx), queryString, args...)
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusInternalServerError)

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
@@ -109,4 +110,8 @@ func isOfDataType(ts []string, fieldDataType string) (result bool) {
 		}
 	}
 	return
+}
+
+func InjectFormattingFuncs(query string, columnNames []string, fields []*config.Field) (queryWithFormatting string) {
+	return query
 }

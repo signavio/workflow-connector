@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	_ "github.com/lib/pq"
+	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
@@ -25,7 +26,7 @@ var (
 			" WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = $1",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
-			"WHERE id = $1",
+			"WHERE {{.UniqueIDColumn}} = $1",
 		"GetCollection": "SELECT * " +
 			"FROM {{.TableName}} " +
 			"ORDER BY {{.UniqueIDColumn}} ASC",
@@ -140,4 +141,8 @@ func isOfDataType(ts []string, fieldDataType string) (result bool) {
 		}
 	}
 	return
+}
+
+func InjectFormattingFuncs(query string, columnNames []string, fields []*config.Field) (queryWithFormatting string) {
+	return query
 }

@@ -12,4 +12,5 @@ require (
 	github.com/spf13/viper v1.2.1
 	github.com/urfave/negroni v1.0.0
 	golang.org/x/crypto v0.0.0-20181029175232-7e6ffbd03851
+	gopkg.in/goracle.v2 v2.9.0
 )

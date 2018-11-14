@@ -18,24 +18,21 @@ type workflowAcceleratorFormatter struct{}
 // the database to comply with Workflow Accelerator's API
 var WorkflowAccelerator = &workflowAcceleratorFormatter{}
 
-// Format will convert the results received from Theo backend service,
+// Format will convert the results received from the backend service,
 // which is an array of empty interfaces, to a JSON byte array
 // that Workflow Accelerator can interpret and understand
 func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
-	currentRoute := mux.CurrentRoute(req).GetName()
 	tableName := req.Context().Value(util.ContextKey("table")).(string)
-	if currentRoute == "GetCollectionAsOptionsFilterable" ||
-		currentRoute == "GetCollectionAsOptions" {
+	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
+	columnAsOptionName := req.Context().Value(util.ContextKey("columnAsOptionName")).(string)
+	if len(results) == 0 {
 		// Signavio Workflow Accelerator expects results from the options routes,
 		// for example, `/options`, `/options?filter=`, to be enclosed
 		// in an array, regardless of whether or not the result set
 		// return 0, 1 or many results
-		return specialFormattingForCollectionAsOptionsRoutes(results, tableName)
-	}
-	if currentRoute == "GetSingleAsOption" {
-		return specialFormattingForSingleAsOptionsRoute(results, tableName)
-	}
-	if len(results) == 0 {
+		if isOptionsRoute(req) {
+			return []byte("[{}]"), nil
+		}
 		return []byte("{}"), nil
 	}
 	if len(results) == 1 {
@@ -44,6 +41,30 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 			results[0].(map[string]interface{}), req, tableName,
 		)
 		log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
+		if isOptionsRoute(req) {
+			var optionResults []interface{}
+			optionResult := map[string]interface{}{
+				"id":   formattedResult[uniqueIDColumn],
+				"name": formattedResult[columnAsOptionName],
+			}
+			optionResults = append(optionResults, optionResult)
+			JSONResults, err = json.MarshalIndent(&optionResults, "", "  ")
+			if err != nil {
+				return nil, err
+			}
+			return
+		}
+		if isOptionRoute(req) {
+			optionResult := map[string]interface{}{
+				"id":   formattedResult[uniqueIDColumn],
+				"name": formattedResult[columnAsOptionName],
+			}
+			JSONResults, err = json.MarshalIndent(&optionResult, "", "  ")
+			if err != nil {
+				return nil, err
+			}
+			return
+		}
 		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
 		if err != nil {
 			return nil, err
@@ -56,6 +77,12 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		formattedResult := formatAsAWorkflowType(
 			result.(map[string]interface{}), req, tableName,
 		)
+		if isOptionRoute(req) || isOptionsRoute(req) {
+			formattedResult = map[string]interface{}{
+				"id":   formattedResult[uniqueIDColumn],
+				"name": formattedResult[columnAsOptionName],
+			}
+		}
 		formattedResults = append(formattedResults, formattedResult)
 	}
 	log.When(config.Options.Logging).Infof(
@@ -79,7 +106,7 @@ func formatAsAWorkflowType(queryResults map[string]interface{}, req *http.Reques
 	for _, field := range typeDescriptor.Fields {
 		if mux.CurrentRoute(req).GetName() == "GetCollection" {
 			formatted = buildResultFromQueryResultsWithoutRelationships(
-				formatted, queryResults, table, field,
+				formatted, queryResults, req, table, field,
 			)
 		} else {
 			formatted = buildResultFromQueryResultsUsingField(
@@ -90,9 +117,17 @@ func formatAsAWorkflowType(queryResults map[string]interface{}, req *http.Reques
 	return
 }
 
-func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
+func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *config.Field) map[string]interface{} {
 	if field.Type.Name == "money" {
 		formatted = buildForFieldTypeMoney(formatted, queryResults, table, field)
+		return formatted
+	}
+	if field.Type.Name == "date" {
+		formatted = buildForFieldTypeDate(formatted, queryResults, table, field)
+		return formatted
+	}
+	if field.FromColumn == req.Context().Value(util.ContextKey("uniqueIDColumn")).(string) {
+		formatted = buildForFieldTypeUniqueIdColumn(formatted, queryResults, table, field)
 		return formatted
 	}
 	formatted = buildForFieldTypeOther(formatted, queryResults, table, field)
@@ -103,7 +138,7 @@ func buildResultFromQueryResultsUsingField(formatted, queryResults map[string]in
 		formatted = buildAndRecursivelyResolveRelationships(formatted, queryResults, req, table, field)
 		return formatted
 	}
-	return buildResultFromQueryResultsWithoutRelationships(formatted, queryResults, table, field)
+	return buildResultFromQueryResultsWithoutRelationships(formatted, queryResults, req, table, field)
 }
 
 func tableHasRelationships(queryResults map[string]interface{}, table string, field *config.Field) bool {
@@ -166,7 +201,31 @@ func buildForFieldTypeMoney(formatted, queryResults map[string]interface{}, tabl
 	}
 	return formatted
 }
-
+func buildForFieldTypeDate(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
+	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
+		dateTime := queryResults[table].(map[string]interface{})[field.FromColumn].(time.Time)
+		formatted[field.Key] = dateTime.UTC().Format("2006-01-02T15:04:05.999Z")
+	}
+	return formatted
+}
+func buildForFieldTypeUniqueIdColumn(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
+	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
+		var uniqueIDColumn interface{}
+		switch v := queryResults[table].(map[string]interface{})[field.FromColumn].(type) {
+		case int64:
+			uniqueIDColumn = fmt.Sprintf("%v", v)
+		case float64:
+			uniqueIDColumn = fmt.Sprintf("%v", v)
+		case time.Time:
+			uniqueIDColumn = v.String()
+		case string:
+			uniqueIDColumn = v
+		}
+		formatted[field.Key] = uniqueIDColumn
+		return formatted
+	}
+	return formatted
+}
 func buildForFieldTypeOther(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
 		formatted[field.Key] =
@@ -195,58 +254,19 @@ func resultAsWorkflowMoneyType(field *config.Field, queryResults map[string]inte
 	}
 	return result
 }
-func specialFormattingForSingleAsOptionsRoute(results []interface{}, table string) (JSONResults []byte, err error) {
-	if len(results) == 0 {
-		return []byte("{}"), nil
+func isOptionsRoute(req *http.Request) bool {
+	currentRoute := mux.CurrentRoute(req).GetName()
+	if currentRoute == "GetCollectionAsOptionsFilterable" ||
+		currentRoute == "GetCollectionAsOptions" {
+		return true
 	}
-	formattedResult := mapWithIDAndName(results[0].(map[string]interface{}), table)
-	JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	return
+	return false
 }
 
-func specialFormattingForCollectionAsOptionsRoutes(results []interface{}, table string) (JSONResults []byte, err error) {
-	if len(results) == 0 {
-		return []byte("[{}]"), nil
+func isOptionRoute(req *http.Request) bool {
+	currentRoute := mux.CurrentRoute(req).GetName()
+	if currentRoute == "GetSingleAsOption" {
+		return true
 	}
-	if len(results) == 1 {
-		formattedResult := mapWithIDAndName(results[0].(map[string]interface{}), table)
-		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
-		if err != nil {
-			return nil, err
-		}
-		return
-	}
-	var formattedResults []interface{}
-	for _, result := range results {
-		formattedResult := mapWithIDAndName(result.(map[string]interface{}), table)
-		formattedResults = append(formattedResults, formattedResult)
-	}
-	JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	return
-
-}
-
-func mapWithIDAndName(queryResults map[string]interface{}, table string) map[string]interface{} {
-	id := queryResults[table].(map[string]interface{})["id"]
-	var name interface{}
-	switch v := queryResults[table].(map[string]interface{})["name"].(type) {
-	case int64:
-		name = fmt.Sprintf("%v", v)
-	case float64:
-		name = fmt.Sprintf("%v", v)
-	case time.Time:
-		name = v.String()
-	case string:
-		name = v
-	}
-	return map[string]interface{}{
-		"id":   id,
-		"name": name,
-	}
+	return false
 }

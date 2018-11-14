@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
@@ -20,7 +21,7 @@ var (
 			"WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = @p1",
 		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
-			"WHERE id = @p1",
+			"WHERE {{.UniqueIDColumn}} = @p1",
 		"GetCollection": "SELECT *" +
 			"FROM {{.TableName}}",
 		"GetCollectionAsOptions": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
@@ -111,4 +112,8 @@ func isOfDataType(ts []string, fieldDataType string) (result bool) {
 		}
 	}
 	return
+}
+
+func InjectFormattingFuncs(query string, columnNames []string, fields []*config.Field) (queryWithFormatting string) {
+	return query
 }

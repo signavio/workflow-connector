@@ -53,7 +53,7 @@ func (b *Backend) execContext(ctx context.Context, query string, args ...interfa
 	return
 }
 
-func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{}) (args []interface{}) {
+func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{}) (args []interface{}, err error) {
 	currentTable := ctx.Value(util.ContextKey("table")).(string)
 	id := ctx.Value(util.ContextKey("id")).(string)
 	td := util.GetTypeDescriptorUsingDBTableName(config.Options.Descriptor.TypeDescriptors, currentTable)
@@ -67,20 +67,34 @@ func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{})
 			return append(args, v)
 		case float64:
 			return append(args, v)
+		case time.Time:
+			return append(args, v)
 		case nil:
 			return append(args, v)
 		}
 		return []interface{}{}
 	}
 	for _, field := range td.Fields {
-		if field.Type.Name == "money" {
+		switch field.Type.Name {
+		case "money":
 			if val, ok = requestData[field.Type.Amount.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
 			if val, ok = requestData[field.Type.Currency.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
-		} else {
+		case "date":
+			if val, ok = requestData[field.Key]; ok {
+				stringifiedDateTime := val.(string)
+				parsedDateTime, err := time.ParseInLocation(
+					"2006-01-02T15:04:05.999Z", stringifiedDateTime, time.UTC,
+				)
+				if err != nil {
+					return nil, err
+				}
+				args = appendRequestDataToArgs(args, parsedDateTime)
+			}
+		default:
 			if val, ok = requestData[field.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
@@ -91,8 +105,6 @@ func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{})
 	}
 	return
 }
-
-// NEXT func deduplicateSingleResourceForOneToOneRelationships
 
 func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []interface{} {
 	fields := util.TypeDescriptorRelationships(td)
