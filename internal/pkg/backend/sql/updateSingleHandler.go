@@ -2,6 +2,7 @@ package sql
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 
@@ -48,15 +49,27 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
-	log.When(config.Options.Logging).Infoln("[handler -> template] interpolate query string")
+	log.When(config.Options.Logging).Infoln("[handler -> backend] interpolate query string")
 	queryString, args, err := handler.interpolateExecTemplates(req.Context(), requestData)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryString)
-	log.When(config.Options.Logging).Infof("will be called with these args:\n%s\n", args)
-
+	log.When(config.Options.Logging).Infof("[handler <- backend] interpolated query string:\n%s\n", queryString)
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		table,
+	)
+	queryStringWithFormatting := b.InjectFormattingFuncs(
+		queryString,
+		columnNames,
+		typeDescriptor.Fields,
+	)
+	log.When(config.Options.Logging).Infof(
+		"[handler <- backend] query string with injected formatting functions:\n%s\n",
+		queryStringWithFormatting,
+	)
+	var result sql.Result
 	// Check that user provided tx is already in backend.Transactions
 	if requestTx != "" {
 		tx, ok := b.Transactions.Load(requestTx)
@@ -71,12 +84,18 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 			http.Error(rw, msg.String(), http.StatusNotFound)
 			return
 		}
-		log.When(config.Options.Logging).Infof("Query will execute within user specified transaction:\n%s\n", tx)
-	}
-	result, err := b.execContext(req.Context(), queryString, args...)
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
+		log.When(config.Options.Logging).Infof("[handler] Query will execute within user specified transaction:\n%s\n", tx)
+		result, err = b.TransactWithinTx(req.Context(), tx.(*sql.Tx), queryStringWithFormatting, args...)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		result, err = b.TransactDirectly(req.Context(), b.DB, queryStringWithFormatting, args...)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n", result)
 

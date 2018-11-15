@@ -83,7 +83,7 @@ func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{})
 			if val, ok = requestData[field.Type.Currency.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
-		case "date":
+		case "datetime", "date", "time":
 			if val, ok = requestData[field.Key]; ok {
 				stringifiedDateTime := val.(string)
 				parsedDateTime, err := time.ParseInLocation(

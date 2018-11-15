@@ -268,8 +268,8 @@ func TestHandlers(t *testing.T) {
 		"GetCollectionHandlerFilterable":          testCasesGetCollectionFilterable,
 		"GetCollectionAsOptionsHandler":           testCasesGetCollectionAsOptions,
 		"GetCollectionAsOptionsFilterableHandler": testCasesGetCollectionAsOptionsFilterable,
-		"UpdateSingleHandler":                     testCasesUpdateSingle,
 		"CreateSingleHandler":                     testCasesCreateSingle,
+		"UpdateSingleHandler":                     testCasesUpdateSingle,
 		"DeleteSingleHandler":                     testCasesDeleteSingle,
 	}
 	var testUsingDB string

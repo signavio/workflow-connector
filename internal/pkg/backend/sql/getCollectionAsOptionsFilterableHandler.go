@@ -33,13 +33,13 @@ func (b *Backend) GetCollectionAsOptionsFilterable(rw http.ResponseWriter, req *
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s", routeName)
 
-	log.When(config.Options.Logging).Infoln("[handler -> template] interpolate query string")
+	log.When(config.Options.Logging).Infoln("[handler -> backend] interpolate query string")
 	queryString, err := handler.interpolateQueryTemplate()
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryString)
+	log.When(config.Options.Logging).Infof("[handler <- backend]\n%s\n", queryString)
 
 	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
 	results, err := b.queryContextForOptionRoutes(req.Context(), queryString, filter)

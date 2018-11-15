@@ -118,32 +118,56 @@ func DriverSpecificInitialization(ctx context.Context, db *sql.DB) (result sql.R
 }
 func ExecContextDirectly(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
 	lastInserted := bytes.NewBufferString("")
-	_, err = db.ExecContext(ctx, query, args...)
+	var id int64
+	var formattedArgs []interface{}
+	for _, arg := range args {
+		formattedArgs = append(formattedArgs, formatArg(arg))
+	}
+	log.When(config.Options.Logging).Infof(
+		"[handler -> db] The following query: \n%s\nwill be executed with these args:\n%s\n",
+		query,
+		formattedArgs,
+	)
+	_, err = db.ExecContext(ctx, query, formattedArgs...)
 	if err != nil {
 		return nil, err
 	}
 	if err := goracle.ReadDbmsOutput(ctx, lastInserted, db); err != nil {
 		return nil, err
 	}
-	id, err := strconv.ParseInt(chomp(lastInserted.String()), 10, 64)
-	if err != nil {
-		return nil, err
+	if lastInserted.String() != "" {
+		id, err = strconv.ParseInt(chomp(lastInserted.String()), 10, 64)
+		if err != nil {
+			return nil, err
+		}
 	}
 	result = &lastId{id}
 	return result, nil
 }
 func ExecContextWithinTx(ctx context.Context, tx *sql.Tx, query string, args ...interface{}) (result sql.Result, err error) {
 	lastInserted := bytes.NewBufferString("")
-	_, err = tx.ExecContext(ctx, query, args...)
+	var id int64
+	var formattedArgs []interface{}
+	for _, arg := range args {
+		formattedArgs = append(formattedArgs, formatArg(arg))
+	}
+	log.When(config.Options.Logging).Infof(
+		"[handler -> db] The following query: \n%s\nwill be executed with these args:\n%s\n",
+		query,
+		formattedArgs,
+	)
+	_, err = tx.ExecContext(ctx, query, formattedArgs...)
 	if err != nil {
 		return nil, err
 	}
 	if err := goracle.ReadDbmsOutput(ctx, lastInserted, tx); err != nil {
 		return nil, err
 	}
-	id, err := strconv.ParseInt(chomp(lastInserted.String()), 10, 64)
-	if err != nil {
-		return nil, err
+	if lastInserted.String() != "" {
+		id, err = strconv.ParseInt(chomp(lastInserted.String()), 10, 64)
+		if err != nil {
+			return nil, err
+		}
 	}
 	result = &lastId{id}
 	return result, nil
@@ -191,10 +215,10 @@ func InjectFormattingFuncs(query string, columnNames []string, fields []*config.
 			if field.FromColumn == column || field.Type.Amount.FromColumn == column {
 				switch field.Type.Kind {
 				case "datetime", "date", "time":
-					queryParamToWrap := fmt.Sprintf(":%v", i)
+					queryParamToWrap := fmt.Sprintf(":%v", i+1)
 					re := regexp.MustCompile(queryParamToWrap)
 					queryWithFormatting = re.ReplaceAllString(
-						query, fmt.Sprintf("to_timestamp(%s, %s)", queryParamToWrap, dateTimeOracleFormat),
+						query, fmt.Sprintf("to_timestamp_tz(%s, %s)", queryParamToWrap, dateTimeOracleFormat),
 					)
 				}
 			}

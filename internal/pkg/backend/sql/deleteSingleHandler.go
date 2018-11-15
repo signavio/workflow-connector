@@ -29,13 +29,13 @@ func (b *Backend) DeleteSingle(rw http.ResponseWriter, req *http.Request) {
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
-	log.When(config.Options.Logging).Infoln("[handler -> template] interpolate query string")
+	log.When(config.Options.Logging).Infoln("[handler -> backend] interpolate query string")
 	queryString, err := handler.interpolateQueryTemplate()
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options.Logging).Infof("[handler <- template]\n%s\n", queryString)
+	log.When(config.Options.Logging).Infof("[handler <- backend]\n%s\n", queryString)
 
 	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
 

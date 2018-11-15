@@ -530,7 +530,7 @@ func (h handler) interpolateExecTemplates(ctx context.Context, requestData map[s
 		return "", nil, err
 	}
 	log.When(config.Options.Logging).Infof(
-		"[handler <- db] buildExecQueryArgsWithID(): returned following args:\n%s\n",
+		"[backend <- db] buildExecQueryArgsWithID(): returned following args:\n%s\n",
 		args,
 	)
 	return query.String(), args, nil
