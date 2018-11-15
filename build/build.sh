@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright 2016 The Kubernetes Authors.
 #
@@ -34,12 +34,18 @@ if [ -z "${OS}" ]; then
     echo "OS must be set"
     exit 1
 fi
+if [ "${OS}" == "windows" ] && [ "${ARCH}" == "amd64" ]; then
+    export CC=x86_64-w64-mingw32-gcc
+fi
+if [ "${OS}" == "windows" ] && [ "${ARCH}" == "i686" ]; then
+    export CC=i686-w64-mingw32-gcc
+fi
 
 
 export CGO_ENABLED=1
 export GOARCH="${ARCH}"
 export GOOS="${OS}"
 
-go install                                                         \
-    -ldflags "-X ${PKG}/pkg/version.VERSION=${VERSION}"            \
+go install                                                                     \
+    -ldflags "-X ${PKG}/pkg/version.VERSION=${VERSION} main.version=${VERSION}"\
     ./...

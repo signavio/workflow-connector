@@ -14,14 +14,14 @@
 
 FROM ARG_BUILDIMAGE as testing
 LABEL maintainer="Stefano Da Ros <stefano.daros@signavio.com>"
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
   git \
-  build-base \
+  build-essential \
+  gcc-mingw-w64-x86-64 \
+  gcc-mingw-w64-i686 \
   && mkdir -p /go/src/ARG_PKG
 COPY . /go/src/ARG_PKG
 WORKDIR /go/src/ARG_PKG
-RUN go get github.com/golang/dep/cmd/dep
-RUN dep ensure -vendor-only
 
 FROM ARG_BASEIMAGE as production
 RUN apk update && apk add \

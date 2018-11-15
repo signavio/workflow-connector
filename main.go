@@ -7,9 +7,7 @@ import (
 	"github.com/signavio/workflow-connector/internal/pkg/log"
 )
 
-var (
-	version = "0.1.0-beta.2"
-)
+var version string
 
 func main() {
 	log.When(true).Infof("starting workflow connector v%s\n", version)
