@@ -114,9 +114,17 @@ func deduplicateSingleResource(data []interface{}, td *config.TypeDescriptor) []
 		for _, datum := range data {
 			if tableResults, ok := datum.(map[string]interface{})[field.Relationship.WithTable].(map[string]interface{}); ok {
 				// If the result set of a related table is empty, then all values
-				// will be equal to nil, so do not append it to the fieldResultSet
+				// will equal nil (or the empty string for oracle db) so do not
+				// append it to the fieldResultSet
 				for _, value := range tableResults {
-					if value != nil {
+					var isEmptyValue bool
+					valueString, ok := value.(string)
+					if ok {
+						isEmptyValue = valueString != ""
+					} else {
+						isEmptyValue = value != nil
+					}
+					if isEmptyValue {
 						relationshipTableContainsResults = true
 					}
 				}

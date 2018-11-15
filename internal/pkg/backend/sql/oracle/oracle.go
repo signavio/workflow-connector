@@ -24,8 +24,6 @@ var (
 	dateTimeOracleFormat = `'YYYY-MM-DD"T"HH24:MI:SSXFF3TZH:TZM'`
 	dateTimeGolangFormat = `2006-01-02T15:04:05.999-07:00`
 	QueryTemplates       = map[string]string{
-		`AlterTimeStampTzFormat`: `ALTER SESSION SET ` +
-			`NLS_TIMESTAMP_TZ_FORMAT=` + dateTimeOracleFormat,
 		`GetSingle`: `SELECT * ` +
 			`FROM {{.TableName}} "_{{.TableName}}"` +
 			`{{range .Relations}}` +
@@ -192,7 +190,7 @@ func InjectFormattingFuncs(query string, columnNames []string, fields []*config.
 		for i, column := range columnNames {
 			if field.FromColumn == column || field.Type.Amount.FromColumn == column {
 				switch field.Type.Kind {
-				case "datetime", "date":
+				case "datetime", "date", "time":
 					queryParamToWrap := fmt.Sprintf(":%v", i)
 					re := regexp.MustCompile(queryParamToWrap)
 					queryWithFormatting = re.ReplaceAllString(
