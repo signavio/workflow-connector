@@ -47,5 +47,5 @@ export GOARCH="${ARCH}"
 export GOOS="${OS}"
 
 go install                                                                     \
-    -ldflags "-X ${PKG}/pkg/version.VERSION=${VERSION} main.version=${VERSION}"\
+    -ldflags "-X ${PKG}/pkg/version.VERSION=${VERSION} -X main.version=${VERSION}"\
     ./...

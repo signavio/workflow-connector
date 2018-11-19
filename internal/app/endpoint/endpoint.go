@@ -50,8 +50,8 @@ func NewEndpoint(cfg config.Config) (Endpoint, error) {
 	switch cfg.Database.Driver {
 	case "sqlserver":
 		return sql.NewBackend("sqlserver"), nil
-	case "sqlite":
-		return sql.NewBackend("sqlite"), nil
+	case "sqlite3":
+		return sql.NewBackend("sqlite3"), nil
 	case "mysql":
 		return sql.NewBackend("mysql"), nil
 	case "postgres":

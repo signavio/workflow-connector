@@ -11,14 +11,16 @@ import (
 )
 
 // Options is populated by this package's init() function
-// TODO It should be a singleton
 var Options Config
 
 // Config defines the data structures which can be used and configured
 // in the config.yaml file and other relevant data structures
 type Config struct {
-	Port     string
-	Database struct {
+	Name        string
+	DisplayName string
+	Description string
+	Port        string
+	Database    struct {
 		Driver string
 		URL    string
 		Tables []*Table
@@ -61,6 +63,13 @@ type configDir struct {
 	val  string
 }
 
+// service is a command line flag that specifies which control
+// should be sent to a service
+type service struct {
+	name string
+	val  string
+}
+
 // Initialize configuration file from typical directory locations and parse it
 func init() {
 	db := &db{name: "db", val: ""}
@@ -69,10 +78,14 @@ func init() {
 	configDir := &configDir{name: "config-dir", val: "config"}
 	flag.StringVar(&configDir.val, "config-dir", "", "specify location to config directory")
 	viper.BindFlagValue("configDir", configDir)
+	serviceControl := &service{name: "service", val: ""}
+	flag.StringVar(&serviceControl.val, "service", "", "specify control to send to service")
+	viper.BindFlagValue("service", serviceControl)
 	flag.Parse()
 	viper.SetConfigName("config")
 	if configDir.ValueString() == "" {
 		viper.AddConfigPath("config")
+		viper.AddConfigPath(filepath.Join("C:\\Program Files\\Workflow Connector\\", "config"))
 		viper.AddConfigPath(filepath.Join("../../../", "config"))
 		viper.AddConfigPath(filepath.Join("../../../../", "config"))
 	} else {
@@ -84,14 +97,14 @@ func init() {
 	replacer := strings.NewReplacer(".", "_")
 	viper.SetEnvKeyReplacer(replacer)
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Can not parse config file: %v\n", err)
+		log.When(true).Fatalf("Can not parse config file: %v\n", err)
 	}
 	if err := viper.Unmarshal(&Options); err != nil {
-		log.Fatalf("Unable to decode config file into struct: %s", err)
+		log.When(true).Fatalf("Unable to decode config file into struct: %s", err)
 	}
 	descriptorFile, err := os.Open(descriptorFilePath())
 	if err != nil {
-		log.Fatalf("Unable to open descriptor.json file: %v\n", err)
+		log.When(true).Fatalf("Unable to open descriptor.json file: %v\n", err)
 	}
 	Options.Descriptor = ParseDescriptorFile(descriptorFile)
 	for _, td := range Options.Descriptor.TypeDescriptors {
@@ -113,3 +126,7 @@ func (f configDir) HasChanged() bool    { return false }
 func (f configDir) Name() string        { return f.name }
 func (f configDir) ValueString() string { return f.val }
 func (f configDir) ValueType() string   { return "string" }
+func (f service) HasChanged() bool      { return false }
+func (f service) Name() string          { return f.name }
+func (f service) ValueString() string   { return f.val }
+func (f service) ValueType() string     { return "string" }

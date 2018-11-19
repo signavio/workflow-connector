@@ -1,34 +1,109 @@
 package main
 
 import (
+	"context"
+	"net/http"
+	"os"
+
+	"github.com/kardianos/service"
 	"github.com/signavio/workflow-connector/internal/app/endpoint"
 	"github.com/signavio/workflow-connector/internal/app/server"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
-	"github.com/signavio/workflow-connector/internal/pkg/log"
+	"github.com/spf13/viper"
 )
 
-var version string
+var (
+	version string
+	logger  service.Logger
+)
 
-func main() {
-	log.When(true).Infof("starting workflow connector v%s\n", version)
+type app struct {
+	server *http.Server
+}
+
+func (a *app) Start(s service.Service) error {
+	logger.Infof("starting workflow connector %s\n", version)
+	go a.run()
+	return nil
+}
+func (a *app) Stop(s service.Service) error {
+	logger.Infof("\nstopping workflow connector %s\n", version)
+	if err := a.server.Shutdown(context.Background()); err != nil {
+		logger.Infof("unable to shutdown server cleanly: %s\n", err)
+	}
+	if service.Interactive() {
+		os.Exit(0)
+	}
+	return nil
+}
+func (a *app) run() {
 	endpoint, err := endpoint.NewEndpoint(config.Options)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Errorf("unable to create new endpoint: %s\n", err)
+		os.Exit(1)
 	}
-	log.When(true).Infoln("[endpoint] initialize backend")
 	err = endpoint.Open(
 		config.Options.Database.Driver,
 		config.Options.Database.URL,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Errorf("unable to initialize backend: %s\n", err)
+		os.Exit(1)
 	}
-	server := server.NewServer(config.Options, endpoint)
-	println("[server] ready and listening on :" + config.Options.Port)
+	a.server = server.NewServer(config.Options, endpoint)
+	logger.Infof(
+		"server is ready and listening on port %s\n",
+		config.Options.Port,
+	)
 	if config.Options.TLS.Enabled {
-		log.Fatalln(server.ListenAndServeTLS(config.Options.TLS.PublicKey,
-			config.Options.TLS.PrivateKey))
+		err := a.server.ListenAndServeTLS(
+			config.Options.TLS.PublicKey,
+			config.Options.TLS.PrivateKey,
+		)
+		if err != http.ErrServerClosed {
+			logger.Errorf("unable to start http server: %s\n", err)
+			os.Exit(1)
+		}
 	} else {
-		log.Fatalln(server.ListenAndServe())
+		err := a.server.ListenAndServe()
+		if err != http.ErrServerClosed {
+			logger.Errorf("unable to start http server: %s\n", err)
+			os.Exit(1)
+		}
+	}
+}
+
+func main() {
+	a := &app{}
+	svc, err := service.New(
+		a,
+		&service.Config{
+			Name:        config.Options.Name,
+			DisplayName: config.Options.DisplayName,
+			Description: config.Options.Description,
+		},
+	)
+	if err != nil {
+		logger.Errorf("unable to create service: %s\n", err)
+		os.Exit(1)
+	}
+	logger, err = svc.Logger(nil)
+	if err != nil {
+		logger.Errorf("unable to initialize logger: %s\n", err)
+		os.Exit(1)
+	}
+	serviceControl, ok := viper.Get("service").(string)
+	if ok && serviceControl != "" {
+		// Execute user specified control on service
+		if err := service.Control(svc, serviceControl); err != nil {
+			logger.Error(err)
+			os.Exit(1)
+		}
+		return
+	}
+	err = svc.Run()
+	if err != nil {
+		logger.Errorf("unable to run the service: %s\n", err)
+		os.Exit(1)
 	}
 }

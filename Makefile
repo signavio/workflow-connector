@@ -30,10 +30,10 @@ OS ?= linux
 STAGE ?= production
 
 # This version-strategy uses git tags to set the version string
-#VERSION := $(shell git describe --tags --always --dirty)
+VERSION := $(shell git describe --tags --always --dirty)
 #
 # This version-strategy uses a manual value to set the version string
-VERSION := 0.1.0
+#VERSION := 0.1.0
 
 ###
 ### These variables should not need tweaking.
@@ -60,7 +60,7 @@ endif
 
 IMAGE := $(REGISTRY)/$(BIN)-$(ARCH)-$(OS)
 
-BUILD_IMAGE ?= golang:1.9.2-alpine3.6
+BUILD_IMAGE ?= golang:1.11-stretch
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
 # If you want to build AND push all containers, see the 'all-push' rule.
@@ -74,10 +74,11 @@ bin/$(ARCH)/$(OS)/$(BIN): build-dirs container-testing
 	    -ti                                                                 \
 	    --rm                                                                \
 	    -u $$(id -u):$$(id -g)                                              \
+      -e GO111MODULE=on                                                  \
       -v "$$(pwd)/.go:/go"                                                \
 	    -v "$$(pwd):/go/src/$(PKG)"                                         \
-	    -v "$$(pwd)/bin/$(ARCH)/$(OS):/go/bin"                                    \
-	    -v "$$(pwd)/bin/$(ARCH)/$(OS):/go/bin/$(OS)_$(ARCH)"            \
+	    -v "$$(pwd)/bin/$(ARCH)/$(OS):/go/bin"                              \
+	    -v "$$(pwd)/bin/$(ARCH)/$(OS):/go/bin/$(OS)_$(ARCH)"                \
 	    -v "$$(pwd)/.go/std/$(ARCH):/usr/local/go/pkg/$(OS)_$(ARCH)_static" \
 	    -w /go/src/$(PKG)                                                   \
       $(IMAGE):$(VERSION)-testing                                         \

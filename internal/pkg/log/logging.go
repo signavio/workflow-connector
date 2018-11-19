@@ -23,11 +23,15 @@ func (l Logger) Infoln(v ...interface{}) {
 		fmt.Println(v...)
 	}
 }
-func Fatalln(v ...interface{}) {
-	fmt.Println(v...)
-	os.Exit(1)
+func (l Logger) Fatalln(v ...interface{}) {
+	if l {
+		fmt.Println(v...)
+		os.Exit(1)
+	}
 }
-func Fatalf(format string, v ...interface{}) {
-	fmt.Printf(format, v...)
-	os.Exit(1)
+func (l Logger) Fatalf(format string, v ...interface{}) {
+	if l {
+		fmt.Printf(format, v...)
+		os.Exit(1)
+	}
 }

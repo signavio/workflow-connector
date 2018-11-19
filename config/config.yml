@@ -1,6 +1,11 @@
+name: workflow-connector
+displayName: Signavio Workflow Connector
+description: >
+  A web service which provides a Workflow Accelerator conform
+  RESTful API on top of standard SQL Databases
 port: 443
 database:
-  driver: sqlite
+  driver: sqlite3
   url: test.db 
 tls:
   enabled: false

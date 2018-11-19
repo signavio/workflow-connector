@@ -6,6 +6,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f
 	github.com/go-sql-driver/mysql v1.4.0
 	github.com/gorilla/mux v1.6.2
+	github.com/kardianos/service v0.0.0-20181115005516-4c239ee84e7b
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/satori/go.uuid v1.2.0
