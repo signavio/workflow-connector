@@ -136,7 +136,7 @@ pip install passlib argon2_cffi
 
 Setting the `logging` option to true will make the workflow-connector output debug level logging to standard output
 
-#### config/descriptor.json
+#### The `descriptor.json` file
 
 The workflow connector also needs to know the schema of the data it will receive from the database. This is stored in the connector descriptor file `descriptor.json` and an example is provided in the [config](https://github.com/signavio/workflow-connector/blob/master/config/descriptor.json) folder. If you need a step by step guide on how to create a `descriptor.json` file, you can follow the instructions in the [wiki](https://github.com/signavio/workflow-connector/wiki/Creating-Descriptor-File). Also refer to the [workflow documentation](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#connector-descriptor) for more information. 
 
