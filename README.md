@@ -72,41 +72,88 @@ This will install the workflow-connector as a windows service, if it is running 
 
 #### Configuration ####
 
-All program and environment specific configuration settings (like database connection information, username, password, etc.) should be stored in a directory named `config` which is located in the following directories:
+All program and environment specific configuration settings (like database connection information, username, password, etc.) should be stored in a directory named `config` which should be located in the following directories:
 
 | Directory                            | Operating System |
 | ------------------------------------ | ---------------- |
 | C:/Program Files/Workflow Connector/ | windows          |
 | /etc/workflow-connector/             | linux            |
+| ~/.config/workflow-connector/        | linux            |
 
-This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable.
+This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable. The following configuration files will need to be modified.
 
 ##### config/config.yaml #####
 
-All configuration settings in `config.yaml` can also be specified as environment variables. For example, you can specify the database connection url by exporting the environment variable `DATABASE_URL=mysql://john:84mj29rSgHz@172.17.8.2?database=test`. This means that nested fields in the yaml file are delimited with a '_' (underscore) character when used in an environment variable. All configuration settings declared via environment variables will take precedence over the settings in your `config.yaml` file.
+The `config.yml` file should be configured to include settings specific to your environment. The following snippet shows an example of what this could look like. Other examples can be found in the [config.example.yml](https://github.com/signavio/workflow-connector/blob/master/config/config.example.yml).
 
-##### config/descriptor.json #####
+```yml
+port: 443
+database:
+  driver: goracle
+  # url = username:password@protocol(address)/dbname?param=value
+  url: bob:l120arSgHz@tcp(172.17.8.2:3306)/test?parseTime=true
+tls:
+  enabled: true
+  publicKey: ./config/server.crt
+  privateKey: ./config/server.key
+auth:
+  username: wfauser
+  # password = Foobar
+  passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
+logging: false
+```
+#### port
 
-The workflow connector also needs to know the schema of the data it will receive from the database. This is stored in the connector descriptor file `descriptor.json` and an example is provided in this repository. You can also refer to the [workflow documentation](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#connector-descriptor) for more information. 
+The port to listen on. This should be port 443 if you have TLS enabled otherwise you can choose any other custom port.
 
-##### HTTP basic auth #####
+#### database
 
-The webservice will only respond to clients that provide valid HTTP Basic Auth credentials. The credentials for the HTTP Basic Auth are found in `config.yaml`. The username is stored in this file as plain text and the password is stored salted and hashed using [argon2](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.argon2.html). You can use the following commands to use python to generate a argon2 password hash that can be added to the `config.yaml`.
+The `driver` option specifies which golang driver will be used to communicate with the database. A list of supported databases and their corresponding drivers can be found on the [Supported Databases](https://github.com/signavio/workflow-connector/wiki/Supported-Databases) page. The `url` option specifies the connection parameters for the database such as username, password and address.
+
+#### tls
+
+Setting the `enabled` option to true will force the workflow connector web service to only use TLS. The `publicKey` and `privateKey` option should point to the location of the public key and private key that the web service will use for TLS connections. *Note*: if your TLS certificate was generated through intermediate Certificate Authorities (CAs), make sure to bundle all of the intermediate CAs' certificates in the workflow connector server's certificate. 
+
+#### auth
+
+The workflow connector web service will only respond to clients that provide valid HTTP basic access authentication credentials. These authentication credentials are specified in the `username` and `passwordHash` options. The `username` option stores the username required for HTTP basic access authentication as plain text, and the `passwordHash` option stores the salted and hashed password using [argon2](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.argon2.html). You can use the following commands in python to generate a valid argon2 password hash for the `passwordHash` option.
 
 1. Install passlib using python `pip`
 
 ```sh
+
 pip install passlib argon2_cffi
+
 ```
 
 2. Use the python shell in the command line to generate an argon2 password hash with a digest size of 32 bytes
 
 ```python
+
 >>> from passlib.hash import argon2
+
 >>> argon2.using(digest_size=32).hash("password")
+
 '$argon2i$v=19$m=102400,t=2,p=8$916LEeL8f8+ZM8Z4D0EIAQ$JitmfHTb4UZxm6TqgPLdG9Sbqn5U3LHnrfO9qp3ni6U'
+
 >>> 
+
 ```
+
+#### logging
+
+Setting the `logging` option to true will make the workflow-connector output debug level logging to standard output
+
+All configuration settings in `config.yaml` can also be specified as environment variables.
+
+For example, you can specify the database connection url by exporting the environment variable `DATABASE_URL=mysql://john:84mj29rSgHz@172.17.8.2?database=test`. This means that nested fields in the yaml file are delimited with a '_' (underscore) character when used in an environment variable. All configuration settings declared via environment variables will take precedence over the settings in your `config.yaml` file.
+
+##### config/descriptor.json #####
+
+The workflow connector also needs to know the schema of the data it will receive from the database. This is stored in the connector descriptor file `descriptor.json` and an example is provided in the [config](https://github.com/signavio/workflow-connector/blob/master/config/descriptor.json) folder. You can also refer to the [workflow documentation](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#connector-descriptor) for more information. 
+
+##### HTTP basic access authentication #####
+
 
 ## Testing ##
 
