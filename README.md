@@ -65,7 +65,7 @@ The workflow connector can be configured to run on boot as a service. This can b
 
 ```sh
 # provide the -service parameter with the `install` subcommand
-./workflow-connector/workflow-connector -service install
+> ./workflow-connector/workflow-connector -service install
 ```
 
 This will install the workflow-connector as a windows service, if it is running in windows, or as a systemd unit,  if running on linux. This assumes that the user running the `-service install` command has sufficient rights to install services and the configuration files are stored in the correct directories (see Configuration below).
