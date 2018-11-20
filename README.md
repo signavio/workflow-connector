@@ -63,36 +63,37 @@ This will install the workflow-connector as a windows service, if it is running 
 
 ### Configuration
 
-All program and environment specific configuration settings (like database connection information, username, password, etc.) should be stored in a directory named `config` which should be located in the following directories:
+All program and environment specific configuration settings are done in the `config.yml` and `descriptor.json` files, which should be located in the following directories:
 
-| Directory                            | Operating System |
-| ------------------------------------ | ---------------- |
-| C:/Program Files/Workflow Connector/ | windows          |
-| /etc/workflow-connector/             | linux            |
-| ~/.config/workflow-connector/        | linux            |
+| Directory                                   | Operating System |
+| ------------------------------------------- | ---------------- |
+| C:/Program Files/Workflow Connector/config/ | windows          |
+| /etc/workflow-connector/config/             | linux            |
+| ~/.config/workflow-connector/config/        | linux            |
 
-This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable. The following configuration files will need to be modified.
+This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable.
 
-#### config/config.yaml
+#### The `config.yaml` file
 
-The `config.yml` file should be configured to include settings specific to your environment. The following snippet shows an example of what this could look like. Other examples can be found in the [config.example.yml](https://github.com/signavio/workflow-connector/blob/master/config/config.example.yml).
+The `config.yml` file should include settings specific to your environment. The following snippet shows an example of what this could look like. Other examples can be found in the [config.example.yml](https://github.com/signavio/workflow-connector/blob/master/config/config.example.yml). It is also possible to override the values in the `config.yml` file by using environment variables. For example, you could specify the database connection url by exporting the environment variable `DATABASE_URL=mysql://john:84mj29rSgHz@172.17.8.28?database=test`. 
 
 ```yml
 port: 443
 database:
   driver: goracle
-  # url = username:password@protocol(address)/dbname?param=value
-  url: bob:l120arSgHz@tcp(172.17.8.2:3306)/test?parseTime=true
+  # url = oracle://username:password@address/service_name
+  url: oracle://bob:l120arSgHz@172.17.8.2/test
 tls:
-  enabled: true
+  enabled: false
   publicKey: ./config/server.crt
   privateKey: ./config/server.key
 auth:
   username: wfauser
   # password = Foobar
   passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
-logging: false
+logging: true
 ```
+
 ##### port
 
 The port to listen on. This should be port 443 if you have TLS enabled otherwise you can choose any other custom port.
@@ -134,10 +135,6 @@ pip install passlib argon2_cffi
 ##### logging
 
 Setting the `logging` option to true will make the workflow-connector output debug level logging to standard output
-
-All configuration settings in `config.yaml` can also be specified as environment variables.
-
-For example, you can specify the database connection url by exporting the environment variable `DATABASE_URL=mysql://john:84mj29rSgHz@172.17.8.2?database=test`. This means that nested fields in the yaml file are delimited with a '_' (underscore) character when used in an environment variable. All configuration settings declared via environment variables will take precedence over the settings in your `config.yaml` file.
 
 #### config/descriptor.json
 
