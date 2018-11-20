@@ -1,5 +1,10 @@
 # Using a SQLite database
 ---
+name: workflow-connector
+displayName: Signavio Workflow Connector
+description: >
+  A web service which provides a Workflow Accelerator conform
+  RESTful API on top of standard SQL Databases
 port: 443
 database:
   driver: sqlite
@@ -14,12 +19,18 @@ auth:
   passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
 logging: true
 ...
-# Using a Microsoft SQL Server database
+# Using an Oracle database
 ---
+name: workflow-connector
+displayName: Signavio Workflow Connector
+description: >
+  A web service which provides a Workflow Accelerator conform
+  RESTful API on top of standard SQL Databases
 port: 443
 database:
-  driver: sqlserver
-  url: sqlserver://john:84mj29rSgHz@172.17.8.2?database=test
+  driver: goracle
+  # url = username:password@address/service_name
+  url: oracle://john:84mj29rSgHz@172.17.8.2/test
 tls:
   enabled: false
   publicKey: ./config/server.crt
@@ -32,11 +43,16 @@ logging: true
 ...
 # Using a Postgres database
 ---
+name: workflow-connector
+displayName: Signavio Workflow Connector
+description: >
+  A web service which provides a Workflow Accelerator conform
+  RESTful API on top of standard SQL Databases
 port: 443
 database:
   driver: postgres
   # You can find the list of supported parameters
-  # at TODO
+  # at https://godoc.org/github.com/lib/pq
   url: postgres://bob:l120arSgHz@172.17.8.2/test?sslmode=verify-full
 tls:
   enabled: false
@@ -50,6 +66,11 @@ logging: true
 ...
 # Using a mysql database
 ---
+name: workflow-connector
+displayName: Signavio Workflow Connector
+description: >
+  A web service which provides a Workflow Accelerator conform
+  RESTful API on top of standard SQL Databases
 port: 443
 database:
   driver: mysql

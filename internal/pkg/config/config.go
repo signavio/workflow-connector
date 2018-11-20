@@ -85,6 +85,7 @@ func init() {
 	viper.SetConfigName("config")
 	if configDir.ValueString() == "" {
 		viper.AddConfigPath("config")
+		viper.AddConfigPath(filepath.Join("/etc/workflow-connector/", "config"))
 		viper.AddConfigPath(filepath.Join("C:\\Program Files\\Workflow Connector\\", "config"))
 		viper.AddConfigPath(filepath.Join("../../../", "config"))
 		viper.AddConfigPath(filepath.Join("../../../../", "config"))
