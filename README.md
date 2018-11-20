@@ -4,7 +4,11 @@ Signavio Workflow Accelerator Connector is a RESTful web service which can be us
 
 ![Overview](docs/images/connector-network-diagram.png?raw=true "Overview")
 
-The connector is a simple executable that can be run on most servers. In order to use the connector with Signavio's Workflow Accelerator, the connector must first be running on a server that is accessible to the public internet. After the connector is running and the database has been provisioned, a Workflow Accelerator administrator can [add](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#configuring-a-connector) the connector to a workspace under _Services & Connector_ menu entry. A process owner can then use the connector in a process to populate a drop down field dynamically using data from the database. More information about this can be found [here](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html)
+The connector is a simple executable that can be run on most servers. In order to use the connector with Signavio's Workflow Accelerator, the connector must first be running on a server that is accessible to the public internet. 
+
+After the connector is running and the database has been provisioned, a Workflow Accelerator administrator can [add](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#configuring-a-connector) the connector to a workspace under _Services & Connector_ menu entry. 
+
+A process owner can then use the connector in a process to populate a drop down field dynamically using data from the database. More information about this can be found [here](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html)
 
 ## Features
 
@@ -13,7 +17,7 @@ The connector is a simple executable that can be run on most servers. In order t
 
 ## Deployment
 
-The following examples will demonstrate how to deploy the workflow connector web service on premise.
+The following examples will demonstrate how to deploy the workflow connector web service.
 
 ### On premise (bare metal) ###
 
@@ -68,46 +72,45 @@ This will install the workflow-connector as a windows service, if it is running 
 
 #### Configuration ####
 
-All program and environment specific configuration settings (like database connection information, username, password, etc.) should be stored in a directory named `config` which *must* be located in the following directories:
+All program and environment specific configuration settings (like database connection information, username, password, etc.) should be stored in a directory named `config` which is located in the following directories:
 
 | Directory                            | Operating System |
 | ------------------------------------ | ---------------- |
 | C:/Program Files/Workflow Connector/ | windows          |
+| /etc/workflow-connector/             | linux            |
 
-the same directory where the `workflow-connector` executable is running. This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable.
+This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable.
 
-##### config.yaml #####
+##### config/config.yaml #####
 
-All configuration settings in `config.yaml` can also be specified as environment variables. For example, you can specify the database connection url by exporting the environment variable `DATABASE_URL=sqlserver://john:84mj29rSgHz@172.17.8.2?database=test`. This means that nested fields in the yaml file are delimited with a '_' (underscore) character when used in an environment variable. All configuration settings declared via environment variables will take precedence over the settings in your `config.yaml` file.
+All configuration settings in `config.yaml` can also be specified as environment variables. For example, you can specify the database connection url by exporting the environment variable `DATABASE_URL=mysql://john:84mj29rSgHz@172.17.8.2?database=test`. This means that nested fields in the yaml file are delimited with a '_' (underscore) character when used in an environment variable. All configuration settings declared via environment variables will take precedence over the settings in your `config.yaml` file.
 
-##### descriptor.json #####
+##### config/descriptor.json #####
 
 The workflow connector also needs to know the schema of the data it will receive from the database. This is stored in the connector descriptor file `descriptor.json` and an example is provided in this repository. You can also refer to the [workflow documentation](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#connector-descriptor) for more information. 
 
 ##### HTTP basic auth #####
 
-The webservice will only respond to clients using HTTP basic auth. This can be enabled by setting `tls.enabled = true` and providing valid TLS certificates in the `config.yaml` file. The username for HTTP basic auth is stored as plain text in `config.yaml` but the password is stored salted and hashed using [argon2](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.argon2.html). You can use the following commands to generate a argon2 password hash using python.
+The webservice will only respond to clients that provide valid HTTP Basic Auth credentials. The credentials for the HTTP Basic Auth are found in `config.yaml`. The username is stored in this file as plain text and the password is stored salted and hashed using [argon2](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.argon2.html). You can use the following commands to use python to generate a argon2 password hash that can be added to the `config.yaml`.
 
 1. Install passlib using python `pip`
 
 ```sh
-pip install passlib
+pip install passlib argon2_cffi
 ```
 
 2. Use the python shell in the command line to generate an argon2 password hash with a digest size of 32 bytes
 
 ```python
-from passlib.hash import argon2
-argon2.using(digest_size=32).hash("password")
+>>> from passlib.hash import argon2
+>>> argon2.using(digest_size=32).hash("password")
+'$argon2i$v=19$m=102400,t=2,p=8$916LEeL8f8+ZM8Z4D0EIAQ$JitmfHTb4UZxm6TqgPLdG9Sbqn5U3LHnrfO9qp3ni6U'
+>>> 
 ```
-
-### In the cloud (using Heroku) ###
-
-The following [screencast](https://drive.google.com/file/d/1V8Kizoka-5L-56SpqTRxshCBBDyerB7v/view?usp=sharing) will show how to use heroku to install, configure and deploy the workflow connector.
 
 ## Testing ##
 
-You can test the deployment with a local sqlite database to make sure that the REST API is behaving properly. The following sections demonstrate how this can be done.
+You can test the deployment with a local sqlite database to make sure that the RESTful API is behaving properly. The following sections demonstrate how this can be done.
 
 ### Since everyone loves coffee ###
 
@@ -118,11 +121,11 @@ On a high level the intern would need to know what style of coffee we want, what
 
 Translating this diagramm to plain english would result in the following:
 
-- A recipe contains instructions for the intern to follow. Making a recipe requires *only one* piece of equipment. A recipe of course contains *many* ingredients.
-- A piece of equipment can be used in *many* different recipes.
+- A recipe contains instructions for the intern to follow. Making a recipe requires **only one** piece of equipment. A recipe of course contains **many** ingredients.
+- A piece of equipment can be used in **many** different recipes.
 - The database keeps track of the ingredients in stock in the `inventory` table. When the intern is shown the ingredients necessary for a recipe he or she will also be shown if there is enough of these ingredients in stock.
 
-This database model has been translated one to one in the `config/descriptor.json` file.
+This database model has been translated one to one in the `config/descriptor.json` file located in this repository.
 
 #### Okay now on to the prerequisites ####
 
