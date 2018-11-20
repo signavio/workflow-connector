@@ -73,7 +73,7 @@ All program and environment specific configuration settings are done in the `con
 
 This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable.
 
-#### The `config.yaml` file
+#### The `config.yml` file
 
 The `config.yml` file should include settings specific to your environment. The following snippet shows an example of what this could look like. Other examples can be found in the [config.example.yml](https://github.com/signavio/workflow-connector/blob/master/config/config.example.yml). It is also possible to override the values in the `config.yml` file by using environment variables. For example, you could specify the database connection url by exporting the environment variable `DATABASE_URL=mysql://john:84mj29rSgHz@172.17.8.28?database=test`. 
 
@@ -138,8 +138,17 @@ Setting the `logging` option to true will make the workflow-connector output deb
 
 #### config/descriptor.json
 
-The workflow connector also needs to know the schema of the data it will receive from the database. This is stored in the connector descriptor file `descriptor.json` and an example is provided in the [config](https://github.com/signavio/workflow-connector/blob/master/config/descriptor.json) folder. You can also refer to the [workflow documentation](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#connector-descriptor) for more information. 
+The workflow connector also needs to know the schema of the data it will receive from the database. This is stored in the connector descriptor file `descriptor.json` and an example is provided in the [config](https://github.com/signavio/workflow-connector/blob/master/config/descriptor.json) folder. If you need a step by step guide on how to create a `descriptor.json` file, you can follow the instructions in the [wiki](https://github.com/signavio/workflow-connector/wiki/Creating-Descriptor-File). Also refer to the [workflow documentation](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#connector-descriptor) for more information. 
 
+### Run the service
+
+After the workflow connector has been configured, you can execute it on the command line and do some rudimentary testing to see if its working correctly.
+
+```sh
+> ./workflow-connector/workflow-connector
+I: 12:34:56 server is ready and listening on port 8000
+```
+If you open a web browser on the same server that is running the workflow-connector and connect to the url `http://localhost:8000` you should be prompted from the workflow connector to enter in a username and password. After you have entered the correct credentials, you should see the output of the `descriptor.json` file in your web browser.
 
 ## Support
 
