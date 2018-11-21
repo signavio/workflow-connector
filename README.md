@@ -1,16 +1,14 @@
 # Signavio Workflow Accelerator Connector
 
-Signavio Workflow Accelerator Connector is a RESTful web service which can be used to retrieve data from many external SQL Databases and forward this data to Signavio's Workflow Accelerator.
+Signavio Workflow Accelerator Connector is a RESTful web service which can be used to retrieve data from an external SQL Database and forward this data to Signavio's Workflow Accelerator.
 
 ![Overview](docs/images/connector-network-diagram.png?raw=true "Overview")
 
-The connector is a simple executable that can be run on most servers. In order to use the connector with Signavio's Workflow Accelerator, the connector must first be running on a server that is accessible to the public internet.
+The data can then be used to populate form fields within a workflow.
 
 ![Workflow Connector Example](docs/images/workflow-connector-example.gif?raw=true "Workflow Connector Example")
 
-After the connector is running and the database has been provisioned, a Workflow Accelerator administrator can [add](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#configuring-a-connector) the connector to a workspace under _Services & Connector_ menu entry. 
-
-A process owner can then use the connector in a process to populate a drop down field dynamically using data from the database. More information about this can be found [here](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html)
+This README file and the associated [wiki](https://github.com/signavio/workflow-connector/wiki) will show you to install and configure the Signavio Workflow Accelerator Connector.
 
 ## Features
 
