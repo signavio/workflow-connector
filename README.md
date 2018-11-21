@@ -63,36 +63,37 @@ This will install the workflow-connector as a windows service, if it is running 
 
 ### Configuration
 
-All program and environment specific configuration settings (like database connection information, username, password, etc.) should be stored in a directory named `config` which should be located in the following directories:
+All program and environment specific configuration settings are done in the `config.yml` and `descriptor.json` files, which should be located in the following directories:
 
-| Directory                            | Operating System |
-| ------------------------------------ | ---------------- |
-| C:/Program Files/Workflow Connector/ | windows          |
-| /etc/workflow-connector/             | linux            |
-| ~/.config/workflow-connector/        | linux            |
+| Directory                                   | Operating System |
+| ------------------------------------------- | ---------------- |
+| C:/Program Files/Workflow Connector/config/ | windows          |
+| /etc/workflow-connector/config/             | linux            |
+| ~/.config/workflow-connector/config/        | linux            |
 
-This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable. The following configuration files will need to be modified.
+This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable.
 
-#### config/config.yaml
+#### The `config.yml` file
 
-The `config.yml` file should be configured to include settings specific to your environment. The following snippet shows an example of what this could look like. Other examples can be found in the [config.example.yml](https://github.com/signavio/workflow-connector/blob/master/config/config.example.yml).
+The `config.yml` file should include settings specific to your environment. The following snippet shows an example of what this could look like. Other examples can be found in the [config.example.yml](https://github.com/signavio/workflow-connector/blob/master/config/config.example.yml). It is also possible to override the values in the `config.yml` file by using environment variables. For example, you could specify the database connection url by exporting the environment variable `DATABASE_URL=mysql://john:84mj29rSgHz@172.17.8.28?database=test`. 
 
 ```yml
 port: 443
 database:
   driver: goracle
-  # url = username:password@protocol(address)/dbname?param=value
-  url: bob:l120arSgHz@tcp(172.17.8.2:3306)/test?parseTime=true
+  # url = oracle://username:password@address/service_name
+  url: oracle://bob:l120arSgHz@172.17.8.2/test
 tls:
-  enabled: true
+  enabled: false
   publicKey: ./config/server.crt
   privateKey: ./config/server.key
 auth:
   username: wfauser
   # password = Foobar
   passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
-logging: false
+logging: true
 ```
+
 ##### port
 
 The port to listen on. This should be port 443 if you have TLS enabled otherwise you can choose any other custom port.
@@ -135,14 +136,19 @@ pip install passlib argon2_cffi
 
 Setting the `logging` option to true will make the workflow-connector output debug level logging to standard output
 
-All configuration settings in `config.yaml` can also be specified as environment variables.
+#### The `descriptor.json` file
 
-For example, you can specify the database connection url by exporting the environment variable `DATABASE_URL=mysql://john:84mj29rSgHz@172.17.8.2?database=test`. This means that nested fields in the yaml file are delimited with a '_' (underscore) character when used in an environment variable. All configuration settings declared via environment variables will take precedence over the settings in your `config.yaml` file.
+The workflow connector also needs to know the schema of the data it will receive from the database. This is stored in the connector descriptor file `descriptor.json` and an example is provided in the [config](https://github.com/signavio/workflow-connector/blob/master/config/descriptor.json) folder. If you need a step by step guide on how to create a `descriptor.json` file, you can follow the instructions in the [wiki](https://github.com/signavio/workflow-connector/wiki/Creating-Descriptor-File). Also refer to the [workflow documentation](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#connector-descriptor) for more information. 
 
-#### config/descriptor.json
+### Run the service
 
-The workflow connector also needs to know the schema of the data it will receive from the database. This is stored in the connector descriptor file `descriptor.json` and an example is provided in the [config](https://github.com/signavio/workflow-connector/blob/master/config/descriptor.json) folder. You can also refer to the [workflow documentation](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#connector-descriptor) for more information. 
+After the workflow connector has been configured, you can execute it on the command line and do some rudimentary testing to see if its working correctly.
 
+```sh
+> ./workflow-connector/workflow-connector
+I: 12:34:56 server is ready and listening on port 8000
+```
+If you open a web browser on the same server that is running the workflow-connector and connect to the url `http://localhost:8000` you should be prompted from the workflow connector to enter in a username and password. After you have entered the correct credentials, you should see the output of the `descriptor.json` file in your web browser.
 
 ## Support
 
