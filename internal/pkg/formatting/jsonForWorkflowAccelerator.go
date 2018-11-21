@@ -31,7 +31,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		// in an array, regardless of whether or not the result set
 		// return 0, 1 or many results
 		if isOptionsRoute(req) {
-			return []byte("[{}]"), nil
+			return []byte("[]"), nil
 		}
 		return []byte("{}"), nil
 	}
