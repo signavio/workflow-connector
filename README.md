@@ -4,7 +4,9 @@ Signavio Workflow Accelerator Connector is a RESTful web service which can be us
 
 ![Overview](docs/images/connector-network-diagram.png?raw=true "Overview")
 
-The connector is a simple executable that can be run on most servers. In order to use the connector with Signavio's Workflow Accelerator, the connector must first be running on a server that is accessible to the public internet. 
+The connector is a simple executable that can be run on most servers. In order to use the connector with Signavio's Workflow Accelerator, the connector must first be running on a server that is accessible to the public internet.
+
+![Workflow Connector Example](docs/images/workflow-connector-example.gif?raw=true "Workflow Connector Example")
 
 After the connector is running and the database has been provisioned, a Workflow Accelerator administrator can [add](https://docs.signavio.com/userguide/workflow/en/integration/connectors.html#configuring-a-connector) the connector to a workspace under _Services & Connector_ menu entry. 
 
