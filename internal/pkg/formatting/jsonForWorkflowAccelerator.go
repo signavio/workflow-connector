@@ -204,7 +204,12 @@ func buildForFieldTypeMoney(formatted, queryResults map[string]interface{}, tabl
 func buildForFieldTypeDate(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
 		dateTime := queryResults[table].(map[string]interface{})[field.FromColumn].(time.Time)
-		formatted[field.Key] = dateTime.UTC().Format("2006-01-02T15:04:05.999Z")
+		// Don't convert dateTime to UTC since when a DATE type is coerced
+		// into a *time.Time it can contain the database's timezone.
+		// Converting the dateTime to UTC can change the original
+		// date from 2006-01-02T00:00:00+01:00 to
+		// 2006-01-01T23:00:00+0:00 when in UTC
+		formatted[field.Key] = dateTime.Format("2006-01-02T15:04:05.999Z")
 	}
 	return formatted
 }

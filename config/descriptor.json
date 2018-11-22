@@ -277,6 +277,24 @@
           "type" : {
             "name" : "text"
           }
+        },
+        {
+          "key" : "creationDate",
+          "name" : "Creation date",
+          "fromColumn" : "creation_date",
+          "type" : {
+              "name" : "date",
+              "kind": "datetime"
+          }
+        },
+        {
+          "key" : "lastAccessed",
+          "name" : "Last accessed",
+          "fromColumn" : "last_accessed",
+          "type" : {
+              "name" : "date",
+              "kind": "date"
+          }
         }
      ],
       "optionsAvailable" : true,
