@@ -57,7 +57,7 @@ func (b *Backend) GetSingle(rw http.ResponseWriter, req *http.Request) {
 			table,
 		),
 	)
-	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n", results)
+	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%s\n", results)
 	log.When(config.Options.Logging).Infoln("[handler -> formatter] format results as json")
 	formattedResults, err := formatting.WorkflowAccelerator.Format(req, results)
 	if err != nil {

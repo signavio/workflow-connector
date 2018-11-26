@@ -60,7 +60,7 @@ func (b *Backend) DeleteSingle(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n",
+	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%s\n",
 		result,
 	)
 	rowsAffected, err := result.RowsAffected()

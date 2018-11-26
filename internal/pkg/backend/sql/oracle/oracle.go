@@ -110,10 +110,10 @@ func (l *lastId) RowsAffected() (int64, error) {
 	return 0, nil
 }
 func DriverSpecificInitialization(ctx context.Context, db *sql.DB) (result sql.Result, err error) {
+	log.When(config.Options.Logging).Infoln("[db] Performing driver specific initialization")
 	if err := goracle.EnableDbmsOutput(ctx, db); err != nil {
 		return nil, err
 	}
-	log.When(config.Options.Logging).Infoln("[db] Performing driver specific initialization")
 	return
 }
 func ExecContextDirectly(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
@@ -213,10 +213,10 @@ func InjectFormattingFuncs(query string, columnNames []string, fields []*config.
 	for _, field := range fields {
 		for i, column := range columnNames {
 			if field.FromColumn == column || field.Type.Amount.FromColumn == column {
+				queryParamToWrap := fmt.Sprintf(":%v", i+1)
+				re := regexp.MustCompile(queryParamToWrap)
 				switch field.Type.Kind {
 				case "datetime", "date", "time":
-					queryParamToWrap := fmt.Sprintf(":%v", i+1)
-					re := regexp.MustCompile(queryParamToWrap)
 					queryWithFormatting = re.ReplaceAllString(
 						query, fmt.Sprintf("to_timestamp_tz(%s, %s)", queryParamToWrap, dateTimeOracleFormat),
 					)

@@ -97,7 +97,7 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n", result)
+	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%s\n", result)
 
 	log.When(config.Options.Logging).Infoln("[handler] try to return the newly updated resource")
 	lastInsertID, err := result.LastInsertId()

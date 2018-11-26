@@ -87,7 +87,7 @@ func (b *Backend) GetCollectionFilterable(rw http.ResponseWriter, req *http.Requ
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n",
+	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%s\n",
 		results,
 	)
 

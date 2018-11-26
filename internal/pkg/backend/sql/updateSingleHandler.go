@@ -97,7 +97,7 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%#v\n", result)
+	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%s\n", result)
 
 	withUpdatedRoute := context.WithValue(
 		req.Context(),

@@ -295,6 +295,15 @@
               "name" : "date",
               "kind": "date"
           }
+        },
+        {
+          "key" : "lastModified",
+          "name" : "Last modified",
+          "fromColumn" : "last_modified",
+          "type" : {
+              "name" : "date",
+              "kind": "datetime"
+          }
         }
      ],
       "optionsAvailable" : true,
