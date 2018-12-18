@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/kardianos/service"
-	"github.com/signavio/workflow-connector/internal/app/endpoint"
+	"github.com/signavio/workflow-connector/internal/app"
 	"github.com/signavio/workflow-connector/internal/app/server"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/spf13/viper"
@@ -17,16 +17,16 @@ var (
 	logger  service.Logger
 )
 
-type app struct {
+type App struct {
 	server *http.Server
 }
 
-func (a *app) Start(s service.Service) error {
+func (a *App) Start(s service.Service) error {
 	logger.Infof("starting workflow connector %s\n", version)
 	go a.run()
 	return nil
 }
-func (a *app) Stop(s service.Service) error {
+func (a *App) Stop(s service.Service) error {
 	logger.Infof("\nstopping workflow connector %s\n", version)
 	if err := a.server.Shutdown(context.Background()); err != nil {
 		logger.Infof("unable to shutdown server cleanly: %s\n", err)
@@ -36,8 +36,8 @@ func (a *app) Stop(s service.Service) error {
 	}
 	return nil
 }
-func (a *app) run() {
-	endpoint, err := endpoint.NewEndpoint(config.Options)
+func (a *App) run() {
+	endpoint, err := app.NewEndpoint(config.Options)
 	if err != nil {
 		logger.Errorf("unable to create new endpoint: %s\n", err)
 		os.Exit(1)
@@ -74,7 +74,7 @@ func (a *app) run() {
 }
 
 func main() {
-	a := &app{}
+	a := &App{}
 	svc, err := service.New(
 		a,
 		&service.Config{

@@ -11,25 +11,20 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
+	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
 )
 
 // ContextKey is used as a key when populating a context.Context with values
 type ContextKey string
 
-type HTTPCodeMsg struct {
-	Code int
-	Msg  string
-}
-type HTTPCodeTxMsg struct {
+type ResponseMessage struct {
 	Code int
 	Tx   string
 	Msg  string
 }
-type HTTPErrorCodeMsg struct {
-	Code int
-	Msg  string
-}
+
 type NullTime struct {
 	Time  time.Time
 	Valid bool // Valid is true if Time is not NULL
@@ -40,45 +35,32 @@ var (
 	ErrUnexpectedJSON  = errors.New("Received JSON data that we are unable to parse")
 )
 
-func (cm *HTTPCodeMsg) String() string {
+func (rm *ResponseMessage) Byte() []byte {
 	msg := map[string]interface{}{
 		"status": map[string]interface{}{
-			"code":        cm.Code,
-			"description": cm.Msg,
+			"code":        rm.Code,
+			"description": rm.Msg,
 		},
 	}
-	result, _ := json.MarshalIndent(&msg, "", "  ")
-	return string(result[:])
+	if rm.Tx != "" {
+		msg["status"].(map[string]interface{})["tx"] = rm.Tx
+	}
+	result, err := json.MarshalIndent(&msg, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	return result
 }
-
-func (cm *HTTPCodeTxMsg) String() string {
-	msg := map[string]interface{}{
-		"status": map[string]interface{}{
-			"code":        cm.Code,
-			"tx":          cm.Tx,
-			"description": cm.Msg,
-		},
-	}
-	result, _ := json.MarshalIndent(&msg, "", "  ")
-	return string(result[:])
+func (rm *ResponseMessage) String() string {
+	return string(rm.Byte()[:])
 }
-
-func (cm *HTTPErrorCodeMsg) String() string {
-	msg := map[string]interface{}{
-		"errors": []map[string]interface{}{
-			{
-				"code":        cm.Code,
-				"description": cm.Msg,
-			},
-		},
-	}
-	result, _ := json.MarshalIndent(&msg, "", "  ")
-	return string(result[:])
+func (rm *ResponseMessage) Error() string {
+	return rm.String()
 }
 
 // GetTypeDescriptorUsingDBTableName will return the typeDescriptor from the descriptor.json
 // file defined for the table provided in the function's second parameter
-func GetTypeDescriptorUsingDBTableName(typeDescriptors []*config.TypeDescriptor, tableName string) (td *config.TypeDescriptor) {
+func GetTypeDescriptorUsingDBTableName(typeDescriptors []*descriptor.TypeDescriptor, tableName string) (td *descriptor.TypeDescriptor) {
 	for _, typeDescriptor := range typeDescriptors {
 		if tableName == typeDescriptor.TableName {
 			td = typeDescriptor
@@ -88,16 +70,17 @@ func GetTypeDescriptorUsingDBTableName(typeDescriptors []*config.TypeDescriptor,
 }
 
 // GetDBTableNameUsingTypeDescriptorKey will return the typeDescriptor from the descriptor.json file defined for the table provided in the function's second parameter
-func GetDBTableNameUsingTypeDescriptorKey(typeDescriptors []*config.TypeDescriptor, typeDescriptorKey string) (tableName string) {
+func GetDBTableNameUsingTypeDescriptorKey(typeDescriptors []*descriptor.TypeDescriptor, typeDescriptorKey string) (tableName string, ok bool) {
 	for _, typeDescriptor := range typeDescriptors {
 		if typeDescriptorKey == typeDescriptor.Key {
 			tableName = typeDescriptor.TableName
+			return tableName, true
 		}
 	}
-	return
+	return "", false
 }
 
-func GetTypeDescriptorUsingTypeDescriptorKey(typeDescriptors []*config.TypeDescriptor, typeDescriptorKey string) (result *config.TypeDescriptor) {
+func GetTypeDescriptorUsingTypeDescriptorKey(typeDescriptors []*descriptor.TypeDescriptor, typeDescriptorKey string) (result *descriptor.TypeDescriptor) {
 	for _, typeDescriptor := range typeDescriptors {
 		if typeDescriptorKey == typeDescriptor.Key {
 			result = typeDescriptor
@@ -107,7 +90,7 @@ func GetTypeDescriptorUsingTypeDescriptorKey(typeDescriptors []*config.TypeDescr
 }
 
 // ContextWithRelationships will return a new context which will included an array of all relationships for the table provided in the function's second parameter
-func ContextWithRelationships(ctx context.Context, typeDescriptors []*config.TypeDescriptor, table string) context.Context {
+func ContextWithRelationships(ctx context.Context, typeDescriptors []*descriptor.TypeDescriptor, table string) context.Context {
 	typeDescriptor := GetTypeDescriptorUsingDBTableName(typeDescriptors, table)
 	relationships := TypeDescriptorRelationships(typeDescriptor)
 	return context.WithValue(ctx, ContextKey("relationships"), relationships)
@@ -124,8 +107,8 @@ func TableHasRelationships(cfg config.Config, table string) bool {
 	return result
 }
 
-func TypeDescriptorRelationships(td *config.TypeDescriptor) []*config.Field {
-	var relationships []*config.Field
+func TypeDescriptorRelationships(td *descriptor.TypeDescriptor) []*descriptor.Field {
+	var relationships []*descriptor.Field
 	for _, field := range td.Fields {
 		if field.Relationship != nil {
 			relationships = append(relationships, field)
@@ -182,6 +165,23 @@ func parseApplicationJSON(req *http.Request) (data map[string]interface{}, err e
 		return nil, fmt.Errorf(ErrUnexpectedJSON.Error()+": %v\n", err)
 	}
 	return
+}
+
+func IsOptionsRoute(req *http.Request) bool {
+	currentRoute := mux.CurrentRoute(req).GetName()
+	if currentRoute == "GetCollectionAsOptionsFilterable" ||
+		currentRoute == "GetCollectionAsOptions" {
+		return true
+	}
+	return false
+}
+
+func IsOptionRoute(req *http.Request) bool {
+	currentRoute := mux.CurrentRoute(req).GetName()
+	if currentRoute == "GetSingleAsOption" {
+		return true
+	}
+	return false
 }
 
 // Scan implements the Scanner interface.

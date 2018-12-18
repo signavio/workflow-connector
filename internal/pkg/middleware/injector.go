@@ -24,7 +24,7 @@ func RequestInjector(next http.Handler) http.Handler {
 		// property of the type descriptor in the descriptor.json file
 		// and *not* the name of the table in the database
 		typeDescriptorKey := mux.Vars(r)["table"]
-		tableName := util.GetDBTableNameUsingTypeDescriptorKey(
+		tableName, _ := util.GetDBTableNameUsingTypeDescriptorKey(
 			config.Options.Descriptor.TypeDescriptors,
 			typeDescriptorKey,
 		)

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
 	"github.com/spf13/viper"
 )
@@ -30,7 +31,7 @@ type Config struct {
 		PublicKey  string
 		PrivateKey string
 	}
-	Descriptor *Descriptor
+	Descriptor *descriptor.Descriptor
 	Auth       *Auth
 	Logging    bool
 }
@@ -108,7 +109,7 @@ func init() {
 	if err != nil {
 		log.When(true).Fatalf("Unable to open descriptor.json file: %v\n", err)
 	}
-	Options.Descriptor = ParseDescriptorFile(descriptorFile)
+	Options.Descriptor = descriptor.ParseDescriptorFile(descriptorFile)
 	for _, td := range Options.Descriptor.TypeDescriptors {
 		Options.Database.Tables = append(Options.Database.Tables,
 			&Table{td.TableName, td.ColumnAsOptionName})

@@ -24,6 +24,7 @@ func NewServer(cfg config.Config, e endpoint.Endpoint) *http.Server {
 	// built in NewRecovery and NewLogger middlewares
 	n := negroni.New(negroni.NewRecovery(), negroni.NewLogger())
 	router.Use(middleware.BasicAuth)
+	router.Use(middleware.RouteChecker)
 	router.Use(middleware.RequestInjector)
 	router.Use(middleware.ResponseInjector)
 	n.UseHandler(router)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
+	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
@@ -30,7 +31,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		// for example, `/options`, `/options?filter=`, to be enclosed
 		// in an array, regardless of whether or not the result set
 		// return 0, 1 or many results
-		if isOptionsRoute(req) {
+		if util.IsOptionsRoute(req) {
 			return []byte("[]"), nil
 		}
 		return []byte("{}"), nil
@@ -41,7 +42,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 			results[0].(map[string]interface{}), req, tableName,
 		)
 		log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
-		if isOptionsRoute(req) {
+		if util.IsOptionsRoute(req) {
 			var optionResults []interface{}
 			optionResult := map[string]interface{}{
 				"id":   formattedResult[uniqueIDColumn],
@@ -54,7 +55,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 			}
 			return
 		}
-		if isOptionRoute(req) {
+		if util.IsOptionRoute(req) {
 			optionResult := map[string]interface{}{
 				"id":   formattedResult[uniqueIDColumn],
 				"name": formattedResult[columnAsOptionName],
@@ -77,7 +78,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		formattedResult := formatAsAWorkflowType(
 			result.(map[string]interface{}), req, tableName,
 		)
-		if isOptionRoute(req) || isOptionsRoute(req) {
+		if util.IsOptionRoute(req) || util.IsOptionsRoute(req) {
 			formattedResult = map[string]interface{}{
 				"id":   formattedResult[uniqueIDColumn],
 				"name": formattedResult[columnAsOptionName],
@@ -117,13 +118,17 @@ func formatAsAWorkflowType(queryResults map[string]interface{}, req *http.Reques
 	return
 }
 
-func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *config.Field) map[string]interface{} {
+func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
 	if field.Type.Name == "money" {
 		formatted = buildForFieldTypeMoney(formatted, queryResults, table, field)
 		return formatted
 	}
-	if field.Type.Name == "date" {
+	if field.Type.Kind == "date" {
 		formatted = buildForFieldTypeDate(formatted, queryResults, table, field)
+		return formatted
+	}
+	if field.Type.Kind == "datetime" {
+		formatted = buildForFieldTypeDateTime(formatted, queryResults, table, field)
 		return formatted
 	}
 	if field.FromColumn == req.Context().Value(util.ContextKey("uniqueIDColumn")).(string) {
@@ -133,7 +138,7 @@ func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map
 	formatted = buildForFieldTypeOther(formatted, queryResults, table, field)
 	return formatted
 }
-func buildResultFromQueryResultsUsingField(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *config.Field) map[string]interface{} {
+func buildResultFromQueryResultsUsingField(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
 	if tableHasRelationships(queryResults, table, field) {
 		formatted = buildAndRecursivelyResolveRelationships(formatted, queryResults, req, table, field)
 		return formatted
@@ -141,10 +146,10 @@ func buildResultFromQueryResultsUsingField(formatted, queryResults map[string]in
 	return buildResultFromQueryResultsWithoutRelationships(formatted, queryResults, req, table, field)
 }
 
-func tableHasRelationships(queryResults map[string]interface{}, table string, field *config.Field) bool {
+func tableHasRelationships(queryResults map[string]interface{}, table string, field *descriptor.Field) bool {
 	return field.Relationship != nil && queryResults[table].(map[string]interface{})[field.Key] != nil
 }
-func buildAndRecursivelyResolveRelationships(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *config.Field) map[string]interface{} {
+func buildAndRecursivelyResolveRelationships(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
 	switch field.Relationship.Kind {
 	case "oneToMany":
 		return relationshipKindIsOneToMany(formatted, queryResults, req, table, field)
@@ -155,7 +160,7 @@ func buildAndRecursivelyResolveRelationships(formatted, queryResults map[string]
 	}
 }
 
-func relationshipKindIsOneToMany(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *config.Field) map[string]interface{} {
+func relationshipKindIsOneToMany(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
 	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
 		var results []map[string]interface{}
 		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
@@ -173,7 +178,7 @@ func relationshipKindIsOneToMany(formatted, queryResults map[string]interface{},
 	return formatted
 }
 
-func relationshipKindIsXToOne(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *config.Field) map[string]interface{} {
+func relationshipKindIsXToOne(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
 	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
 		var result map[string]interface{}
 		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
@@ -188,12 +193,12 @@ func relationshipKindIsXToOne(formatted, queryResults map[string]interface{}, re
 	formatted[field.Key] = make(map[string]interface{})
 	return formatted
 }
-func relatedTablesResultSetNotEmpty(queryResults map[string]interface{}, table string, field *config.Field) bool {
+func relatedTablesResultSetNotEmpty(queryResults map[string]interface{}, table string, field *descriptor.Field) bool {
 	fieldKey := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})
 	fieldKeyRelationshipWithTable := fieldKey[field.Relationship.WithTable].([]map[string]interface{})
 	return len(fieldKeyRelationshipWithTable) > 0
 }
-func buildForFieldTypeMoney(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
+func buildForFieldTypeMoney(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.Type.Amount.FromColumn] != nil ||
 		queryResults[table].(map[string]interface{})[field.Type.Currency.FromColumn] != nil {
 		formatted[field.Key] =
@@ -201,7 +206,7 @@ func buildForFieldTypeMoney(formatted, queryResults map[string]interface{}, tabl
 	}
 	return formatted
 }
-func buildForFieldTypeDate(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
+func buildForFieldTypeDate(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
 		dateTime := queryResults[table].(map[string]interface{})[field.FromColumn].(time.Time)
 		// Don't convert dateTime to UTC since when a DATE type is coerced
@@ -213,7 +218,14 @@ func buildForFieldTypeDate(formatted, queryResults map[string]interface{}, table
 	}
 	return formatted
 }
-func buildForFieldTypeUniqueIdColumn(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
+func buildForFieldTypeDateTime(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
+	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
+		dateTime := queryResults[table].(map[string]interface{})[field.FromColumn].(time.Time)
+		formatted[field.Key] = dateTime.UTC().Format("2006-01-02T15:04:05.999Z")
+	}
+	return formatted
+}
+func buildForFieldTypeUniqueIdColumn(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
 		var uniqueIDColumn interface{}
 		switch v := queryResults[table].(map[string]interface{})[field.FromColumn].(type) {
@@ -231,14 +243,14 @@ func buildForFieldTypeUniqueIdColumn(formatted, queryResults map[string]interfac
 	}
 	return formatted
 }
-func buildForFieldTypeOther(formatted, queryResults map[string]interface{}, table string, field *config.Field) map[string]interface{} {
+func buildForFieldTypeOther(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
 		formatted[field.Key] =
 			queryResults[table].(map[string]interface{})[field.FromColumn]
 	}
 	return formatted
 }
-func resultAsWorkflowMoneyType(field *config.Field, queryResults map[string]interface{}, table string) map[string]interface{} {
+func resultAsWorkflowMoneyType(field *descriptor.Field, queryResults map[string]interface{}, table string) map[string]interface{} {
 	result := make(map[string]interface{})
 	var currency interface{}
 	if field.Type.Currency.FromColumn == "" {
@@ -258,20 +270,4 @@ func resultAsWorkflowMoneyType(field *config.Field, queryResults map[string]inte
 		"currency": currency,
 	}
 	return result
-}
-func isOptionsRoute(req *http.Request) bool {
-	currentRoute := mux.CurrentRoute(req).GetName()
-	if currentRoute == "GetCollectionAsOptionsFilterable" ||
-		currentRoute == "GetCollectionAsOptions" {
-		return true
-	}
-	return false
-}
-
-func isOptionRoute(req *http.Request) bool {
-	currentRoute := mux.CurrentRoute(req).GetName()
-	if currentRoute == "GetSingleAsOption" {
-		return true
-	}
-	return false
 }

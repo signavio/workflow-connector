@@ -1,12 +1,22 @@
 package endpoint
 
 import (
+	"context"
+	"database/sql"
 	"errors"
-	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/signavio/workflow-connector/internal/pkg/backend/sql"
-	"github.com/signavio/workflow-connector/internal/pkg/config"
+	uuid "github.com/satori/go.uuid"
+	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
+	"github.com/signavio/workflow-connector/internal/pkg/filter"
+)
+
+var (
+	ErrPostForm               = errors.New("Form data sent was empty and/or not of type `application/x-www-form-urlencoded`")
+	ErrCardinalityMany        = errors.New("Form data contained multiple input values for a single column")
+	ErrUnexpectedJSON         = errors.New("Received JSON data that we are unable to parse")
+	ErrMismatchedAffectedRows = errors.New("The amount of rows affected should be sane")
 )
 
 // Endpoint fetches data from a backend (ie. a SQL DB) and makes the data
@@ -14,11 +24,12 @@ import (
 
 type Endpoint interface {
 	CRUD
-	WorkflowConnector
+	DataConnectorOptions
+	CollectionFilterer
 	// GetHandler returns a http.Handler which include all the routes that implement
 	// the functionality required by the CRUD and WorkflowConnector interfaces
 	GetHandler() http.Handler
-	Open(args ...interface{}) error
+	Open(...interface{}) error
 }
 
 // CRUD abstracts the functionality expected from a standard CRUD service,
@@ -31,35 +42,27 @@ type CRUD interface {
 	DeleteSingle(rw http.ResponseWriter, req *http.Request)
 }
 
-// WorkflowConnector satisfies the interface for a custom connector as
+// DataConnectorOptions satisfies the interface for a custom connector as
 // specified by Signavio's Workflow Accelerator documentation
-type WorkflowConnector interface {
+type DataConnectorOptions interface {
 	GetSingleAsOption(rw http.ResponseWriter, req *http.Request)
 	GetCollectionAsOptions(rw http.ResponseWriter, req *http.Request)
 	GetCollectionAsOptionsFilterable(rw http.ResponseWriter, req *http.Request)
 }
 
-var (
-	ErrPostForm               = errors.New("Form data sent was empty and/or not of type `application/x-www-form-urlencoded`")
-	ErrCardinalityMany        = errors.New("Form data contained multiple input values for a single column")
-	ErrUnexpectedJSON         = errors.New("Received JSON data that we are unable to parse")
-	ErrMismatchedAffectedRows = errors.New("The amount of rows affected should be sane")
-)
+// CollectionFilterer allows a user to select an operator and a field to filter
+// the result set upon
+type CollectionFilterer interface {
+	GetCollectionFilterable(rw http.ResponseWriter, req *http.Request)
+}
 
-func NewEndpoint(cfg config.Config) (Endpoint, error) {
-	switch cfg.Database.Driver {
-	case "sqlserver":
-		return sql.NewBackend("sqlserver"), nil
-	case "sqlite3":
-		return sql.NewBackend("sqlite3"), nil
-	case "mysql":
-		return sql.NewBackend("mysql"), nil
-	case "postgres":
-		return sql.NewBackend("postgres"), nil
-	case "goracle":
-		return sql.NewBackend("goracle"), nil
-	default:
-		return nil, fmt.Errorf("Database driver: %s, not supported", cfg.Database.Driver)
-
-	}
+type Backend interface {
+	GetSchemaMapping(string) *descriptor.SchemaMapping
+	GetFilterPredicateMapping(filter.Predicate) string
+	SaveSchemaMapping() error
+	GetQueryTemplate(string) string
+	QueryContext(context.Context, string, ...interface{}) ([]interface{}, error)
+	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+	CommitTx(string) error
+	CreateTx(time.Duration) (uuid.UUID, error)
 }
