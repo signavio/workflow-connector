@@ -12,6 +12,8 @@ type Descriptor struct {
 	Name            string            `json:"name,omitempty"`
 	Description     string            `json:"description,omitempty"`
 	TypeDescriptors []*TypeDescriptor `json:"typeDescriptors,omitempty"`
+	Version         int               `json:"version,omitempty"`
+	ProtocolVersion int               `json:"protocolVersion,omitempty"`
 }
 
 type TypeDescriptor struct {
