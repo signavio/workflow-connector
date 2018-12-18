@@ -20,6 +20,7 @@ type TypeDescriptor struct {
 	TableName          string   `json:"tableName,omitempty"`
 	ColumnAsOptionName string   `json:"columnAsOptionName,omitempty"`
 	UniqueIdColumn     string   `json:"uniqueIdColumn,omitempty"`
+	RecordType         string   `json:"recordType,omitempty"`
 	Fields             []*Field `json:"fields,omitempty"`
 	OptionsAvailable   bool     `json:"optionsAvailable,omitempty"`
 	FetchOneAvailable  bool     `json:"fetchOneAvailable,omitempty"`
