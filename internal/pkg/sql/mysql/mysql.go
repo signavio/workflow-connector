@@ -2,12 +2,19 @@ package mysql
 
 import (
 	"database/sql"
+	"fmt"
+	"regexp"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/signavio/workflow-connector/internal/app/endpoint"
+	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
 	sqlBackend "github.com/signavio/workflow-connector/internal/pkg/sql"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
+)
+
+const (
+	dateTimeMysqlFormat = `'%Y-%m-%dT%TZ'`
 )
 
 var (
@@ -91,6 +98,7 @@ func New() endpoint.Endpoint {
 	m := &Mysql{sqlBackend.New().(*sqlBackend.SqlBackend)}
 	m.Templates = QueryTemplates
 	m.CastDatabaseTypeToGolangType = convertFromMysqlDataType
+	m.CoerceExecArgsFunc = coerceExecArgsToMysqlType
 	return m
 }
 
@@ -116,5 +124,35 @@ func isOfDataType(ts []string, fieldDataType string) (result bool) {
 			return true
 		}
 	}
+	return
+}
+
+func coerceExecArgsToMysqlType(query string, columnNames []string, fields []*descriptor.Field) (queryWithFormatting string) {
+	// We need the [^'"] at the end of the regular expression
+	// to make sure that we do not match on column names
+	// which may contain a literal ? in the name
+	queryParamAndSeperator := `(?m)(?P<param>\?)(?P<seperator>[,;])[^'"]`
+	pattern := regexp.MustCompile(queryParamAndSeperator)
+	submatches := pattern.FindAllSubmatchIndex([]byte(query), -1)
+	betweenTheMatches := pattern.Split(query, -1)
+	coerceDateTemplate := []byte(fmt.Sprintf("str_to_date($param, %s)$seperator ", dateTimeMysqlFormat))
+	doNothingTemplate := []byte("$param$seperator ")
+	result := []byte{}
+	for _, field := range fields {
+		for i, column := range columnNames {
+			if field.FromColumn == column || field.Type.Amount.FromColumn == column {
+				switch field.Type.Kind {
+				case "datetime", "date", "time":
+					result = append(result, []byte(betweenTheMatches[i])...)
+					result = pattern.Expand(result, coerceDateTemplate, []byte(query), submatches[i])
+				default:
+					result = append(result, []byte(betweenTheMatches[i])...)
+					result = pattern.Expand(result, doNothingTemplate, []byte(query), submatches[i])
+				}
+			}
+		}
+	}
+	result = append(result, []byte(betweenTheMatches[len(betweenTheMatches)-1])...)
+	queryWithFormatting = string(result)
 	return
 }

@@ -23,10 +23,13 @@ type lastId struct {
 	id int64
 }
 
-var (
+const (
 	dateTimeOracleFormat = `'YYYY-MM-DD"T"HH24:MI:SSXFF3TZH:TZM'`
 	dateTimeGolangFormat = `2006-01-02T15:04:05.999-07:00`
-	QueryTemplates       = map[string]string{
+)
+
+var (
+	QueryTemplates = map[string]string{
 		`GetSingle`: `SELECT * ` +
 			`FROM {{.TableName}} "_{{.TableName}}"` +
 			`{{range .Relations}}` +
@@ -53,7 +56,8 @@ var (
 			`{{range $index, $element := .ColumnNames | tail}},` +
 			`  "{{$element}}" = :{{(add2 $index)}}` +
 			`{{end}} ` +
-			`WHERE "{{.UniqueIDColumn}}"= :{{(lenPlus1 .ColumnNames)}}`, `CreateSingle`: `DECLARE "l_{{.UniqueIDColumn}}" nvarchar2(256); ` +
+			`WHERE "{{.UniqueIDColumn}}"= :{{(lenPlus1 .ColumnNames)}}`,
+		`CreateSingle`: `DECLARE "l_{{.UniqueIDColumn}}" nvarchar2(256); ` +
 			`BEGIN ` +
 			`INSERT INTO {{.TableName}}` +
 			`("{{.ColumnNames | head}}"` +

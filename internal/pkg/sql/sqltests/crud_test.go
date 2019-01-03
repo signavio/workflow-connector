@@ -158,7 +158,7 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "1,Bialetti Moka Express 6 cup,25.95,2017-12-12T12:00:00Z\n" +
+			RowsAsCsv: "1,Bialetti Moka Express 6 cup,25.95,2017-12-11T12:00:00Z\n" +
 				"2,Sanremo Café Racer,8477.85,2017-12-12T12:00:00Z\n" +
 				"3,Buntfink SteelKettle,39.95,2017-12-12T12:00:00Z\n" +
 				"4,Copper Coffee Pot Cezve,49.95,2017-12-12T12:00:00Z",
@@ -170,7 +170,7 @@ var (
     },
     "id": "1",
     "name": "Bialetti Moka Express 6 cup",
-    "purchaseDate": "2017-12-12T12:00:00Z"
+    "purchaseDate": "2017-12-11T12:00:00Z"
   },
   {
     "acquisitionCost": {
@@ -295,7 +295,7 @@ var (
   },
   "id": "2",
   "name": "Sanremo Café Racer",
-  "purchaseDate": "2017-12-01T12:34:57Z",
+  "purchaseDate": "2017-12-01T12:34:56.789Z",
   "recipes": [%s]
 }`,
 			ExpectedResultsRelationships: []interface{}{`
