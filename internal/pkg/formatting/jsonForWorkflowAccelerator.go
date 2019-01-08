@@ -74,9 +74,9 @@ func formatForOptionsRoute(req *http.Request, results []interface{}) (JSONResult
 		return []byte("[]"), nil
 	}
 	for _, result := range results {
-		formattedResult := formatAsAWorkflowType(
-			result.(map[string]interface{}), req, tableName,
-		)
+		formattedResult := make(map[string]interface{})
+		formattedResult["id"] = result.(map[string]interface{})[tableName].(map[string]interface{})["id"]
+		formattedResult["name"] = result.(map[string]interface{})[tableName].(map[string]interface{})["name"]
 		formattedResults = append(formattedResults, formattedResult)
 	}
 	log.When(config.Options.Logging).Infof(
