@@ -24,8 +24,6 @@ var WorkflowAccelerator = &workflowAcceleratorFormatter{}
 // that Workflow Accelerator can interpret and understand
 func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
 	tableName := req.Context().Value(util.ContextKey("table")).(string)
-	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
-	columnAsOptionName := req.Context().Value(util.ContextKey("columnAsOptionName")).(string)
 	if len(results) == 0 {
 		// Signavio Workflow Accelerator expects results from the options routes,
 		// for example, `/options`, `/options?filter=`, to be enclosed
@@ -42,30 +40,6 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 			results[0].(map[string]interface{}), req, tableName,
 		)
 		log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
-		if util.IsOptionsRoute(req) {
-			var optionResults []interface{}
-			optionResult := map[string]interface{}{
-				"id":   formattedResult[uniqueIDColumn],
-				"name": formattedResult[columnAsOptionName],
-			}
-			optionResults = append(optionResults, optionResult)
-			JSONResults, err = json.MarshalIndent(&optionResults, "", "  ")
-			if err != nil {
-				return nil, err
-			}
-			return
-		}
-		if util.IsOptionRoute(req) {
-			optionResult := map[string]interface{}{
-				"id":   formattedResult[uniqueIDColumn],
-				"name": formattedResult[columnAsOptionName],
-			}
-			JSONResults, err = json.MarshalIndent(&optionResult, "", "  ")
-			if err != nil {
-				return nil, err
-			}
-			return
-		}
 		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
 		if err != nil {
 			return nil, err
@@ -78,12 +52,6 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		formattedResult := formatAsAWorkflowType(
 			result.(map[string]interface{}), req, tableName,
 		)
-		if util.IsOptionRoute(req) || util.IsOptionsRoute(req) {
-			formattedResult = map[string]interface{}{
-				"id":   formattedResult[uniqueIDColumn],
-				"name": formattedResult[columnAsOptionName],
-			}
-		}
 		formattedResults = append(formattedResults, formattedResult)
 	}
 	log.When(config.Options.Logging).Infof(
