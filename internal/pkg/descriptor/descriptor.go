@@ -80,36 +80,11 @@ func ParseDescriptorFile(file io.Reader) (descriptor *Descriptor) {
 	if err != nil {
 		panic(fmt.Errorf("Unable to unmarshal descriptor.json: %v", err))
 	}
-	descriptor = addIDFieldIfNotExists(descriptor)
 	if err := performSanityChecks(descriptor); err != nil {
 		panic(err)
 	}
 	return
 }
-
-func addIDFieldIfNotExists(descriptor *Descriptor) *Descriptor {
-	for _, td := range descriptor.TypeDescriptors {
-		isIDFieldPresent := false
-		for _, field := range td.Fields {
-			if field.Key == "id" || field.FromColumn == "id" {
-				isIDFieldPresent = true
-			}
-		}
-		// Assume there exists a column in the table called 'id'
-		// which is the primary key
-		if !isIDFieldPresent {
-			field := Field{
-				Key:        "id",
-				Name:       "Identifier",
-				FromColumn: "id",
-				Type:       &WorkflowType{Name: "text"},
-			}
-			td.Fields = append(td.Fields, &field)
-		}
-	}
-	return descriptor
-}
-
 func performSanityChecks(descriptor *Descriptor) error {
 	for _, td := range descriptor.TypeDescriptors {
 		for _, field := range td.Fields {
