@@ -23,15 +23,11 @@ var WorkflowAccelerator = &workflowAcceleratorFormatter{}
 // which is an array of empty interfaces, to a JSON byte array
 // that Workflow Accelerator can interpret and understand
 func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
+	if util.IsOptionsRoute(req) {
+		return formatForOptionsRoute(req, results)
+	}
 	tableName := req.Context().Value(util.ContextKey("table")).(string)
 	if len(results) == 0 {
-		// Signavio Workflow Accelerator expects results from the options routes,
-		// for example, `/options`, `/options?filter=`, to be enclosed
-		// in an array, regardless of whether or not the result set
-		// return 0, 1 or many results
-		if util.IsOptionsRoute(req) {
-			return []byte("[]"), nil
-		}
 		return []byte("{}"), nil
 	}
 	if len(results) == 1 {
@@ -44,6 +40,7 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 		if err != nil {
 			return nil, err
 		}
+		log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
 		return
 	}
 	log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set > 1")
@@ -66,6 +63,33 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 	return
 }
 
+// formatForOptionsRoute applies special formatting to the results from
+// the options routes, for example, `/options`, `/options?filter=`,
+// to be enclosed in an array, regardless of whether or not
+// the result set return 0, 1 or many results
+func formatForOptionsRoute(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
+	tableName := req.Context().Value(util.ContextKey("table")).(string)
+	var formattedResults []interface{}
+	if len(results) == 0 {
+		return []byte("[]"), nil
+	}
+	for _, result := range results {
+		formattedResult := formatAsAWorkflowType(
+			result.(map[string]interface{}), req, tableName,
+		)
+		formattedResults = append(formattedResults, formattedResult)
+	}
+	log.When(config.Options.Logging).Infof(
+		"[formatter <- asWorkflowType] formattedResult(s): \n%+v ...\n",
+		formattedResults,
+	)
+	JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
+	return
+}
 func formatAsAWorkflowType(queryResults map[string]interface{}, req *http.Request, table string) (formatted map[string]interface{}) {
 	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
 		config.Options.Descriptor.TypeDescriptors,
