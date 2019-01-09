@@ -94,7 +94,22 @@ func performSanityChecks(descriptor *Descriptor) error {
 			if err := errFromColumnPropertyIsMissing(field); err != nil {
 				return err
 			}
+			if err := errTypeNameIsMissing(field); err != nil {
+				return err
+			}
 		}
+	}
+	return nil
+}
+
+func errTypeNameIsMissing(field *Field) error {
+	msg := "Unable to parse descriptor.json: " +
+		"%s should not have an empty type name"
+	if len(field.Type.Name) == 0 {
+		return fmt.Errorf(
+			msg,
+			field.Key,
+		)
 	}
 	return nil
 }
