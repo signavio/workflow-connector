@@ -77,9 +77,7 @@ func (f *getSingleAsOptionFormatter) Format(req *http.Request, results []interfa
 		return nil, fmt.Errorf("formatting: expected result set to contain only one resource")
 	}
 	tableName := req.Context().Value(util.ContextKey("table")).(string)
-	formattedResult := make(map[string]interface{})
-	formattedResult["id"] = results[0].(map[string]interface{})[tableName].(map[string]interface{})["id"]
-	formattedResult["name"] = results[0].(map[string]interface{})[tableName].(map[string]interface{})["name"]
+	formattedResult := stringifyIdAndName(results[0].(map[string]interface{}), tableName)
 	log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
 	JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
 	if err != nil {
@@ -88,7 +86,6 @@ func (f *getSingleAsOptionFormatter) Format(req *http.Request, results []interfa
 	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
 	return
 }
-
 func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
 	tableName := req.Context().Value(util.ContextKey("table")).(string)
 	var formattedResults []interface{}
@@ -96,10 +93,10 @@ func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []in
 		return []byte("[]"), nil
 	}
 	for _, result := range results {
-		formattedResult := make(map[string]interface{})
-		formattedResult["id"] = result.(map[string]interface{})[tableName].(map[string]interface{})["id"]
-		formattedResult["name"] = result.(map[string]interface{})[tableName].(map[string]interface{})["name"]
-		formattedResults = append(formattedResults, formattedResult)
+		formattedResults = append(
+			formattedResults,
+			stringifyIdAndName(result.(map[string]interface{}), tableName),
+		)
 	}
 	log.When(config.Options.Logging).Infof(
 		"[formatter <- asWorkflowType] formattedResult(s): \n%+v ...\n",
@@ -112,6 +109,34 @@ func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []in
 	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
 	return
 }
+
+func stringifyIdAndName(in map[string]interface{}, tableName string) (stringifiedResult map[string]interface{}) {
+	stringifiedResult = make(map[string]interface{})
+	// Signavio Workflow Accelerator Connector API requires
+	// the `id` and `name` field to be of type string
+	switch v := in[tableName].(map[string]interface{})["id"].(type) {
+	case int64:
+		stringifiedResult["id"] = fmt.Sprintf("%d", v)
+	case float64:
+		stringifiedResult["id"] = fmt.Sprintf("%f", v)
+	case fmt.Stringer:
+		stringifiedResult["id"] = v.String()
+	default:
+		stringifiedResult["id"] = v
+	}
+	switch v := in[tableName].(map[string]interface{})["name"].(type) {
+	case int64:
+		stringifiedResult["name"] = fmt.Sprintf("%d", v)
+	case float64:
+		stringifiedResult["name"] = fmt.Sprintf("%f", v)
+	case fmt.Stringer:
+		stringifiedResult["name"] = v.String()
+	default:
+		stringifiedResult["name"] = v
+	}
+	return
+}
+
 func formatAsAWorkflowType(queryResults map[string]interface{}, req *http.Request, table string) (formatted map[string]interface{}) {
 	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
 		config.Options.Descriptor.TypeDescriptors,
