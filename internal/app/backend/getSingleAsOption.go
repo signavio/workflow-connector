@@ -64,7 +64,7 @@ func (b *Backend) GetSingleAsOption(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	log.When(config.Options.Logging).Infoln("[handler -> formatter] format results as json")
-	formattedResults, err := formatting.WorkflowAccelerator.Format(req, results)
+	formattedResults, err := formatting.GetSingleAsOption.Format(req, results)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,

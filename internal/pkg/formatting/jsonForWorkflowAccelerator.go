@@ -13,23 +13,24 @@ import (
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
-type workflowAcceleratorFormatter struct{}
+type standardFormatter struct{}
+type getSingleAsOptionFormatter struct{}
+type getCollectionAsOptionsFormatter struct{}
 
-// WorkflowAcccelerator will format the results retrieved from
-// the database to comply with Workflow Accelerator's API
-var WorkflowAccelerator = &workflowAcceleratorFormatter{}
+var (
+	Standard               = &standardFormatter{}
+	GetSingleAsOption      = &getSingleAsOptionFormatter{}
+	GetCollectionAsOptions = &getCollectionAsOptionsFormatter{}
+)
 
 // Format will convert the results received from the backend service,
 // which is an array of empty interfaces, to a JSON byte array
 // that Workflow Accelerator can interpret and understand
-func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
-	if util.IsOptionsRoute(req) {
-		return formatForOptionsRoute(req, results)
-	}
-	tableName := req.Context().Value(util.ContextKey("table")).(string)
+func (f *standardFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
 	if len(results) == 0 {
 		return []byte("{}"), nil
 	}
+	tableName := req.Context().Value(util.ContextKey("table")).(string)
 	if len(results) == 1 {
 		log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set == 1")
 		formattedResult := formatAsAWorkflowType(
@@ -62,12 +63,31 @@ func (f *workflowAcceleratorFormatter) Format(req *http.Request, results []inter
 	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
 	return
 }
+func (f *getSingleAsOptionFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
+	if len(results) == 0 {
+		return []byte("{}"), nil
+	}
+	if len(results) > 1 {
+		return nil, fmt.Errorf("formatting: expected result set to contain only one resource")
+	}
+	tableName := req.Context().Value(util.ContextKey("table")).(string)
+	formattedResult := make(map[string]interface{})
+	formattedResult["id"] = results[0].(map[string]interface{})[tableName].(map[string]interface{})["id"]
+	formattedResult["name"] = results[0].(map[string]interface{})[tableName].(map[string]interface{})["name"]
+	log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
+	JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
+	return
+}
 
 // formatForOptionsRoute applies special formatting to the results from
 // the options routes, for example, `/options`, `/options?filter=`,
 // to be enclosed in an array, regardless of whether or not
 // the result set return 0, 1 or many results
-func formatForOptionsRoute(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
+func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
 	tableName := req.Context().Value(util.ContextKey("table")).(string)
 	var formattedResults []interface{}
 	if len(results) == 0 {
