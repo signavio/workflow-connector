@@ -14,13 +14,19 @@ import (
 )
 
 type standardFormatter struct{}
+
+// Special formatting for the options route like `/options`, `/options?filter=`
+// is required, since Workflow Accelerator expects the results returned
+// by these routes to be enclosed in an array, regardless of whether
+// or not the result set return 0, 1 or many results
 type getSingleAsOptionFormatter struct{}
 type getCollectionAsOptionsFormatter struct{}
 
 var (
-	Standard               = &standardFormatter{}
-	GetSingleAsOption      = &getSingleAsOptionFormatter{}
-	GetCollectionAsOptions = &getCollectionAsOptionsFormatter{}
+	Standard                         = &standardFormatter{}
+	GetSingleAsOption                = &getSingleAsOptionFormatter{}
+	GetCollectionAsOptions           = &getCollectionAsOptionsFormatter{}
+	GetCollectionAsOptionsFilterable = &getCollectionAsOptionsFormatter{}
 )
 
 // Format will convert the results received from the backend service,
@@ -83,10 +89,6 @@ func (f *getSingleAsOptionFormatter) Format(req *http.Request, results []interfa
 	return
 }
 
-// formatForOptionsRoute applies special formatting to the results from
-// the options routes, for example, `/options`, `/options?filter=`,
-// to be enclosed in an array, regardless of whether or not
-// the result set return 0, 1 or many results
 func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
 	tableName := req.Context().Value(util.ContextKey("table")).(string)
 	var formattedResults []interface{}
