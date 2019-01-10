@@ -51,6 +51,12 @@ var (
 		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM {{.TableName}} ` +
 			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%'`,
+		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+			`FROM {{.TableName}} ` +
+			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%' ` +
+			"{{range $key, $value := .ParamsWithValues}}" +
+			"AND {{$key}} = '{{$value}}'" +
+			"{{end}}",
 		`UpdateSingle`: `UPDATE {{.TableName}} ` +
 			`SET "{{.ColumnNames | head}}" = :1` +
 			`{{range $index, $element := .ColumnNames | tail}},` +

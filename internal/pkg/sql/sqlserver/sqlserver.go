@@ -30,6 +30,12 @@ var (
 		"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
 			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) LIKE @p1",
+		"GetCollectionAsOptionsWithParams": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
+			"FROM {{.TableName}} " +
+			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) LIKE @p1 " +
+			"{{range $key, $value := .ParamsWithValues}}" +
+			"AND {{$key}} = '{{$value}}'" +
+			"{{end}}",
 		"UpdateSingle": "UPDATE {{.TableName}} " +
 			"SET {{.ColumnNames | head}} = @p1" +
 			"{{range $index, $element := .ColumnNames | tail}}," +
