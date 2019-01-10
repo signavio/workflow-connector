@@ -17,17 +17,23 @@ type Descriptor struct {
 }
 
 type TypeDescriptor struct {
-	Key                string   `json:"key,omitempty"`
-	Name               string   `json:"name,omitempty"`
-	TableName          string   `json:"tableName,omitempty"`
-	ColumnAsOptionName string   `json:"columnAsOptionName,omitempty"`
-	UniqueIdColumn     string   `json:"uniqueIdColumn,omitempty"`
-	RecordType         string   `json:"recordType,omitempty"`
-	Fields             []*Field `json:"fields,omitempty"`
-	OptionsAvailable   bool     `json:"optionsAvailable,omitempty"`
-	FetchOneAvailable  bool     `json:"fetchOneAvailable,omitempty"`
+	Key                string       `json:"key,omitempty"`
+	Name               string       `json:"name,omitempty"`
+	TableName          string       `json:"tableName,omitempty"`
+	ColumnAsOptionName string       `json:"columnAsOptionName,omitempty"`
+	UniqueIdColumn     string       `json:"uniqueIdColumn,omitempty"`
+	RecordType         string       `json:"recordType,omitempty"`
+	Parameters         []*Parameter `json:"parameters,omitempty"`
+	Fields             []*Field     `json:"fields,omitempty"`
+	OptionsAvailable   bool         `json:"optionsAvailable,omitempty"`
+	FetchOneAvailable  bool         `json:"fetchOneAvailable,omitempty"`
 }
 
+type Parameter struct {
+	Key  string        `json:"key,omitempty"`
+	Name string        `json:"name,omitempty"`
+	Type *WorkflowType `json:"type,omitempty"`
+}
 type Field struct {
 	Key          string        `json:"key,omitempty"`
 	Name         string        `json:"name,omitempty"`
