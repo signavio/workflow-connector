@@ -12,6 +12,7 @@ var (
 		"GetSingleAsOption":                getSingleAsOptionTestCases,
 		"GetCollectionAsOptions":           getCollectionAsOptionsTestCases,
 		"GetCollectionAsOptionsFilterable": getCollectionAsOptionsFilterableTestCases,
+		"GetCollectionAsOptionsWithParams": getCollectionAsOptionsWithParamsTestCases,
 	}
 	getSingleAsOptionTestCases = []testCase{
 		{
@@ -122,6 +123,79 @@ var (
 			},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment/options", nil)
+				return req
+			},
+		},
+	}
+	getCollectionAsOptionsWithParamsTestCases = []testCase{
+		{
+			Kind: "success",
+			Name: "it succeeds when equipment table contains more than one column" +
+				" and returns three records when we filter on purchaseDate",
+			DescriptorFields: []string{
+				commonEquipmentDescriptorFields,
+				commonRecipesDescriptorFields,
+			},
+			TableSchema: commonEquipmentTableSchema,
+			ColumnNames: []string{
+				"equipment\x00id",
+				"equipment\x00name",
+			},
+			RowsAsCsv: "2,Sanremo Café Racer\n3,Buntfink SteelKettle\n4, Copper Coffee Pot Cezve",
+			ExpectedResults: `[
+  {
+    "id": "2",
+    "name": "Sanremo Café Racer"
+  },
+  {
+    "id": "3",
+    "name": "Buntfink SteelKettle"
+  },
+  {
+    "id": "4",
+    "name": "Copper Coffee Pot Cezve"
+  }
+]`,
+			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
+				rows := sqlmock.NewRows(columns).
+					FromCSVString(rowsAsCsv)
+				mock.ExpectQuery("SELECT (.+), (.+) FROM (.+) WHERE (.+) LIKE (.+)").
+					WillReturnRows(rows)
+			},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/equipment/options?filter=&purchaseDate=2017-12-12T12:00:00Z", nil)
+				return req
+			},
+		},
+		{
+			Kind: "success",
+			Name: "it succeeds when equipment table contains more than one column" +
+				" and returns one record when we filter on purchaseDate and provide" +
+				" a filter query",
+			DescriptorFields: []string{
+				commonEquipmentDescriptorFields,
+				commonRecipesDescriptorFields,
+			},
+			TableSchema: commonEquipmentTableSchema,
+			ColumnNames: []string{
+				"equipment\x00id",
+				"equipment\x00name",
+			},
+			RowsAsCsv: "2,Sanremo Café Racer",
+			ExpectedResults: `[
+  {
+    "id": "2",
+    "name": "Sanremo Café Racer"
+  }
+]`,
+			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
+				rows := sqlmock.NewRows(columns).
+					FromCSVString(rowsAsCsv)
+				mock.ExpectQuery("SELECT (.+), (.+) FROM (.+) WHERE (.+) LIKE (.+)").
+					WillReturnRows(rows)
+			},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/equipment/options?filter=San&purchaseDate=2017-12-12T12:00:00Z", nil)
 				return req
 			},
 		},

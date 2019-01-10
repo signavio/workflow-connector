@@ -40,6 +40,12 @@ var (
 		"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
 			"WHERE {{.ColumnAsOptionName}} LIKE ?",
+		"GetCollectionAsOptionsWithParams": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
+			"FROM {{.TableName}} " +
+			"WHERE {{.ColumnAsOptionName}} LIKE ? " +
+			"{{range $key, $value := .ParamsWithValues}}" +
+			"AND {{$key}} = '{{$value}}'" +
+			"{{end}}",
 		"UpdateSingle": "UPDATE {{.TableName}} SET {{.ColumnNames | head}}" +
 			" = ?{{range .ColumnNames | tail}}, {{.}} = ?{{end}} WHERE {{.UniqueIDColumn}} = ?",
 		"CreateSingle": "INSERT INTO {{.TableName}}({{.ColumnNames | head}}" +

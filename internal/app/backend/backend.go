@@ -38,6 +38,13 @@ func appendHandlers(r *mux.Router, b *Backend) *mux.Router {
 	r.HandleFunc("/{table}/options/{id}", b.GetSingleAsOption).
 		Name("GetSingleAsOption").
 		Methods("GET")
+	r.HandleFunc("/{table}/options", b.GetCollectionAsOptionsWithParams).
+		Name("GetCollectionAsOptionsWithParams").
+		Methods("GET").
+		Queries("filter", "{filter}").
+		MatcherFunc(func(req *http.Request, rm *mux.RouteMatch) bool {
+			return len(req.URL.Query()) > 1
+		})
 	r.HandleFunc("/{table}/options", b.GetCollectionAsOptionsFilterable).
 		Name("GetCollectionAsOptionsFilterable").
 		Methods("GET").

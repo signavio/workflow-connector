@@ -63,7 +63,9 @@ func (s *SqlBackend) execContext(ctx context.Context, query string, args ...inte
 func (s *SqlBackend) queryContext(ctx context.Context, query string, args ...interface{}) (results []interface{}, err error) {
 	currentRoute := ctx.Value(util.ContextKey("currentRoute")).(string)
 	switch currentRoute {
-	case "GetSingleAsOption", "GetCollectionAsOptions", "GetCollectionAsOptionsFilterable":
+	case "GetSingleAsOption", "GetCollectionAsOptions":
+		return s.queryContextForOptionRoutes(ctx, query, args...)
+	case "GetCollectionAsOptionsFilterable", "GetCollectionAsOptionsWithParams":
 		return s.queryContextForOptionRoutes(ctx, query, args...)
 	case "GetSingle":
 		return s.queryContextForGetSingleRoute(ctx, query, args...)
