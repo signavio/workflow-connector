@@ -9,6 +9,7 @@
       "tableName": "equipment",
       "columnAsOptionName": "name",
       "uniqueIdColumn": "id",
+      "recordType": "value",
       "fields" : [
         {
           "key" : "id",
@@ -72,6 +73,7 @@
       "tableName": "inventory",
       "columnAsOptionName": "ingredient_id",
       "uniqueIdColumn": "ingredient_id",
+      "recordType": "value",
       "fields" : [
         {
           "key" : "ingredientId",
@@ -155,6 +157,7 @@
       "tableName": "ingredient_recipe",
       "columnAsOptionName": "id",
       "uniqueIdColumn": "id",
+      "recordType": "value",
       "fields" : [
         {
           "key" : "id",
@@ -232,6 +235,14 @@
       "tableName": "recipes",
       "columnAsOptionName": "name",
       "uniqueIdColumn": "id",
+      "recordType": "value",
+      "parameters": [{
+          "key": "equipmentId",
+          "name": "Equipment ID",
+          "type": {
+              "name": "text"
+          }
+      }],
       "fields" : [
         {
           "key" : "id",
