@@ -34,7 +34,7 @@ var (
   },
   "id": "3",
   "name": "Buntfink SteelKettle",
-  "purchaseDate": "2017-12-12T12:00:00Z"
+  "purchaseDate": "2017-12-12T12:00:00.000Z"
 }`,
 			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 				rows := sqlmock.NewRows(columns).

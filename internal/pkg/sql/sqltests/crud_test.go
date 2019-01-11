@@ -40,7 +40,7 @@ var (
   },
   "id": "2",
   "name": "Sanremo Café Racer",
-  "purchaseDate": "2017-12-12T12:00:00Z",
+  "purchaseDate": "2017-12-12T12:00:00.000Z",
   "recipes": [%s]
 }`,
 			ExpectedResultsRelationships: []interface{}{`
@@ -128,7 +128,7 @@ var (
     },
     "id": "2",
     "name": "Sanremo Café Racer",
-    "purchaseDate": "2017-12-12T12:00:00Z"
+    "purchaseDate": "2017-12-12T12:00:00.000Z"
   `},
 			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 				rows := sqlmock.NewRows(columns).
@@ -170,7 +170,7 @@ var (
     },
     "id": "1",
     "name": "Bialetti Moka Express 6 cup",
-    "purchaseDate": "2017-12-11T12:00:00Z"
+    "purchaseDate": "2017-12-11T12:00:00.000Z"
   },
   {
     "acquisitionCost": {
@@ -179,7 +179,7 @@ var (
     },
     "id": "2",
     "name": "Sanremo Café Racer",
-    "purchaseDate": "2017-12-12T12:00:00Z"
+    "purchaseDate": "2017-12-12T12:00:00.000Z"
   },
   {
     "acquisitionCost": {
@@ -188,7 +188,7 @@ var (
     },
     "id": "3",
     "name": "Buntfink SteelKettle",
-    "purchaseDate": "2017-12-12T12:00:00Z"
+    "purchaseDate": "2017-12-12T12:00:00.000Z"
   },
   {
     "acquisitionCost": {
@@ -197,7 +197,7 @@ var (
     },
     "id": "4",
     "name": "Copper Coffee Pot Cezve",
-    "purchaseDate": "2017-12-12T12:00:00Z"
+    "purchaseDate": "2017-12-12T12:00:00.000Z"
   }
 ]`,
 			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
@@ -235,7 +235,7 @@ var (
   },
   "id": "5",
   "name": "French Press",
-  "purchaseDate": "2017-04-02T00:00:00Z",
+  "purchaseDate": "2017-04-02T00:00:00.000Z",
   "recipes": [%s]
 }`,
 			ExpectedStatusCode: http.StatusCreated,
@@ -348,7 +348,7 @@ var (
   },
   "id": "2",
   "name": "Sanremo Café Racer",
-  "purchaseDate": "2017-12-12T12:00:00Z",
+  "purchaseDate": "2017-12-12T12:00:00.000Z",
   "recipes": [%s]
 }`,
 			ExpectedResultsRelationships: []interface{}{`
