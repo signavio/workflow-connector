@@ -2,13 +2,10 @@ package mysql
 
 import (
 	"database/sql"
-	"fmt"
-	"regexp"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/signavio/workflow-connector/internal/app/endpoint"
-	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
 	sqlBackend "github.com/signavio/workflow-connector/internal/pkg/sql"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
@@ -104,7 +101,6 @@ func New() endpoint.Endpoint {
 	m := &Mysql{sqlBackend.New().(*sqlBackend.SqlBackend)}
 	m.Templates = QueryTemplates
 	m.CastDatabaseTypeToGolangType = convertFromMysqlDataType
-	m.CoerceExecArgsFunc = coerceExecArgsToMysqlType
 	return m
 }
 
@@ -128,45 +124,6 @@ func isOfDataType(ts []string, fieldDataType string) (result bool) {
 	for _, t := range ts {
 		if strings.HasPrefix(strings.ToUpper(fieldDataType), t) {
 			return true
-		}
-	}
-	return
-}
-
-func coerceExecArgsToMysqlType(query string, columnNames []string, fields []*descriptor.Field) (queryWithFormatting string) {
-	// We need the [^'"] at the end of the regular expression
-	// to make sure that we do not match on column names
-	// which may contain a literal ? in the name
-	queryParamAndSeperator := `(?U)(?P<pre>.+)(?P<param>\?)(?P<seperator>[,;\)])(?P<post>[^'"]*)`
-	pattern := regexp.MustCompile(queryParamAndSeperator)
-	coerceDateTemplate := fmt.Sprintf("$pre str_to_date($param, %s)$seperator$post", dateTimeMysqlFormat)
-	doNothingTemplate := "$pre$param$seperator$post"
-	submatches := pattern.FindAllStringSubmatchIndex(query, -1)
-	result := []byte{}
-	for i := 0; i < len(submatches); i++ {
-		if isOfDateType(columnNames[i], fields) {
-			result = pattern.ExpandString(result, coerceDateTemplate, query, submatches[i])
-		} else {
-			result = pattern.ExpandString(result, doNothingTemplate, query, submatches[i])
-		}
-	}
-	queryWithFormatting = string(result)
-	return
-}
-
-func isOfDateType(columnName string, fields []*descriptor.Field) (result bool) {
-	columnNameMatchesFieldName := func(columnName string, field *descriptor.Field) bool {
-		if field.Type.Amount != nil {
-			return field.Type.Amount.FromColumn == columnName
-		}
-		return field.FromColumn == columnName
-	}
-	columnNameIsOfDateType := func(field *descriptor.Field) bool {
-		return field.Type.Kind == "datetime" || field.Type.Kind == "date" || field.Type.Kind == "time"
-	}
-	for _, field := range fields {
-		if columnNameMatchesFieldName(columnName, field) {
-			result = columnNameIsOfDateType(field)
 		}
 	}
 	return
