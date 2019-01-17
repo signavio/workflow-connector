@@ -170,7 +170,7 @@ func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map
 		formatted = buildForFieldTypeDateTime(formatted, queryResults, table, field)
 		return formatted
 	}
-	if field.FromColumn == req.Context().Value(util.ContextKey("uniqueIDColumn")).(string) {
+	if field.FromColumn == req.Context().Value(util.ContextKey("uniqueIDColumn")).(string) && (util.IsOptionsRoute(req) || util.IsOptionRoute(req)) {
 		formatted = buildForFieldTypeUniqueIdColumn(formatted, queryResults, table, field)
 		return formatted
 	}
@@ -283,9 +283,18 @@ func buildForFieldTypeUniqueIdColumn(formatted, queryResults map[string]interfac
 	return formatted
 }
 func buildForFieldTypeOther(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		table,
+	)
 	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
-		formatted[field.Key] =
-			queryResults[table].(map[string]interface{})[field.FromColumn]
+		if typeDescriptor.ColumnAsOptionName == field.FromColumn {
+			formatted["name"] =
+				queryResults[table].(map[string]interface{})[field.FromColumn]
+		} else {
+			formatted[field.Key] =
+				queryResults[table].(map[string]interface{})[field.FromColumn]
+		}
 	}
 	return formatted
 }
