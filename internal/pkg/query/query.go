@@ -68,7 +68,8 @@ func (e *ExecTemplate) Interpolate(ctx context.Context, requestData map[string]i
 		return "", nil, err
 	}
 	log.When(config.Options.Logging).Infof(
-		"[backend <- db] buildExecQueryArgsWithID(): returned following args:\n%s\n",
+		"[handler <- query] interpolated query string: \n%s\nwill be provided the following args:\n%s\n",
+		queryFormatted,
 		args,
 	)
 	return queryFormatted, args, nil

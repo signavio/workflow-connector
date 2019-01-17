@@ -23,16 +23,21 @@ type testCase struct {
 }
 
 var (
-	commonColumnNames = []string{"name", "purchase_date", "acquisition_cost"}
+	commonColumnNames = []string{"id", "name", "purchase_date", "acquisition_cost"}
 	commonFields      = []*descriptor.Field{
+		&descriptor.Field{
+			Key:  "id",
+			Name: "Equipment Id",
+			Type: &descriptor.WorkflowType{
+				Name: "text",
+			},
+			FromColumn: "id",
+		},
 		&descriptor.Field{
 			Key:  "name",
 			Name: "Equipment Name",
 			Type: &descriptor.WorkflowType{
 				Name: "text",
-				Amount: &descriptor.Amount{
-					FromColumn: "",
-				},
 			},
 			FromColumn: "name",
 		},
@@ -42,9 +47,6 @@ var (
 			Type: &descriptor.WorkflowType{
 				Name: "date",
 				Kind: "date",
-				Amount: &descriptor.Amount{
-					FromColumn: "",
-				},
 			},
 			FromColumn: "purchase_date",
 		},
@@ -66,33 +68,48 @@ var (
 	testCases = []*testCase{
 		&testCase{
 			Kind:        "success",
-			Name:        "it only wraps columns of `datetime` type with database specific date coersion function",
+			Name:        "it only wraps columns of `datetime` type with database specific date coersion function on update",
 			Fields:      commonFields,
 			ColumnNames: commonColumnNames,
 			QueryToCoerce: `UPDATE "equipment" ` +
 				`SET "name" = ?, ` +
-				`SET "purchase_date" = ?, ` +
 				`SET "acquisition_cost" = ?, ` +
+				`SET "purchase_date" = ?, ` +
 				`WHERE "id" = ?;`,
 			ExpectedResult: `UPDATE "equipment" ` +
 				`SET "name" = ?, ` +
-				`SET "purchase_date" = str_to_date(?, '%Y-%m-%dT%TZ'), ` +
 				`SET "acquisition_cost" = ?, ` +
+				`SET "purchase_date" =  str_to_date(?, '%Y-%m-%dT%TZ'), ` +
 				`WHERE "id" = ?;`,
 		},
 		&testCase{
 			Kind:        "success",
+			Name:        "it only wraps columns of `datetime` type with database specific date coersion function on create",
+			ColumnNames: []string{"id", "name", "acquisition_cost", "purchase_date"},
+			Fields:      commonFields,
+			QueryToCoerce: `INSERT INTO equipment(id, name, acquisition_cost, purchase_date) ` +
+				`VALUES (?, ?, ?, ?)`,
+			ExpectedResult: `INSERT INTO equipment(id, name, acquisition_cost, purchase_date) ` +
+				`VALUES (?, ?, ?,  str_to_date(?, '%Y-%m-%dT%TZ'))`,
+		},
+		&testCase{
+			Kind:        "success",
 			Name:        "it successfully handles column names containing a literal question mark character `?`",
-			ColumnNames: []string{"name?", "pur?chase_date", "?acquisition_cost'"},
+			ColumnNames: []string{"id?", "name?", "pur?chase_date", "?acquisition_cost'"},
 			Fields: []*descriptor.Field{
+				&descriptor.Field{
+					Key:  "id",
+					Name: "Equipment Id",
+					Type: &descriptor.WorkflowType{
+						Name: "text",
+					},
+					FromColumn: "id?",
+				},
 				&descriptor.Field{
 					Key:  "name",
 					Name: "Equipment Name",
 					Type: &descriptor.WorkflowType{
 						Name: "text",
-						Amount: &descriptor.Amount{
-							FromColumn: "",
-						},
 					},
 					FromColumn: "name?",
 				},
@@ -102,9 +119,6 @@ var (
 					Type: &descriptor.WorkflowType{
 						Name: "date",
 						Kind: "date",
-						Amount: &descriptor.Amount{
-							FromColumn: "",
-						},
 					},
 					FromColumn: "pur?chase_date",
 				},
@@ -125,13 +139,13 @@ var (
 			},
 			QueryToCoerce: `UPDATE "equipment" ` +
 				`SET "name?" = ?, ` +
-				`SET "pur?chase_date" = ?, ` +
 				`SET "?acquisition_cost'" = ?, ` +
+				`SET "pur?chase_date" = ?, ` +
 				`WHERE "id" = ?;`,
 			ExpectedResult: `UPDATE "equipment" ` +
 				`SET "name?" = ?, ` +
-				`SET "pur?chase_date" = str_to_date(?, '%Y-%m-%dT%TZ'), ` +
 				`SET "?acquisition_cost'" = ?, ` +
+				`SET "pur?chase_date" =  str_to_date(?, '%Y-%m-%dT%TZ'), ` +
 				`WHERE "id" = ?;`,
 		},
 	}

@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS equipment (
   id INT NOT NULL AUTO_INCREMENT,
   name text,
   acquisition_cost decimal(10,5),
-  purchase_date datetime,
+  purchase_date datetime(3),
   primary key (id)
 );
 INSERT INTO equipment (name, acquisition_cost, purchase_date)

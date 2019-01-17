@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS equipment (
   id serial,
   name text,
   acquisition_cost decimal(10,5),
-  purchase_date timestamp,
+  purchase_date timestamp(3),
   primary key (id)
 );
 INSERT INTO equipment (name, acquisition_cost, purchase_date)
   VALUES
-  ('Bialetti Moka Express 6 cup', 25.95, '2017-12-12 12:00:00'),
+  ('Bialetti Moka Express 6 cup', 25.95, '2017-12-11 12:00:00'),
   ('Sanremo Café Racer', 8477.85,'2017-12-12 12:00:00'),
   ('Buntfink SteelKettle', 39.95,'2017-12-12 12:00:00'),
   ('Copper Coffee Pot Cezve', 49.95,'2017-12-12 12:00:00');

@@ -137,28 +137,37 @@ func coerceExecArgsToMysqlType(query string, columnNames []string, fields []*des
 	// We need the [^'"] at the end of the regular expression
 	// to make sure that we do not match on column names
 	// which may contain a literal ? in the name
-	queryParamAndSeperator := `(?m)(?P<param>\?)(?P<seperator>[,;])[^'"]`
+	queryParamAndSeperator := `(?U)(?P<pre>.+)(?P<param>\?)(?P<seperator>[,;\)])(?P<post>[^'"]*)`
 	pattern := regexp.MustCompile(queryParamAndSeperator)
-	submatches := pattern.FindAllSubmatchIndex([]byte(query), -1)
-	betweenTheMatches := pattern.Split(query, -1)
-	coerceDateTemplate := []byte(fmt.Sprintf("str_to_date($param, %s)$seperator ", dateTimeMysqlFormat))
-	doNothingTemplate := []byte("$param$seperator ")
+	coerceDateTemplate := fmt.Sprintf("$pre str_to_date($param, %s)$seperator$post", dateTimeMysqlFormat)
+	doNothingTemplate := "$pre$param$seperator$post"
+	submatches := pattern.FindAllStringSubmatchIndex(query, -1)
 	result := []byte{}
-	for _, field := range fields {
-		for i, column := range columnNames {
-			if field.FromColumn == column || field.Type.Amount.FromColumn == column {
-				switch field.Type.Kind {
-				case "datetime", "date", "time":
-					result = append(result, []byte(betweenTheMatches[i])...)
-					result = pattern.Expand(result, coerceDateTemplate, []byte(query), submatches[i])
-				default:
-					result = append(result, []byte(betweenTheMatches[i])...)
-					result = pattern.Expand(result, doNothingTemplate, []byte(query), submatches[i])
-				}
-			}
+	for i := 0; i < len(submatches); i++ {
+		if isOfDateType(columnNames[i], fields) {
+			result = pattern.ExpandString(result, coerceDateTemplate, query, submatches[i])
+		} else {
+			result = pattern.ExpandString(result, doNothingTemplate, query, submatches[i])
 		}
 	}
-	result = append(result, []byte(betweenTheMatches[len(betweenTheMatches)-1])...)
 	queryWithFormatting = string(result)
+	return
+}
+
+func isOfDateType(columnName string, fields []*descriptor.Field) (result bool) {
+	columnNameMatchesFieldName := func(columnName string, field *descriptor.Field) bool {
+		if field.Type.Amount != nil {
+			return field.Type.Amount.FromColumn == columnName
+		}
+		return field.FromColumn == columnName
+	}
+	columnNameIsOfDateType := func(field *descriptor.Field) bool {
+		return field.Type.Kind == "datetime" || field.Type.Kind == "date" || field.Type.Kind == "time"
+	}
+	for _, field := range fields {
+		if columnNameMatchesFieldName(columnName, field) {
+			result = columnNameIsOfDateType(field)
+		}
+	}
 	return
 }

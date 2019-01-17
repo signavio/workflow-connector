@@ -58,7 +58,7 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
-	log.When(config.Options.Logging).Infoln("[handler -> backend] interpolate query string")
+	log.When(config.Options.Logging).Infoln("[handler -> query] interpolate query string")
 	queryString, args, err := execTemplate.Interpolate(req.Context(), requestData)
 	if err != nil {
 		msg := &util.ResponseMessage{
@@ -68,6 +68,7 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, msg.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	result, err := b.ExecContext(req.Context(), queryString, args...)
 	if err != nil {
 		msg := &util.ResponseMessage{
