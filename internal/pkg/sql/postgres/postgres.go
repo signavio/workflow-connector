@@ -51,7 +51,8 @@ var (
 			"{{range $index, $element := .ColumnNames | tail}}," +
 			"  {{$element}} = ${{(add2 $index)}}" +
 			"{{end}} " +
-			"WHERE {{.UniqueIDColumn}}= ${{(lenPlus1 .ColumnNames)}}",
+			"WHERE {{.UniqueIDColumn}} = ${{(lenPlus1 .ColumnNames)}} " +
+			"RETURNING {{.UniqueIDColumn}}",
 		"CreateSingle": "INSERT INTO {{.TableName}}" +
 			"({{.ColumnNames | head}}" +
 			"{{range .ColumnNames | tail}}," +

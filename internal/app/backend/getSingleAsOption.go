@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -59,10 +60,16 @@ func (b *Backend) GetSingleAsOption(rw http.ResponseWriter, req *http.Request) {
 		results,
 	)
 	if len(results) == 0 {
-		rw.WriteHeader(http.StatusNotFound)
+		msg := &util.ResponseMessage{
+			Code: http.StatusNotFound,
+			Msg: fmt.Sprintf(
+				"Resource with uniqueID '%s' not found in %s table",
+				id, table,
+			),
+		}
+		http.Error(rw, msg.Error(), http.StatusNotFound)
 		return
 	}
-
 	log.When(config.Options.Logging).Infoln("[handler -> formatter] format results as json")
 	formattedResults, err := formatting.GetSingleAsOption.Format(req, results)
 	if err != nil {

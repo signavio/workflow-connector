@@ -62,7 +62,7 @@ var (
 			ExpectedResults: `{
   "status": {
     "code": 404,
-    "description": "The requested resource was not found"
+    "description": "Resource with uniqueID '42' not found in equipment table"
   }
 }
 `,

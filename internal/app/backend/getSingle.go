@@ -60,13 +60,16 @@ func (b *Backend) GetSingle(rw http.ResponseWriter, req *http.Request) {
 	if len(results) == 0 {
 		msg := &util.ResponseMessage{
 			Code: http.StatusNotFound,
-			Msg:  "requested resource not found",
+			Msg: fmt.Sprintf(
+				"Resource with uniqueID '%s' not found in %s table",
+				id, table,
+			),
 		}
-		rw.WriteHeader(http.StatusNotFound)
-		rw.Write(msg.Byte())
+		http.Error(rw, msg.Error(), http.StatusNotFound)
 		return
 	}
 	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%s\n", results)
+
 	log.When(config.Options.Logging).Infoln("[handler -> formatter] format results as json")
 	formattedResults, err := formatting.Standard.Format(req, results)
 	if err != nil {

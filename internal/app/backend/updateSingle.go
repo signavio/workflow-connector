@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 
@@ -13,6 +14,7 @@ import (
 )
 
 func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
+	id := mux.Vars(req)["id"]
 	routeName := mux.CurrentRoute(req).GetName()
 	table := req.Context().Value(util.ContextKey("table")).(string)
 	queryTemplateUninterpolated := b.GetQueryTemplate(routeName)
@@ -69,7 +71,19 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
 	result, err := b.ExecContext(req.Context(), queryString, args...)
+	if err == sql.ErrNoRows {
+		msg := &util.ResponseMessage{
+			Code: http.StatusNotFound,
+			Msg: fmt.Sprintf(
+				"Resource with uniqueID '%s' not found in %s table",
+				id, table,
+			),
+		}
+		http.Error(rw, msg.Error(), http.StatusNotFound)
+		return
+	}
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,
@@ -79,6 +93,7 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%s\n", result)
+
 	withUpdatedRoute := context.WithValue(
 		req.Context(),
 		util.ContextKey("currentRoute"),

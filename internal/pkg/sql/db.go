@@ -82,7 +82,10 @@ func (s *SqlBackend) queryContextForGetSingleRoute(ctx context.Context, query st
 	if len(results) == 0 {
 		msg := &util.ResponseMessage{
 			Code: http.StatusNotFound,
-			Msg:  "The requested resource was not found",
+			Msg: fmt.Sprintf(
+				"Resource with uniqueID '%s' not found in %s table",
+				args[len(args)-1], tableName,
+			),
 		}
 		return nil, msg
 	}
