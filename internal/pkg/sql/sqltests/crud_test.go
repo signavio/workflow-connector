@@ -45,9 +45,12 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
+      "creationDate": null,
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
+      "lastAccessed": null,
+      "lastModified": null,
       "name": "Espresso single shot"
     }
   `},
@@ -115,10 +118,13 @@ var (
 			},
 			RowsAsCsv: "1,2,Espresso single shot,do this",
 			ExpectedResults: `{
+  "creationDate": null,
   "equipment": {%s},
   "equipmentId": 2,
   "id": "1",
   "instructions": "do this",
+  "lastAccessed": null,
+  "lastModified": null,
   "name": "Espresso single shot"
 }`,
 			ExpectedResultsRelationships: []interface{}{`
@@ -300,9 +306,12 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
+      "creationDate": null,
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
+      "lastAccessed": null,
+      "lastModified": null,
       "name": "Espresso single shot"
     }
   `},
@@ -323,6 +332,66 @@ var (
 				postData.Set("acquisitionCost", "9283.99")
 				postData.Set("purchaseDate", "2017-12-01T12:34:56.789Z")
 				req, _ := http.NewRequest("PATCH", "/equipment/2?"+postData.Encode(), nil)
+				return req
+			},
+		},
+		{
+			Kind: "success",
+			Name: "it succeeds when user explicitely wants to insert a null value",
+			DescriptorFields: []string{
+				commonEquipmentDescriptorFields,
+				commonRecipesDescriptorFields,
+			},
+			TableSchema: commonEquipmentTableSchema,
+			ColumnNames: []string{
+				"equipment\x00id",
+				"equipment\x00name",
+				"equipment\x00acquisition_cost",
+				"equipment\x00purchase_date",
+			},
+			RowsAsCsv: "2,Sanremo Café Racer,8477.85,null",
+			ExpectedResults: `{
+  "acquisitionCost": {
+    "amount": 8477.85,
+    "currency": "EUR"
+  },
+  "id": "2",
+  "name": "Sanremo Café Racer",
+  "purchaseDate": null,
+  "recipes": [%s]
+}`,
+			ExpectedResultsRelationships: []interface{}{`
+    {
+      "creationDate": null,
+      "equipmentId": 2,
+      "id": "1",
+      "instructions": "do this",
+      "lastAccessed": null,
+      "lastModified": null,
+      "name": "Espresso single shot"
+    }
+  `},
+			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
+				mock.ExpectBegin()
+				mock.ExpectExec("UPDATE (.+) SET name = ., acquisition_cost = ., purchase_date = . WHERE (.+) = .").
+					WithArgs("Sanremo Café Racer", 8477.85, "2017-12-12T12:00:00Z", "2").
+					WillReturnResult(sqlmock.NewResult(2, 1))
+				mock.ExpectCommit()
+				rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)
+				mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
+					WithArgs("2").
+					WillReturnRows(rows)
+			},
+			Request: func() *http.Request {
+				body := strings.NewReader(
+					`{"name": "Sanremo Café Racer", "acquisitionCost": 8477.85, "purchaseDate": null}`,
+				)
+				req, _ := http.NewRequest(
+					"PATCH",
+					"/equipment/2",
+					body,
+				)
+				req.Header.Set("Content-Type", "application/json")
 				return req
 			},
 		},
@@ -353,9 +422,12 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
+      "creationDate": null,
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
+      "lastAccessed": null,
+      "lastModified": null,
       "name": "Espresso single shot"
     }
   `},

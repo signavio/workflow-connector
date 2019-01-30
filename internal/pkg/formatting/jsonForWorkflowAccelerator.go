@@ -14,6 +14,7 @@ import (
 )
 
 type standardFormatter struct{}
+type getCollectionFormatter struct{}
 
 // Special formatting for the options route like `/options`, `/options?filter=`
 // is required, since Workflow Accelerator expects the results returned
@@ -24,6 +25,7 @@ type getCollectionAsOptionsFormatter struct{}
 
 var (
 	Standard                         = &standardFormatter{}
+	GetCollection                    = &getCollectionFormatter{}
 	GetSingleAsOption                = &getSingleAsOptionFormatter{}
 	GetCollectionAsOptions           = &getCollectionAsOptionsFormatter{}
 	GetCollectionAsOptionsFilterable = &getCollectionAsOptionsFormatter{}
@@ -37,10 +39,15 @@ func (f *standardFormatter) Format(req *http.Request, results []interface{}) (JS
 		return []byte("{}"), nil
 	}
 	tableName := req.Context().Value(util.ContextKey("table")).(string)
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		tableName,
+	)
+	fields := typeDescriptor.Fields
 	if len(results) == 1 {
 		log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set == 1")
 		formattedResult := formatAsAWorkflowType(
-			results[0].(map[string]interface{}), req, tableName,
+			results[0].(map[string]interface{}), req, tableName, fields,
 		)
 		log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
 		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
@@ -54,7 +61,45 @@ func (f *standardFormatter) Format(req *http.Request, results []interface{}) (JS
 	var formattedResults []interface{}
 	for _, result := range results {
 		formattedResult := formatAsAWorkflowType(
-			result.(map[string]interface{}), req, tableName,
+			result.(map[string]interface{}), req, tableName, fields,
+		)
+		formattedResults = append(formattedResults, formattedResult)
+	}
+	log.When(config.Options.Logging).Infof(
+		"[formatter <- asWorkflowType] formattedResult (top 2): \n%+v ...\n",
+		formattedResults[0:1],
+	)
+	JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
+	return
+}
+func (f *getCollectionFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
+	if len(results) == 0 {
+		return []byte("{}"), nil
+	}
+	tableName := req.Context().Value(util.ContextKey("table")).(string)
+	fields := withRelationshipFieldsOmitted(tableName)
+	if len(results) == 1 {
+		log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set == 1")
+		formattedResult := formatAsAWorkflowType(
+			results[0].(map[string]interface{}), req, tableName, fields,
+		)
+		log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
+		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+		log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
+		return
+	}
+	log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set > 1")
+	var formattedResults []interface{}
+	for _, result := range results {
+		formattedResult := formatAsAWorkflowType(
+			result.(map[string]interface{}), req, tableName, fields,
 		)
 		formattedResults = append(formattedResults, formattedResult)
 	}
@@ -137,13 +182,9 @@ func stringifyIdAndName(in map[string]interface{}, tableName string) (stringifie
 	return
 }
 
-func formatAsAWorkflowType(queryResults map[string]interface{}, req *http.Request, table string) (formatted map[string]interface{}) {
-	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
-		config.Options.Descriptor.TypeDescriptors,
-		table,
-	)
+func formatAsAWorkflowType(queryResults map[string]interface{}, req *http.Request, table string, fields []*descriptor.Field) (formatted map[string]interface{}) {
 	formatted = make(map[string]interface{})
-	for _, field := range typeDescriptor.Fields {
+	for _, field := range fields {
 		if mux.CurrentRoute(req).GetName() == "GetCollection" {
 			formatted = buildResultFromQueryResultsWithoutRelationships(
 				formatted, queryResults, req, table, field,
@@ -204,27 +245,46 @@ func relationshipKindIsOneToMany(formatted, queryResults map[string]interface{},
 		var results []map[string]interface{}
 		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
 		for _, r := range relatedResults {
+			// remove relationships keys from recursively resolved subset
+			fields := withRelationshipFieldsOmitted(field.Relationship.WithTable)
 			results = append(results, formatAsAWorkflowType(
 				map[string]interface{}{field.Relationship.WithTable: r},
 				req,
 				field.Relationship.WithTable,
+				fields,
 			))
 		}
 		formatted[field.Key] = results
+		log.When(config.Options.Logging).Infof("[AFTER DELETE] %+v\n", formatted[field.Key])
 	} else {
 		formatted[field.Key] = []interface{}{}
 	}
 	return formatted
 }
 
+func withRelationshipFieldsOmitted(table string) (fields []*descriptor.Field) {
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		table,
+	)
+	for _, field := range typeDescriptor.Fields {
+		if field.Relationship == nil {
+			fields = append(fields, field)
+		}
+	}
+	return fields
+}
+
 func relationshipKindIsXToOne(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
 	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
 		var result map[string]interface{}
 		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
+		fields := withRelationshipFieldsOmitted(field.Relationship.WithTable)
 		result = formatAsAWorkflowType(
 			map[string]interface{}{field.Relationship.WithTable: relatedResults[0]},
 			req,
 			field.Relationship.WithTable,
+			fields,
 		)
 		formatted[field.Key] = result
 		return formatted
@@ -242,7 +302,9 @@ func buildForFieldTypeMoney(formatted, queryResults map[string]interface{}, tabl
 		queryResults[table].(map[string]interface{})[field.Type.Currency.FromColumn] != nil {
 		formatted[field.Key] =
 			resultAsWorkflowMoneyType(field, queryResults, table)
+		return formatted
 	}
+	formatted[field.Key] = nil
 	return formatted
 }
 func buildForFieldTypeDate(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
@@ -254,14 +316,18 @@ func buildForFieldTypeDate(formatted, queryResults map[string]interface{}, table
 		// date from 2006-01-02T00:00:00+01:00 to
 		// 2006-01-01T23:00:00+0:00 when in UTC
 		formatted[field.Key] = dateTime.Format("2006-01-02T15:04:05.000Z")
+		return formatted
 	}
+	formatted[field.Key] = nil
 	return formatted
 }
 func buildForFieldTypeDateTime(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
 		dateTime := queryResults[table].(map[string]interface{})[field.FromColumn].(time.Time)
 		formatted[field.Key] = dateTime.UTC().Format("2006-01-02T15:04:05.000Z")
+		return formatted
 	}
+	formatted[field.Key] = nil
 	return formatted
 }
 func buildForFieldTypeUniqueIdColumn(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
@@ -295,6 +361,14 @@ func buildForFieldTypeOther(formatted, queryResults map[string]interface{}, tabl
 			formatted[field.Key] =
 				queryResults[table].(map[string]interface{})[field.FromColumn]
 		}
+		return formatted
+	}
+	if typeDescriptor.ColumnAsOptionName == field.FromColumn {
+		formatted["name"] =
+			queryResults[table].(map[string]interface{})[field.FromColumn]
+	} else {
+		formatted[field.Key] =
+			queryResults[table].(map[string]interface{})[field.FromColumn]
 	}
 	return formatted
 }

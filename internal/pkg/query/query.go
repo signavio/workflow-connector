@@ -102,7 +102,7 @@ func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{})
 		case time.Time:
 			return append(args, v)
 		case nil:
-			return append(args, v)
+			return append(args, nil)
 		}
 		return []interface{}{}
 	}
@@ -110,25 +110,37 @@ func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{})
 		switch field.Type.Name {
 		case "money":
 			if val, ok = requestData[field.Type.Amount.Key]; ok {
-				args = appendRequestDataToArgs(args, val)
+				if val == nil {
+					args = appendRequestDataToArgs(args, nil)
+				} else {
+					args = appendRequestDataToArgs(args, val)
+				}
 			}
 			if val, ok = requestData[field.Type.Currency.Key]; ok {
 				args = appendRequestDataToArgs(args, val)
 			}
 		case "datetime", "date", "time":
 			if val, ok = requestData[field.Key]; ok {
-				stringifiedDateTime := val.(string)
-				parsedDateTime, err := time.ParseInLocation(
-					"2006-01-02T15:04:05.999Z", stringifiedDateTime, time.UTC,
-				)
-				if err != nil {
-					return nil, err
+				if val == nil {
+					args = appendRequestDataToArgs(args, nil)
+				} else {
+					stringifiedDateTime := val.(string)
+					parsedDateTime, err := time.ParseInLocation(
+						"2006-01-02T15:04:05.999Z", stringifiedDateTime, time.UTC,
+					)
+					if err != nil {
+						return nil, err
+					}
+					args = appendRequestDataToArgs(args, parsedDateTime)
 				}
-				args = appendRequestDataToArgs(args, parsedDateTime)
 			}
 		default:
 			if val, ok = requestData[field.Key]; ok {
-				args = appendRequestDataToArgs(args, val)
+				if val == nil {
+					args = appendRequestDataToArgs(args, nil)
+				} else {
+					args = appendRequestDataToArgs(args, val)
+				}
 			}
 		}
 	}

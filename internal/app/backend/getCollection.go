@@ -54,8 +54,8 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 		results,
 	)
 
-	log.When(config.Options.Logging).Infoln("[handler -> formatter] format results as json")
-	formattedResults, err := formatting.Standard.Format(req, results)
+	log.When(config.Options.Logging).Infoln("[handler -> Format] format results as json")
+	formattedResults, err := formatting.GetCollection.Format(req, results)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,
