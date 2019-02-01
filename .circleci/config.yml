@@ -7,6 +7,7 @@ jobs:
     docker:
       - image: circleci/golang:1.11
       - image: circleci/mysql:5.7-ram
+      - image: circleci/postgres:9.4
         environment:
           MYSQL_DATABASE: circle_test
           MYSQL_HOST: 127.0.0.1
@@ -15,7 +16,6 @@ jobs:
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
     working_directory: ~/github.com/signavio/workflow-connector
 
     steps:
@@ -54,3 +54,29 @@ jobs:
           environment:
             MYSQL_DATABASE_URL: "root:@tcp(localhost:3306)/circle_test?parseTime=true"
           command: go test -v ./... -args -db mysql
+      - run:
+          name: Resolve postgres prerequisites
+          command: |
+            sudo apt-get update
+            sudo apt-get install postgresql
+      - run:
+          name: Waiting for postgres to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgresql && exit 1
+      - run:
+          name: Migrate coffee example to postgresql database
+          environment:
+            POSTGRES_DATABASE: circle_test
+          command: build/migrate-to-postgres.sh
+      - run:
+          name: Run tests on a postgres database
+          environment:
+            POSTGRES_DATABASE_URL: "postgres://root@localhost:5432/circle_test?sslmode=disable"
+          command: go test -v ./... -args -db postgres
+
