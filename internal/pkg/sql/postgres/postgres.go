@@ -45,7 +45,8 @@ var (
 			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) ILIKE $1 " +
 			"{{range $key, $value := .ParamsWithValues}}" +
 			"AND {{$key}} = '{{$value}}'" +
-			"{{end}}",
+			"{{end}} " +
+			"ORDER BY {{.UniqueIDColumn}} ASC",
 		"UpdateSingle": "UPDATE {{.TableName}} " +
 			"SET {{.ColumnNames | head}} = $1" +
 			"{{range $index, $element := .ColumnNames | tail}}," +
