@@ -21,9 +21,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Run tests using a mock database
-          command: go test -v ./...
-      - run:
           name: Resolve mysql prerequisites
           command: |
             sudo apt-get update
