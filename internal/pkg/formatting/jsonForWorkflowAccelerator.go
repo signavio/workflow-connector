@@ -255,7 +255,6 @@ func relationshipKindIsOneToMany(formatted, queryResults map[string]interface{},
 			))
 		}
 		formatted[field.Key] = results
-		log.When(config.Options.Logging).Infof("[AFTER DELETE] %+v\n", formatted[field.Key])
 	} else {
 		formatted[field.Key] = []interface{}{}
 	}

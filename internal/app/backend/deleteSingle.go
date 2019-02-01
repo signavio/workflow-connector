@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 
@@ -42,17 +41,6 @@ func (b *Backend) DeleteSingle(rw http.ResponseWriter, req *http.Request) {
 
 	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
 	result, err := b.ExecContext(req.Context(), queryString, id)
-	if err == sql.ErrNoRows {
-		msg := &util.ResponseMessage{
-			Code: http.StatusNotFound,
-			Msg: fmt.Sprintf(
-				"Resource with uniqueID '%s' not found in %s table",
-				id, table,
-			),
-		}
-		http.Error(rw, msg.Error(), http.StatusNotFound)
-		return
-	}
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,

@@ -125,6 +125,7 @@ func execContext(b *sqlBackend.SqlBackend) func(context.Context, string, ...inte
 	return func(ctx context.Context, query string, args ...interface{}) (result sql.Result, err error) {
 		var id int64
 		requestTx := ctx.Value(util.ContextKey("tx")).(string)
+		currentRoute := ctx.Value(util.ContextKey("currentRoute")).(string)
 		if requestTx == "" {
 			// User has not specified an existing transaction to execute within.
 			// However, we will still run the exec statement within a new
@@ -147,11 +148,26 @@ func execContext(b *sqlBackend.SqlBackend) func(context.Context, string, ...inte
 			// We assume the transacation is a valid one
 			txi, _ := b.Transactions.Load(requestTx)
 			tx := txi.(*sql.Tx)
+			if currentRoute == "DeleteSingle" {
+				result, err = b.DB.ExecContext(ctx, query, args...)
+				if err != nil {
+					return nil, err
+				}
+				tx.Commit()
+				return
+			}
 			if err = b.DB.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
 				return nil, err
 			}
 			result = &lastId{id}
 			tx.Commit()
+			return
+		}
+		if currentRoute == "DeleteSingle" {
+			result, err = b.DB.ExecContext(ctx, query, args...)
+			if err != nil {
+				return nil, err
+			}
 			return
 		}
 		if err = b.DB.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
