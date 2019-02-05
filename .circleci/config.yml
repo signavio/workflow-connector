@@ -45,48 +45,6 @@ jobs:
             MYSQL_DATABASE_URL: "root:@tcp(localhost:3306)/circle_test?parseTime=true"
           command: go test -v ./... -args -db mysql
 
-  mysql_8.0:
-    docker:
-      - image: circleci/golang:1.11
-      - image: circleci/mysql:8.0-ram
-    working_directory: ~/github.com/signavio/workflow-connector
-    steps:
-      - checkout
-      - run:
-          name: Copy config to XDG_HOME_DIR
-          command: |
-            mkdir -p ~/.config/workflow-connector
-            cp ~/github.com/signavio/workflow-connector/config/* \
-            ~/.config/workflow-connector/
-      - run:
-          name: Resolve mysql prerequisites
-          command: |
-            sudo apt-get update
-            sudo apt-get install mysql-client
-      - run:
-          name: Waiting for mysql to be ready
-          command: |
-            for i in `seq 1 10`;
-            do
-              nc -z localhost 3306 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Mysql && exit 1
-      - run:
-          name: Migrate coffee example to mysql database
-          environment:
-            MYSQL_DATABASE: circle_test
-            MYSQL_HOST: 127.0.0.1
-            MYSQL_ROOT_HOST: "%"
-            MYSQL_USER: root
-          command: build/migrate-to-mysql.sh
-      - run:
-          name: Run tests on a mysql database
-          environment:
-          MYSQL_DATABASE_URL: "root:@tcp(localhost:3306)/circle_test?parseTime=true"
-          command: go test -v ./... -args -db mysql
-
   postgres_9.4:
     docker:
       - image: circleci/golang:1.11
@@ -170,6 +128,5 @@ workflows:
   db_tests:
     jobs:
       - mysql_5.7
-      - mysql_8.0
       - postgres_9.4
       - postgres_10.6
