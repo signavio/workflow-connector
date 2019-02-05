@@ -94,6 +94,12 @@ jobs:
     working_directory: ~/github.com/signavio/workflow-connector
     steps:
       - run:
+          name: Copy config to XDG_HOME_DIR
+          command: |
+            mkdir -p ~/.config/workflow-connector
+            cp ~/github.com/signavio/workflow-connector/config/* \
+            ~/.config/workflow-connector/
+      - run:
           name: Resolve postgres prerequisites
           command: |
             sudo apt-get update
@@ -126,6 +132,12 @@ jobs:
       - image: circleci/postgres:10.6-alpine-postgis-ram
     working_directory: ~/github.com/signavio/workflow-connector
     steps:
+      - run:
+          name: Copy config to XDG_HOME_DIR
+          command: |
+            mkdir -p ~/.config/workflow-connector
+            cp ~/github.com/signavio/workflow-connector/config/* \
+            ~/.config/workflow-connector/
       - run:
           name: Resolve postgres prerequisites
           command: |
