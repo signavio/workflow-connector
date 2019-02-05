@@ -93,6 +93,7 @@ jobs:
       - image: circleci/postgres:9.4-alpine-postgis-ram
     working_directory: ~/github.com/signavio/workflow-connector
     steps:
+      - checkout
       - run:
           name: Copy config to XDG_HOME_DIR
           command: |
@@ -132,6 +133,7 @@ jobs:
       - image: circleci/postgres:10.6-alpine-postgis-ram
     working_directory: ~/github.com/signavio/workflow-connector
     steps:
+      - checkout
       - run:
           name: Copy config to XDG_HOME_DIR
           command: |
