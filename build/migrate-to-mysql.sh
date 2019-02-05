@@ -17,6 +17,7 @@ else
     MYSQL_CMD="mysql -v -u '"${MYSQL_USER}"' -h ${MYSQL_HOST}"
 fi
 cat << __EOF__ | ${MYSQL_CMD}
+ALTER USER ${MYSQL_USER}@localhost IDENTIFIED WITH mysql_native_password by '${MYSQL_PASSWORD}';
 DROP DATABASE IF EXISTS ${MYSQL_DATABASE};
 CREATE DATABASE ${MYSQL_DATABASE};
 
