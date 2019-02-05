@@ -3,21 +3,10 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 jobs:
-  build:
+  mysql_5.7:
     docker:
       - image: circleci/golang:1.11
       - image: circleci/mysql:5.7-ram
-      - image: circleci/postgres:9.4
-        environment:
-          MYSQL_DATABASE: circle_test
-          MYSQL_HOST: 127.0.0.1
-          MYSQL_ROOT_HOST: "%"
-          MYSQL_USER: root
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-    working_directory: ~/github.com/signavio/workflow-connector
-
     steps:
       - checkout
       - run:
@@ -54,6 +43,53 @@ jobs:
           environment:
             MYSQL_DATABASE_URL: "root:@tcp(localhost:3306)/circle_test?parseTime=true"
           command: go test -v ./... -args -db mysql
+
+  mysql_8.0:
+    docker:
+      - image: circleci/golang:1.11
+      - image: circleci/mysql:8.0-ram
+    steps:
+      - checkout
+      - run:
+          name: Copy config to XDG_HOME_DIR
+          command: |
+            mkdir -p ~/.config/workflow-connector
+            cp ~/github.com/signavio/workflow-connector/config/* \
+            ~/.config/workflow-connector/
+      - run:
+          name: Resolve mysql prerequisites
+          command: |
+            sudo apt-get update
+            sudo apt-get install mysql-client
+      - run:
+          name: Waiting for mysql to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Mysql && exit 1
+      - run:
+          name: Migrate coffee example to mysql database
+          environment:
+            MYSQL_DATABASE: circle_test
+            MYSQL_HOST: 127.0.0.1
+            MYSQL_ROOT_HOST: "%"
+            MYSQL_USER: root
+          command: build/migrate-to-mysql.sh
+      - run:
+          name: Run tests on a mysql database
+          environment:
+          MYSQL_DATABASE_URL: "root:@tcp(localhost:3306)/circle_test?parseTime=true"
+          command: go test -v ./... -args -db mysql
+
+  postgres_9.4:
+    docker:
+      - image: circleci/golang:1.11
+      - image: circleci/postgres:9.4-alpine-postgis-ram
+    steps:
       - run:
           name: Resolve postgres prerequisites
           command: |
@@ -77,6 +113,47 @@ jobs:
       - run:
           name: Run tests on a postgres database
           environment:
-            POSTGRES_DATABASE_URL: "postgres://signavio@localhost:5432/circle_test?sslmode=disable"
+            POSTGRES_DATABASE_URL: |
+              "postgres://signavio@localhost:5432/circle_test?sslmode=disable"
           command: go test -v ./... -args -db postgres
 
+  postgres_10.6:
+    docker:
+      - image: circleci/golang:1.11
+      - image: circleci/postgres:10.6-alpine-postgis-ram
+    steps:
+      - run:
+          name: Resolve postgres prerequisites
+          command: |
+            sudo apt-get update
+            sudo apt-get install postgresql
+      - run:
+          name: Waiting for postgres to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgresql && exit 1
+      - run:
+          name: Migrate coffee example to postgresql database
+          environment:
+            POSTGRES_DATABASE: circle_test
+          command: build/migrate-to-postgres.sh
+      - run:
+          name: Run tests on a postgres database
+          environment:
+            POSTGRES_DATABASE_URL: |
+              "postgres://signavio@localhost:5432/circle_test?sslmode=disable"
+          command: go test -v ./... -args -db postgres
+
+workflows:
+  version: 2
+  db_tests:
+    jobs:
+      - mysql_5.7
+      - mysql_8.0
+      - postgres_9.4
+      - postgres_10.6
