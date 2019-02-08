@@ -52,26 +52,19 @@ If you have TLS enabled and want to listen on port 443 without running the execu
 
 ### Running workflow-connector as a service
 
-The workflow connector can be configured to run on boot as a service. This can be accomplished by executing the `workflow-connector` and providing the `service` parameter with the appropriate value:
+The workflow connector can be configured to run on boot as a service. This can be accomplished by executing the `workflow-connector` and providing the `-service` parameter with the `install` subcommand. Note, when doing so, you **must** also provide the absolute path to the configuration directory using the `-config-dir` parameter:
 
 ```sh
 # provide the -service parameter with the `install` subcommand
-> ./workflow-connector/workflow-connector -service install
+# and the absolute path to the configuration directory
+> ./workflow-connector/workflow-connector -service install -config-dir /workflow-connector/config
 ```
 
-This will install the workflow-connector as a windows service, if it is running in windows, or as a systemd unit,  if running on linux. This assumes that the user running the `-service install` command has sufficient rights to install services and the configuration files are stored in the correct directories (see Configuration below).
+This will install the workflow-connector as a windows service, if it is running in windows, or as a systemd unit,  if running on linux. This assumes that the user running the `-service install` command has sufficient rights to install services and the configuration files are stored in the directory specified by the `-config-dir` parameter
 
 ### Configuration
 
-All program and environment specific configuration settings are done in the `config.yml` and `descriptor.json` files, which should be located in the following directories:
-
-| Directory                                   | Operating System |
-| ------------------------------------------- | ---------------- |
-| C:/Program Files/Workflow Connector/config/ | windows          |
-| /etc/workflow-connector/config/             | linux            |
-| ~/.config/workflow-connector/config/        | linux            |
-
-This behaviour can be overriden by providing a `--config-dir` parameter to the `workflow-connector` executable.
+All program and environment specific configuration settings are done in the `config.yml` and `descriptor.json` files, which should be located in the directory specified in the `-config-dir` parameter.
 
 #### The `config.yml` file
 
@@ -100,7 +93,7 @@ The port to listen on. This should be port 443 if you have TLS enabled otherwise
 
 ##### database
 
-The `driver` option specifies which golang driver will be used to communicate with the database. A list of supported databases and their corresponding drivers can be found on the [Supported Databases](https://github.com/signavio/workflow-connector/wiki/Supported-Databases) page. The `url` option specifies the connection parameters for the database such as username, password and address.
+The `driver` option specifies which golang driver will be used to communicate with the database. A list of supported databases and their corresponding drivers can be found on the [Supported Databases](https://github.com/signavio/workflow-connector/wiki/Supported-Databases) page. The `url` option specifies the connection parameters for the database such as username, password and IP Address.
 
 ##### tls
 
