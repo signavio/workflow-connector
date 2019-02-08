@@ -77,41 +77,33 @@ func (a *App) run() {
 func main() {
 	a := &App{}
 	serviceControl, ok := viper.Get("service").(string)
-	if ok && serviceControl != "" {
-		switch serviceControl {
-		case "install":
-			configDir, ok := viper.Get("configDir").(string)
-			if !ok {
-				msg := "the -config-dir argument must be provided " +
-					"when installing the workflow connector as a service "
-				logger.Error(fmt.Errorf(msg))
-				os.Exit(1)
-			}
-			svc := newService(a, "-config-dir", configDir)
-			if err := service.Control(svc, serviceControl); err != nil {
-				logger.Error(err)
-				os.Exit(1)
-			}
-			err := svc.Run()
-			if err != nil {
-				logger.Errorf("unable to run the service: %s\n", err)
-				os.Exit(1)
-			}
-		default:
-			// Execute user specified control on service
-			svc := newService(a)
-			if err := service.Control(svc, serviceControl); err != nil {
-				logger.Error(err)
-				os.Exit(1)
-			}
-			err := svc.Run()
-			if err != nil {
-				logger.Errorf("unable to run the service: %s\n", err)
-				os.Exit(1)
-			}
+	if ok && serviceControl == "install" {
+		configDir, ok := viper.Get("configDir").(string)
+		if !ok {
+			msg := "the -config-dir argument must be provided " +
+				"when installing the workflow connector as a service "
+			logger.Error(fmt.Errorf(msg))
+			os.Exit(1)
+		}
+		svc := newService(a, "-config-dir", configDir)
+		if err := service.Control(svc, serviceControl); err != nil {
+			logger.Error(err)
+			os.Exit(1)
+		}
+		err := svc.Run()
+		if err != nil {
+			logger.Errorf("unable to run the service: %s\n", err)
+			os.Exit(1)
 		}
 		return
 	}
+	svc := newService(a)
+	err := svc.Run()
+	if err != nil {
+		logger.Errorf("unable to run the service: %s\n", err)
+		os.Exit(1)
+	}
+	return
 }
 
 func newService(a *App, args ...string) (svc service.Service) {
