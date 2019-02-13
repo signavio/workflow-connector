@@ -140,7 +140,8 @@ func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []in
 	for _, result := range results {
 		formattedResults = append(
 			formattedResults,
-			stringifyIdAndName(result.(map[string]interface{}), tableName),
+			//stringifyIdAndName(result.(map[string]interface{}), tableName),
+			result.(map[string]interface{})[tableName].(map[string]interface{}),
 		)
 	}
 	log.When(config.Options.Logging).Infof(
