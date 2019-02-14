@@ -93,6 +93,12 @@ func ParseDescriptorFile(file io.Reader) (descriptor *Descriptor) {
 }
 func performSanityChecks(descriptor *Descriptor) error {
 	for _, td := range descriptor.TypeDescriptors {
+		if err := errUniqueIdColumnAndIdColumnDiffer(td); err != nil {
+			return err
+		}
+		if err := errColumnAsOptionNameAndNameColumnDiffer(td); err != nil {
+			return err
+		}
 		for _, field := range td.Fields {
 			if err := errCurrencyHasDefaultValue(field, td.Key); err != nil {
 				return err
@@ -103,6 +109,28 @@ func performSanityChecks(descriptor *Descriptor) error {
 			if err := errTypeNameIsMissing(field); err != nil {
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+func errUniqueIdColumnAndIdColumnDiffer(td *TypeDescriptor) error {
+	msg := "The `uniqueIdColumn` for type descriptor `%s` must be set " +
+		"to `id` when the type descriptor contains a field called `id`"
+	for _, field := range td.Fields {
+		if field.Name == "id" && td.UniqueIdColumn != "id" {
+			return fmt.Errorf(msg, td.Key)
+		}
+	}
+	return nil
+}
+
+func errColumnAsOptionNameAndNameColumnDiffer(td *TypeDescriptor) error {
+	msg := "The `columnAsOptionName` for type descriptor `%s` must be set " +
+		"to `name` when the type descriptor contains a field called `name`"
+	for _, field := range td.Fields {
+		if field.Name == "name" && td.ColumnAsOptionName != "name" {
+			return fmt.Errorf(msg, td.Key)
 		}
 	}
 	return nil
