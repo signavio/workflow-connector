@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS equipment (
 );
 INSERT INTO equipment (name, acquisition_cost, purchase_date)
   VALUES
-  ("Bialetti Moka Express 6 cup", 25.95, STR_TO_DATE("2017-12-11T12:00:00Z", "%Y-%m-%dT%TZ")),
-  ("Sanremo Café Racer", 8477.85, STR_TO_DATE("2017-12-12T12:00:00Z", "%Y-%m-%dT%TZ")),
+  ("Bialetti Moka Express 6 cup", 25.95, STR_TO_DATE("2017-12-11T12:00:00.123Z", "%Y-%m-%dT%T.%fZ")),
+  ("Sanremo Café Racer", 8477.85, STR_TO_DATE("2017-12-12T12:00:00.123Z", "%Y-%m-%dT%T.%fZ")),
   ("Buntfink SteelKettle", 39.95, STR_TO_DATE("2017-12-12T12:00:00Z", "%Y-%m-%dT%TZ")),
   ("Copper Coffee Pot Cezve", 49.95, STR_TO_DATE("2017-12-12T12:00:00Z", "%Y-%m-%dT%TZ"));
 
