@@ -32,7 +32,7 @@ var (
     "amount": 39.95,
     "currency": "EUR"
   },
-  "id": "3",
+  "id": 3,
   "name": "Buntfink SteelKettle",
   "purchaseDate": "2017-12-12T12:00:00.000Z"
 }`,

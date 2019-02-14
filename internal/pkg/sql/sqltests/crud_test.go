@@ -38,7 +38,7 @@ var (
     "amount": 8477.85,
     "currency": "EUR"
   },
-  "id": "2",
+  "id": 2,
   "name": "Sanremo Café Racer",
   "purchaseDate": "2017-12-12T12:00:00.000Z",
   "recipes": [%s]
@@ -47,7 +47,7 @@ var (
     {
       "creationDate": null,
       "equipmentId": 2,
-      "id": "1",
+      "id": 1,
       "instructions": "do this",
       "lastAccessed": null,
       "lastModified": null,
@@ -121,7 +121,7 @@ var (
   "creationDate": null,
   "equipment": {%s},
   "equipmentId": 2,
-  "id": "1",
+  "id": 1,
   "instructions": "do this",
   "lastAccessed": null,
   "lastModified": null,
@@ -132,7 +132,7 @@ var (
       "amount": 8477.85,
       "currency": "EUR"
     },
-    "id": "2",
+    "id": 2,
     "name": "Sanremo Café Racer",
     "purchaseDate": "2017-12-12T12:00:00.000Z"
   `},
@@ -174,7 +174,7 @@ var (
       "amount": 25.95,
       "currency": "EUR"
     },
-    "id": "1",
+    "id": 1,
     "name": "Bialetti Moka Express 6 cup",
     "purchaseDate": "2017-12-11T12:00:00.000Z"
   },
@@ -183,7 +183,7 @@ var (
       "amount": 8477.85,
       "currency": "EUR"
     },
-    "id": "2",
+    "id": 2,
     "name": "Sanremo Café Racer",
     "purchaseDate": "2017-12-12T12:00:00.000Z"
   },
@@ -192,7 +192,7 @@ var (
       "amount": 39.95,
       "currency": "EUR"
     },
-    "id": "3",
+    "id": 3,
     "name": "Buntfink SteelKettle",
     "purchaseDate": "2017-12-12T12:00:00.000Z"
   },
@@ -201,7 +201,7 @@ var (
       "amount": 49.95,
       "currency": "EUR"
     },
-    "id": "4",
+    "id": 4,
     "name": "Copper Coffee Pot Cezve",
     "purchaseDate": "2017-12-12T12:00:00.000Z"
   }
@@ -239,7 +239,7 @@ var (
     "amount": 35.99,
     "currency": "EUR"
   },
-  "id": "5",
+  "id": 5,
   "name": "French Press",
   "purchaseDate": "2017-04-02T00:00:00.000Z",
   "recipes": [%s]
@@ -299,7 +299,7 @@ var (
     "amount": 9283.99,
     "currency": "EUR"
   },
-  "id": "2",
+  "id": 2,
   "name": "Sanremo Café Racer",
   "purchaseDate": "2017-12-01T12:34:56.789Z",
   "recipes": [%s]
@@ -308,7 +308,7 @@ var (
     {
       "creationDate": null,
       "equipmentId": 2,
-      "id": "1",
+      "id": 1,
       "instructions": "do this",
       "lastAccessed": null,
       "lastModified": null,
@@ -355,7 +355,7 @@ var (
     "amount": 8477.85,
     "currency": "EUR"
   },
-  "id": "2",
+  "id": 2,
   "name": "Sanremo Café Racer",
   "purchaseDate": null,
   "recipes": [%s]
@@ -364,7 +364,7 @@ var (
     {
       "creationDate": null,
       "equipmentId": 2,
-      "id": "1",
+      "id": 1,
       "instructions": "do this",
       "lastAccessed": null,
       "lastModified": null,
@@ -415,7 +415,7 @@ var (
     "amount": 8477.85,
     "currency": "EUR"
   },
-  "id": "2",
+  "id": 2,
   "name": "Sanremo Café Racer",
   "purchaseDate": "2017-12-12T12:00:00.000Z",
   "recipes": [%s]
@@ -424,7 +424,7 @@ var (
     {
       "creationDate": null,
       "equipmentId": 2,
-      "id": "1",
+      "id": 1,
       "instructions": "do this",
       "lastAccessed": null,
       "lastModified": null,

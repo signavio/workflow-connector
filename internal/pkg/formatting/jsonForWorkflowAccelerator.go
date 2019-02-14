@@ -140,8 +140,7 @@ func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []in
 	for _, result := range results {
 		formattedResults = append(
 			formattedResults,
-			//stringifyIdAndName(result.(map[string]interface{}), tableName),
-			result.(map[string]interface{})[tableName].(map[string]interface{}),
+			stringifyIdAndName(result.(map[string]interface{}), tableName),
 		)
 	}
 	log.When(config.Options.Logging).Infof(
@@ -159,7 +158,8 @@ func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []in
 func stringifyIdAndName(in map[string]interface{}, tableName string) (stringifiedResult map[string]interface{}) {
 	stringifiedResult = make(map[string]interface{})
 	// Signavio Workflow Accelerator Connector API requires
-	// the `id` and `name` field to be of type string
+	// the `id` and `name` field to be of type string for
+	// all option(s) routes
 	switch v := in[tableName].(map[string]interface{})["id"].(type) {
 	case int64:
 		stringifiedResult["id"] = fmt.Sprintf("%d", v)

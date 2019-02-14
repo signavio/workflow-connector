@@ -36,6 +36,7 @@ type SqlBackend struct {
 	Templates              map[string]string
 	SchemaMapping          map[string]*descriptor.SchemaMapping
 	FilterPredicateMapping map[filter.Predicate]string
+	NewSchemaMapping       func([]string, []*sql.ColumnType) (*descriptor.SchemaMapping, error)
 	Transactions           sync.Map
 }
 
@@ -55,6 +56,7 @@ func New() endpoint.Endpoint {
 	s.SchemaMapping = make(map[string]*descriptor.SchemaMapping)
 	s.FilterPredicateMapping = filterPredicateMapping()
 	s.GetFilterPredicateMappingFunc = s.getFilterPredicateMapping
+	s.NewSchemaMapping = s.newSchemaMapping
 	return s
 }
 
@@ -210,7 +212,7 @@ func (s *SqlBackend) retrieveSchemaMapping(query, table string) (*descriptor.Sch
 			"unable to get the data types of database table columns",
 		)
 	}
-	return s.newSchemaMapping(columnsPrepended, columnTypes)
+	return s.NewSchemaMapping(columnsPrepended, columnTypes)
 }
 
 func (s *SqlBackend) retrieveSchemaMappingWithRelationships(query, table string) (*descriptor.SchemaMapping, error) {
@@ -300,7 +302,7 @@ func (s *SqlBackend) newSchemaMapping(columnsWithTable []string, columnTypes []*
 				"unable to get the native golang type",
 			)
 		}
-		workflowType := getWorkflowType(columnsWithTable[i])
+		workflowType := GetWorkflowType(columnsWithTable[i])
 		if workflowType == nil {
 			return nil, fmt.Errorf(
 				"unable to get the workflow type specified in descriptor.json",
@@ -314,7 +316,7 @@ func (s *SqlBackend) newSchemaMapping(columnsWithTable []string, columnTypes []*
 	return &descriptor.SchemaMapping{fieldNames, backendTypes, golangTypes, workflowTypes}, nil
 }
 
-func getWorkflowType(columnWithTable string) interface{} {
+func GetWorkflowType(columnWithTable string) interface{} {
 	var tableName string
 	tableNamePrefix := strings.IndexRune(columnWithTable, '\x00')
 	tableName = columnWithTable[0:tableNamePrefix]

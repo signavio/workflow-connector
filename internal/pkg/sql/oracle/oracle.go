@@ -92,8 +92,10 @@ var (
 			` ON {{.Relationship.WithTable}}."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
 			` = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"{{end}} WHERE ROWNUM <= 1`,
 	}
-	integer = []string{}
-	text    = []string{
+	integer = []string{
+		"INTEGER",
+	}
+	text = []string{
 		"CHAR",
 		"NCHAR",
 		"VARCHAR",
@@ -139,11 +141,12 @@ func New() endpoint.Endpoint {
 	o.ExecContextFunc = wrapExecContext(o.DB, o.ExecContextFunc)
 	o.CastDatabaseTypeToGolangType = convertFromOracleDataType
 	o.CoerceExecArgsFunc = coerceExecArgsToOracleType
+	o.NewSchemaMapping = o.newOracleSchemaMapping
 	o.OpenFunc = o.Open
 	return o
 }
 func driverSpecificInitialization(ctx context.Context, db *sql.DB) error {
-	log.When(config.Options.Logging).Infoln("[db] Performing driver specific initialization")
+	log.When(config.Options.Logging).Infoln("[oracle] Performing driver specific initialization")
 	if err := goracle.EnableDbmsOutput(ctx, db); err != nil {
 		return err
 	}
@@ -199,6 +202,47 @@ func (o *Oracle) Open(args ...interface{}) error {
 	}
 	return nil
 }
+func (o *Oracle) newOracleSchemaMapping(columnsWithTable []string, columnTypes []*sql.ColumnType) (*descriptor.SchemaMapping, error) {
+	var backendTypes, golangTypes, workflowTypes []interface{}
+	var fieldNames []string
+	for i := range columnTypes {
+		backendType := columnTypes[i].DatabaseTypeName()
+		if backendType == "" {
+			return nil, fmt.Errorf(
+				"unable to get the type in use by the backend",
+			)
+		} else if backendType == "NUMBER" {
+
+			log.When(config.Options.Logging).Infoln("@@@ HERE @@@")
+			_, scale, ok := columnTypes[i].DecimalSize()
+			if ok && scale == 0 {
+				// The goracle driver in use treats a NUMBER(p,0) as a float64
+				// even if the scale == 0, this makes stringifying an id of
+				// type NUMBER(38,0) a pain since it appears as "1.00000"
+				// when the id == 1 for example
+				backendType = "INTEGER"
+			}
+		}
+		golangType := o.CastDatabaseTypeToGolangType(backendType)
+		if golangType == nil {
+			return nil, fmt.Errorf(
+				"unable to get the native golang type",
+			)
+		}
+		workflowType := sqlBackend.GetWorkflowType(columnsWithTable[i])
+		if workflowType == nil {
+			return nil, fmt.Errorf(
+				"unable to get the workflow type specified in descriptor.json",
+			)
+		}
+		workflowTypes = append(workflowTypes, workflowType)
+		backendTypes = append(backendTypes, backendType)
+		golangTypes = append(golangTypes, golangType)
+		fieldNames = append(fieldNames, columnsWithTable[i])
+	}
+	return &descriptor.SchemaMapping{fieldNames, backendTypes, golangTypes, workflowTypes}, nil
+}
+
 func wrapQueryContext(charSet characterSet, queryContext func(context.Context, string, ...interface{}) ([]interface{}, error)) func(context.Context, string, ...interface{}) ([]interface{}, error) {
 	return func(ctx context.Context, query string, args ...interface{}) ([]interface{}, error) {
 		var resultsAsUtf8 []interface{}
