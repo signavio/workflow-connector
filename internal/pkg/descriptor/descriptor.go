@@ -115,10 +115,10 @@ func performSanityChecks(descriptor *Descriptor) error {
 }
 
 func errUniqueIdColumnAndIdColumnDiffer(td *TypeDescriptor) error {
-	msg := "The `uniqueIdColumn` for type descriptor `%s` must be set " +
+	msg := "The `uniqueIdColumn` property for type descriptor `%s` must be set " +
 		"to `id` when the type descriptor contains a field called `id`"
 	for _, field := range td.Fields {
-		if field.Name == "id" && td.UniqueIdColumn != "id" {
+		if field.Key == "id" && td.UniqueIdColumn != "id" {
 			return fmt.Errorf(msg, td.Key)
 		}
 	}
@@ -126,10 +126,10 @@ func errUniqueIdColumnAndIdColumnDiffer(td *TypeDescriptor) error {
 }
 
 func errColumnAsOptionNameAndNameColumnDiffer(td *TypeDescriptor) error {
-	msg := "The `columnAsOptionName` for type descriptor `%s` must be set " +
+	msg := "The `columnAsOptionName` property for type descriptor `%s` must be set " +
 		"to `name` when the type descriptor contains a field called `name`"
 	for _, field := range td.Fields {
-		if field.Name == "name" && td.ColumnAsOptionName != "name" {
+		if field.Key == "name" && td.ColumnAsOptionName != "name" {
 			return fmt.Errorf(msg, td.Key)
 		}
 	}
