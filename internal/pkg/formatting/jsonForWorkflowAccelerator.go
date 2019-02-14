@@ -159,7 +159,7 @@ func stringifyIdAndName(in map[string]interface{}, tableName string) (stringifie
 	stringifiedResult = make(map[string]interface{})
 	// Signavio Workflow Accelerator Connector API requires
 	// the `id` and `name` field to be of type string for
-	// all option(s) routes
+	// all routes
 	switch v := in[tableName].(map[string]interface{})["id"].(type) {
 	case int64:
 		stringifiedResult["id"] = fmt.Sprintf("%d", v)
@@ -200,23 +200,16 @@ func formatAsAWorkflowType(queryResults map[string]interface{}, req *http.Reques
 }
 
 func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
-	if field.Type.Name == "money" {
+	switch {
+	case field.Type.Name == "money":
 		formatted = buildForFieldTypeMoney(formatted, queryResults, table, field)
-		return formatted
-	}
-	if field.Type.Kind == "date" {
+	case field.Type.Kind == "date":
 		formatted = buildForFieldTypeDate(formatted, queryResults, table, field)
-		return formatted
-	}
-	if field.Type.Kind == "datetime" {
+	case field.Type.Kind == "datetime":
 		formatted = buildForFieldTypeDateTime(formatted, queryResults, table, field)
-		return formatted
+	default:
+		formatted = buildForFieldTypeOther(formatted, queryResults, table, field)
 	}
-	if field.FromColumn == req.Context().Value(util.ContextKey("uniqueIDColumn")).(string) && (util.IsOptionsRoute(req) || util.IsOptionRoute(req)) {
-		formatted = buildForFieldTypeUniqueIdColumn(formatted, queryResults, table, field)
-		return formatted
-	}
-	formatted = buildForFieldTypeOther(formatted, queryResults, table, field)
 	return formatted
 }
 func buildResultFromQueryResultsUsingField(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
@@ -330,48 +323,48 @@ func buildForFieldTypeDateTime(formatted, queryResults map[string]interface{}, t
 	formatted[field.Key] = nil
 	return formatted
 }
-func buildForFieldTypeUniqueIdColumn(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
-	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
-		var uniqueIDColumn interface{}
-		switch v := queryResults[table].(map[string]interface{})[field.FromColumn].(type) {
-		case int64:
-			uniqueIDColumn = fmt.Sprintf("%v", v)
-		case float64:
-			uniqueIDColumn = fmt.Sprintf("%v", v)
-		case time.Time:
-			uniqueIDColumn = v.String()
-		case string:
-			uniqueIDColumn = v
-		}
-		formatted[field.Key] = uniqueIDColumn
-		return formatted
+func stringify(value interface{}) (stringified interface{}) {
+	if value == nil {
+		return nil
 	}
-	return formatted
+	switch v := value.(type) {
+	case int64:
+		stringified = fmt.Sprintf("%d", v)
+	case float64:
+		stringified = fmt.Sprintf("%f", v)
+	case time.Time:
+		stringified = v.String()
+	case string:
+		stringified = v
+	}
+	return stringified
 }
+
 func buildForFieldTypeOther(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
 		config.Options.Descriptor.TypeDescriptors,
 		table,
 	)
-	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
-		if typeDescriptor.ColumnAsOptionName == field.FromColumn {
-			formatted["name"] =
-				queryResults[table].(map[string]interface{})[field.FromColumn]
-		} else {
-			formatted[field.Key] =
-				queryResults[table].(map[string]interface{})[field.FromColumn]
-		}
-		return formatted
-	}
-	if typeDescriptor.ColumnAsOptionName == field.FromColumn {
-		formatted["name"] =
-			queryResults[table].(map[string]interface{})[field.FromColumn]
-	} else {
+	switch field.FromColumn {
+	case typeDescriptor.ColumnAsOptionName:
+		// Workflow Accelerator expects `columnAsOptionName`
+		// to be called `name` and be of type string
+		formatted["name"] = stringify(
+			queryResults[table].(map[string]interface{})[field.FromColumn],
+		)
+	case typeDescriptor.UniqueIdColumn:
+		// Workflow Accelerator expects `uniqueIdColumn`
+		// to be called `id` and be of type string
+		formatted["id"] = stringify(
+			queryResults[table].(map[string]interface{})[field.FromColumn],
+		)
+	default:
 		formatted[field.Key] =
 			queryResults[table].(map[string]interface{})[field.FromColumn]
 	}
 	return formatted
 }
+
 func resultAsWorkflowMoneyType(field *descriptor.Field, queryResults map[string]interface{}, table string) map[string]interface{} {
 	result := make(map[string]interface{})
 	var currency interface{}
