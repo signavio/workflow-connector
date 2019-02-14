@@ -301,16 +301,16 @@ func switchOnValueType(tableName, columnName string, value interface{}, tableRes
 			result[tableName] = tableResult
 		}
 	}
-	// Signavio Workflow Accelerator Connector API
-	// requires an id field to be of type string
-	switch v := result[tableName].(map[string]interface{})["id"].(type) {
-	case int64:
-		tableResult["id"] = fmt.Sprintf("%d", v)
-		result[tableName] = tableResult
-	case time.Time:
-		tableResult["id"] = v.String()
-		result[tableName] = tableResult
-	}
+	//	// Signavio Workflow Accelerator Connector API
+	//	// requires an id field to be of type string
+	//	switch v := result[tableName].(map[string]interface{})["id"].(type) {
+	//	case int64:
+	//		tableResult["id"] = fmt.Sprintf("%d", v)
+	//		result[tableName] = tableResult
+	//	case time.Time:
+	//		tableResult["id"] = v.String()
+	//		result[tableName] = tableResult
+	//	}
 	return result, tableName
 }
 
