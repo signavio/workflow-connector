@@ -45,7 +45,7 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
-      "creationDate": "2017-12-13T23:00:00.123Z",
+      "creationDate": "2017-12-12T23:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
@@ -118,7 +118,7 @@ var (
 			},
 			RowsAsCsv: "1,2,Espresso single shot,do this",
 			ExpectedResults: `{
-  "creationDate": "2017-12-13T23:00:00.123Z",
+  "creationDate": "2017-12-12T23:00:00.123Z",
   "equipment": {%s},
   "equipmentId": 2,
   "id": "1",
@@ -306,7 +306,7 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
-      "creationDate": "2017-12-13T23:00:00.123Z",
+      "creationDate": "2017-12-12T23:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
@@ -362,7 +362,7 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
-      "creationDate": "2017-12-13T23:00:00.123Z",
+      "creationDate": "2017-12-12T23:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
@@ -422,7 +422,7 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
-      "creationDate": "2017-12-13T23:00:00.123Z",
+      "creationDate": "2017-12-12T23:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",

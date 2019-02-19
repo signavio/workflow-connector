@@ -5,6 +5,9 @@ ORACLE_HOST=${ORACLE_HOST:=localhost}
 ORACLE_USER=${ORACLE_USER:=system}
 ORACLE_DATABASE=${ORACLE_DATABASE:=xe}
 ORACLE_DUMP_FILE=${ORACLE_DUMP_FILE:=oracle.dmp}
+# Set the database timezone to something other than UTC for our tests
+export ORA_SDTZ=01:00
+export NLS_LANG=".AL32UTF8"
 # Source sensitive environment variables from .env
 if [ -f .env ]
 then

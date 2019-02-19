@@ -21,22 +21,23 @@ ALTER USER ${MYSQL_USER}@localhost IDENTIFIED WITH mysql_native_password by '${M
 DROP DATABASE IF EXISTS ${MYSQL_DATABASE};
 CREATE DATABASE ${MYSQL_DATABASE};
 
-USE ${MYSQL_DATABASE}
+USE ${MYSQL_DATABASE};
+SET time_zone = "+01:00";
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS equipment (
   id INT NOT NULL AUTO_INCREMENT,
   name text,
   acquisition_cost decimal(10,5),
-  purchase_date datetime(3),
+  purchase_date timestamp(3) null,
   primary key (id)
 );
 INSERT INTO equipment (name, acquisition_cost, purchase_date)
   VALUES
-  ("Bialetti Moka Express 6 cup", 25.95, STR_TO_DATE("2017-12-11T12:00:00.123Z", "%Y-%m-%dT%T.%fZ")),
-  ("Sanremo Café Racer", 8477.85, STR_TO_DATE("2017-12-12T12:00:00.123Z", "%Y-%m-%dT%T.%fZ")),
-  ("Buntfink SteelKettle", 39.95, STR_TO_DATE("2017-12-12T12:00:00Z", "%Y-%m-%dT%TZ")),
-  ("Copper Coffee Pot Cezve", 49.95, STR_TO_DATE("2017-12-12T12:00:00Z", "%Y-%m-%dT%TZ"));
+  ("Bialetti Moka Express 6 cup", 25.95, "2017-12-11 13:00:00.123"),
+  ("Sanremo Café Racer", 8477.85, "2017-12-12 13:00:00.123"),
+  ("Buntfink SteelKettle", 39.95, "2017-12-12 13:00:00"),
+  ("Copper Coffee Pot Cezve", 49.95, "2017-12-12 13:00:00");
 
 CREATE TABLE IF NOT EXISTS ingredients (
   id INT NOT NULL AUTO_INCREMENT,
@@ -78,9 +79,9 @@ CREATE TABLE IF NOT EXISTS recipes (
 );
 INSERT INTO recipes (name, instructions, equipment_id, creation_date, last_accessed, last_modified)
   VALUES
-  ("Espresso single shot","do this", 2, STR_TO_DATE("2017-12-13T23:00:00.123Z", "%Y-%m-%dT%T.%fZ"), STR_TO_DATE("2017-01-13", "%Y-%m-%d"), STR_TO_DATE("2017-12-14T00:00:00.123Z", "%Y-%m-%dT%T.%fZ")),
-  ("Ibrik (turkish) coffee", "do that", 4, STR_TO_DATE("2017-12-13T23:00:00.123Z", "%Y-%m-%dT%T.%fZ"), STR_TO_DATE("2017-01-13", "%Y-%m-%d"), STR_TO_DATE("2017-12-14T00:00:00.123456Z", "%Y-%m-%dT%T.%fZ")),
-  ("Filter coffee", "do bar", 3, STR_TO_DATE("2017-12-13T23:00:00.123Z", "%Y-%m-%dT%T.%fZ"), STR_TO_DATE("2017-01-13", "%Y-%m-%d"), STR_TO_DATE("2017-12-14T00:00:00Z", "%Y-%m-%dT%TZ"));
+  ("Espresso single shot","do this", 2, "2017-12-13 00:00:00.123", "2017-01-13", "2017-12-14 00:00:00.123"),
+  ("Ibrik (turkish) coffee", "do that", 4, "2017-12-13 00:00:00.123", "2017-01-13", "2017-12-14 00:00:00.123456"),
+  ("Filter coffee", "do bar", 3, "2017-12-13 00:00:00.123", "2017-01-13", "2017-12-14 00:00:00");
 
 CREATE TABLE IF NOT EXISTS ingredient_recipe (
   id INT NOT NULL AUTO_INCREMENT,

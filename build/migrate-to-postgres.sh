@@ -77,9 +77,9 @@ CREATE TABLE IF NOT EXISTS recipes (
 );
 INSERT INTO recipes (name, instructions, equipment_id, creation_date, last_accessed, last_modified)
   VALUES
-  ('Espresso single shot','do this', 2, '2017-12-13T23:00:00.123', '2017-01-13', '2017-12-14T00:00:00.123'),
-  ('Ibrik (turkish) coffee', 'do that', 4, '2017-12-13T23:00:00.123', '2017-01-13', '2017-12-14T00:00:00.123456'),
-  ('Filter coffee', 'do bar', 3, '2017-12-13T23:00:00.123', '2017-01-13', '2017-12-14T00:00:00');
+  ('Espresso single shot','do this', 2, '2017-12-13T00:00:00.123+01:00', '2017-01-13', '2017-12-14T00:00:00.123'),
+  ('Ibrik (turkish) coffee', 'do that', 4, '2017-12-13T00:00:00.123+01:00', '2017-01-13', '2017-12-14T00:00:00.123456'),
+  ('Filter coffee', 'do bar', 3, '2017-12-13T00:00:00.123+01:00', '2017-01-13', '2017-12-14T00:00:00');
 
 CREATE TABLE IF NOT EXISTS ingredient_recipe (
   id serial,

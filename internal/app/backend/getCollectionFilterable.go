@@ -55,7 +55,10 @@ func (b *Backend) GetCollectionFilterable(rw http.ResponseWriter, req *http.Requ
 		queryString,
 		filterExpression.Arguments[1],
 	)
-	results, err := b.QueryContext(req.Context(), queryString, filterExpression.Arguments[1])
+	results, err := b.QueryContext(
+		req.Context(),
+		queryString,
+		string(filterExpression.Arguments[1]))
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,

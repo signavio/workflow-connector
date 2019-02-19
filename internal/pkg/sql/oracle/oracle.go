@@ -60,9 +60,9 @@ var (
 		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM {{.TableName}} ` +
 			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%' ` +
-			"{{range $key, $value := .ParamsWithValues}}" +
-			"AND {{$key}} = '{{$value}}'" +
-			"{{end}}",
+			`{{range $key, $value := .ParamsWithValues}}` +
+			`AND "{{$key}}" = '{{$value}}'` +
+			`{{end}}`,
 		`UpdateSingle`: `UPDATE {{.TableName}} ` +
 			`SET "{{.ColumnNames | head}}" = :1` +
 			`{{range $index, $element := .ColumnNames | tail}},` +
@@ -213,7 +213,6 @@ func (o *Oracle) newOracleSchemaMapping(columnsWithTable []string, columnTypes [
 			)
 		} else if backendType == "NUMBER" {
 
-			log.When(config.Options.Logging).Infoln("@@@ HERE @@@")
 			_, scale, ok := columnTypes[i].DecimalSize()
 			if ok && scale == 0 {
 				// The goracle driver in use treats a NUMBER(p,0) as a float64
