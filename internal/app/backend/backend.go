@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -22,16 +23,17 @@ var (
 )
 
 type Backend struct {
-	GetSchemaMappingFunc          func(string) *descriptor.SchemaMapping
-	GetFilterPredicateMappingFunc func(filter.Predicate) string
-	GetQueryTemplateFunc          func(string) string
-	CoerceExecArgsFunc            func(string, []string, []*descriptor.Field) string
-	CastDatabaseTypeToGolangType  func(string) interface{}
-	QueryContextFunc              func(context.Context, string, ...interface{}) ([]interface{}, error)
-	ExecContextFunc               func(context.Context, string, ...interface{}) (sql.Result, error)
-	OpenFunc                      func(...interface{}) error
-	CreateTxFunc                  func(time.Duration) (uuid.UUID, error)
-	CommitTxFunc                  func(string) error
+	GetSchemaMappingFunc                 func(string) *descriptor.SchemaMapping
+	GetFilterPredicateMappingFunc        func(filter.Predicate) string
+	GetQueryTemplateFunc                 func(string) string
+	CoerceExecArgsFunc                   func(string, []string, []*descriptor.Field) string
+	CastDatabaseTypeToGolangType         func(string) interface{}
+	QueryContextFunc                     func(context.Context, string, ...interface{}) ([]interface{}, error)
+	ExecContextFunc                      func(context.Context, string, ...interface{}) (sql.Result, error)
+	ExtractAndFormatQueryParamsAndValues func(string, url.Values) (map[string]string, error)
+	OpenFunc                             func(...interface{}) error
+	CreateTxFunc                         func(time.Duration) (uuid.UUID, error)
+	CommitTxFunc                         func(string) error
 }
 
 func appendHandlers(r *mux.Router, b *Backend) *mux.Router {

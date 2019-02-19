@@ -47,7 +47,7 @@
           "fromColumn" : "purchase_date",
           "type" : {
             "name" : "date",
-            "kind": "date"
+            "kind": "datetime"
           }
         },
         {

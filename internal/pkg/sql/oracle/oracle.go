@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -28,8 +29,11 @@ type lastId struct {
 type characterSet encoding.Encoding
 
 const (
-	dateTimeOracleFormat = `'YYYY-MM-DD"T"HH24:MI:SSXFF3TZH:TZM'`
-	dateTimeGolangFormat = `2006-01-02T15:04:05.999-07:00`
+	dateTimeOracleFormat   = `'YYYY-MM-DD"T"HH24:MI:SSXFF3TZH:TZM'`
+	dateOracleFormat       = `'YYYY-MM-DD'`
+	timeOracleFormat       = `'YYYY-MM-DD"T"HH24:MI:SSXFF3'`
+	dateTimeGolangFormat   = `2006-01-02T15:04:05.999-07:00`
+	dateTimeWorkflowFormat = `2006-01-02T15:04:05.999Z`
 )
 
 var (
@@ -61,7 +65,7 @@ var (
 			`FROM {{.TableName}} ` +
 			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%' ` +
 			`{{range $key, $value := .ParamsWithValues}}` +
-			`AND "{{$key}}" = '{{$value}}'` +
+			`AND "{{$key}}" = {{$value}}` +
 			`{{end}}`,
 		`UpdateSingle`: `UPDATE {{.TableName}} ` +
 			`SET "{{.ColumnNames | head}}" = :1` +
@@ -139,6 +143,7 @@ func New() endpoint.Endpoint {
 	o := &Oracle{sqlBackend.New().(*sqlBackend.SqlBackend), Universal}
 	o.Templates = QueryTemplates
 	o.ExecContextFunc = wrapExecContext(o.DB, o.ExecContextFunc)
+	o.ExtractAndFormatQueryParamsAndValues = o.extractAndFormatQueryParamsAndValues
 	o.CastDatabaseTypeToGolangType = convertFromOracleDataType
 	o.CoerceExecArgsFunc = coerceExecArgsToOracleType
 	o.NewSchemaMapping = o.newOracleSchemaMapping
@@ -201,6 +206,60 @@ func (o *Oracle) Open(args ...interface{}) error {
 		return fmt.Errorf("Error saving table schema: %s", err)
 	}
 	return nil
+}
+func (o *Oracle) extractAndFormatQueryParamsAndValues(tableName string, query url.Values) (formattedQueryValues map[string]string, err error) {
+	formattedQueryValues = make(map[string]string)
+	values := urlValuesWithoutFilter(query)
+	for k, v := range values {
+		columnName, columnType, ok := util.GetColumnNameAndTypeFromQueryParameterName(
+			config.Options.Descriptor.TypeDescriptors,
+			tableName,
+			k,
+		)
+		if ok {
+			formattedQueryValues[columnName], err = formatQueryValue(v[0], columnType)
+		}
+	}
+	return
+}
+func formatQueryValue(value, valueType string) (formatted string, err error) {
+	switch valueType {
+	case "datetime":
+
+		parsedDateTime, err := time.Parse(dateTimeWorkflowFormat, value)
+		if err != nil {
+			return "", err
+		}
+		log.When(config.Options.Logging).Infof("DATETIME: %+v\n", parsedDateTime)
+		formatted = fmt.Sprintf(
+			"to_timestamp_tz('%s', %s)",
+			parsedDateTime.Format("2006-01-02T15:04:05.999-07:00"),
+			dateTimeOracleFormat,
+		)
+	case "date":
+		parsedDate, err := time.Parse(dateTimeWorkflowFormat, value)
+		if err != nil {
+			return "", err
+		}
+		formatted = fmt.Sprintf(
+			"to_date('%s', %s)",
+			parsedDate.Format("2006-01-02"),
+			dateOracleFormat,
+		)
+	case "time":
+		parsedTime, err := time.Parse(dateTimeWorkflowFormat, value)
+		if err != nil {
+			return "", err
+		}
+		formatted = fmt.Sprintf(
+			"to_date('%s', %s)",
+			parsedTime.Format("2006-01-02T15:04:05.999"),
+			timeOracleFormat,
+		)
+	default:
+		formatted = fmt.Sprintf("%s", value)
+	}
+	return
 }
 func (o *Oracle) newOracleSchemaMapping(columnsWithTable []string, columnTypes []*sql.ColumnType) (*descriptor.SchemaMapping, error) {
 	var backendTypes, golangTypes, workflowTypes []interface{}
@@ -348,9 +407,13 @@ func coerceExecArgsToOracleType(query string, columnNames []string, fields []*de
 				queryParamToWrap := fmt.Sprintf(":%v", i+1)
 				re := regexp.MustCompile(queryParamToWrap)
 				switch field.Type.Kind {
-				case "datetime", "date", "time":
+				case "datetime":
 					queryWithFormatting = re.ReplaceAllString(
 						query, fmt.Sprintf("to_timestamp_tz(%s, %s)", queryParamToWrap, dateTimeOracleFormat),
+					)
+				case "date", "time":
+					queryWithFormatting = re.ReplaceAllString(
+						query, fmt.Sprintf("to_date(%s, %s)", queryParamToWrap, dateOracleFormat),
 					)
 				}
 			}
@@ -361,4 +424,18 @@ func coerceExecArgsToOracleType(query string, columnNames []string, fields []*de
 
 func chomp(s string) string {
 	return s[0:strings.IndexRune(s, '\n')]
+}
+
+func urlValuesWithoutFilter(u url.Values) url.Values {
+	if len(u["filter"]) > 1 {
+		// There exists a type descriptor with a field whose key name
+		// is  literaly 'filter', assume the second occurence of
+		// 'filter' is the actual parameter upon which we
+		// want to prefilter the result set
+		val := u["filter"][1]
+		u.Del("filter")
+		u.Add("filter", val)
+		return u
+	}
+	return u
 }

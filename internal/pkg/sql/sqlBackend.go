@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -53,6 +54,9 @@ func New() endpoint.Endpoint {
 	s.CreateTxFunc = s.createTx
 	s.QueryContextFunc = s.queryContext
 	s.ExecContextFunc = s.execContext
+	s.ExtractAndFormatQueryParamsAndValues = func(table string, query url.Values) (map[string]string, error) {
+		return make(map[string]string), nil
+	}
 	s.SchemaMapping = make(map[string]*descriptor.SchemaMapping)
 	s.FilterPredicateMapping = filterPredicateMapping()
 	s.GetFilterPredicateMappingFunc = s.getFilterPredicateMapping

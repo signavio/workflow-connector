@@ -88,22 +88,29 @@ func GetTypeDescriptorUsingTypeDescriptorKey(typeDescriptors []*descriptor.TypeD
 	}
 	return
 }
-func GetColumnNameFromQueryParameterName(typeDescriptors []*descriptor.TypeDescriptor, tableName string, paramName string) (columnName string, ok bool) {
+func GetColumnNameAndTypeFromQueryParameterName(typeDescriptors []*descriptor.TypeDescriptor, tableName string, paramName string) (columnName, columnType string, ok bool) {
 	typeDescriptor := GetTypeDescriptorUsingDBTableName(typeDescriptors, tableName)
 	for _, field := range typeDescriptor.Fields {
-		if field.Key == paramName {
-			return field.FromColumn, true
-		}
-		if field.Type.Name == "money" {
+		switch field.Type.Name {
+		case "money":
 			if field.Type.Amount.Key == paramName {
-				return field.Type.Amount.FromColumn, true
+				return field.Type.Amount.FromColumn, field.Type.Name, true
 			}
 			if field.Type.Currency.Key == paramName {
-				return field.Type.Currency.FromColumn, true
+				return field.Type.Currency.FromColumn, field.Type.Name, true
+			}
+		case "date":
+			if field.Key == paramName {
+				return field.FromColumn, field.Type.Kind, true
+			}
+
+		default:
+			if field.Key == paramName {
+				return field.FromColumn, field.Type.Name, true
 			}
 		}
 	}
-	return "", false
+	return "", "", false
 }
 
 // ContextWithRelationships will return a new context which will included an array of all relationships for the table provided in the function's second parameter

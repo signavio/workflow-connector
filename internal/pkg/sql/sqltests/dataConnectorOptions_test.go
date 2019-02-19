@@ -144,10 +144,6 @@ var (
 			RowsAsCsv: "2,Sanremo Café Racer\n3,Buntfink SteelKettle\n4, Copper Coffee Pot Cezve",
 			ExpectedResults: `[
   {
-    "id": "2",
-    "name": "Sanremo Café Racer"
-  },
-  {
     "id": "3",
     "name": "Buntfink SteelKettle"
   },
@@ -163,7 +159,7 @@ var (
 					WillReturnRows(rows)
 			},
 			Request: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/equipment/options?filter=&purchaseDate=2017-12-12T12:00:00Z", nil)
+				req, _ := http.NewRequest("GET", "/equipment/options?filter=&purchaseDate=2017-12-12T12:00:00.000Z", nil)
 				return req
 			},
 		},
@@ -195,7 +191,7 @@ var (
 					WillReturnRows(rows)
 			},
 			Request: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/equipment/options?filter=San&purchaseDate=2017-12-12T12:00:00Z", nil)
+				req, _ := http.NewRequest("GET", "/equipment/options?filter=San&purchaseDate=2017-12-12T12:00:00.123Z", nil)
 				return req
 			},
 		},
