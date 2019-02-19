@@ -115,14 +115,14 @@ func (f *getCollectionFormatter) Format(req *http.Request, results []interface{}
 	return
 }
 func (f *getSingleAsOptionFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
+	tableName := req.Context().Value(util.ContextKey("table")).(string)
 	if len(results) == 0 {
 		return []byte("{}"), nil
 	}
 	if len(results) > 1 {
 		return nil, fmt.Errorf("formatting: expected result set to contain only one resource")
 	}
-	tableName := req.Context().Value(util.ContextKey("table")).(string)
-	formattedResult := stringifyIdAndName(results[0].(map[string]interface{}), tableName)
+	formattedResult := stringify(results[0].(map[string]interface{})[tableName])
 	log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
 	JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
 	if err != nil {
@@ -140,7 +140,7 @@ func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []in
 	for _, result := range results {
 		formattedResults = append(
 			formattedResults,
-			stringifyIdAndName(result.(map[string]interface{}), tableName),
+			stringify(result.(map[string]interface{})[tableName]),
 		)
 	}
 	log.When(config.Options.Logging).Infof(
@@ -152,34 +152,6 @@ func (f *getCollectionAsOptionsFormatter) Format(req *http.Request, results []in
 		return nil, err
 	}
 	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
-	return
-}
-
-func stringifyIdAndName(in map[string]interface{}, tableName string) (stringifiedResult map[string]interface{}) {
-	stringifiedResult = make(map[string]interface{})
-	// Signavio Workflow Accelerator Connector API requires
-	// the `id` and `name` field to be of type string for
-	// all routes
-	switch v := in[tableName].(map[string]interface{})["id"].(type) {
-	case int64:
-		stringifiedResult["id"] = fmt.Sprintf("%d", v)
-	case float64:
-		stringifiedResult["id"] = fmt.Sprintf("%f", v)
-	case fmt.Stringer:
-		stringifiedResult["id"] = v.String()
-	default:
-		stringifiedResult["id"] = v
-	}
-	switch v := in[tableName].(map[string]interface{})["name"].(type) {
-	case int64:
-		stringifiedResult["name"] = fmt.Sprintf("%d", v)
-	case float64:
-		stringifiedResult["name"] = fmt.Sprintf("%f", v)
-	case fmt.Stringer:
-		stringifiedResult["name"] = v.String()
-	default:
-		stringifiedResult["name"] = v
-	}
 	return
 }
 
@@ -199,6 +171,14 @@ func formatAsAWorkflowType(queryResults map[string]interface{}, req *http.Reques
 	return
 }
 
+func buildResultFromQueryResultsUsingField(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
+	if tableHasRelationships(queryResults, table, field) {
+		formatted = buildAndRecursivelyResolveRelationships(formatted, queryResults, req, table, field)
+		return formatted
+	}
+	return buildResultFromQueryResultsWithoutRelationships(formatted, queryResults, req, table, field)
+}
+
 func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
 	switch {
 	case field.Type.Name == "money":
@@ -211,17 +191,6 @@ func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map
 		formatted = buildForFieldTypeOther(formatted, queryResults, table, field)
 	}
 	return formatted
-}
-func buildResultFromQueryResultsUsingField(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
-	if tableHasRelationships(queryResults, table, field) {
-		formatted = buildAndRecursivelyResolveRelationships(formatted, queryResults, req, table, field)
-		return formatted
-	}
-	return buildResultFromQueryResultsWithoutRelationships(formatted, queryResults, req, table, field)
-}
-
-func tableHasRelationships(queryResults map[string]interface{}, table string, field *descriptor.Field) bool {
-	return field.Relationship != nil && queryResults[table].(map[string]interface{})[field.Key] != nil
 }
 func buildAndRecursivelyResolveRelationships(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
 	switch field.Relationship.Kind {
@@ -255,19 +224,6 @@ func relationshipKindIsOneToMany(formatted, queryResults map[string]interface{},
 	return formatted
 }
 
-func withRelationshipFieldsOmitted(table string) (fields []*descriptor.Field) {
-	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
-		config.Options.Descriptor.TypeDescriptors,
-		table,
-	)
-	for _, field := range typeDescriptor.Fields {
-		if field.Relationship == nil {
-			fields = append(fields, field)
-		}
-	}
-	return fields
-}
-
 func relationshipKindIsXToOne(formatted, queryResults map[string]interface{}, req *http.Request, table string, field *descriptor.Field) map[string]interface{} {
 	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
 		var result map[string]interface{}
@@ -285,11 +241,7 @@ func relationshipKindIsXToOne(formatted, queryResults map[string]interface{}, re
 	formatted[field.Key] = make(map[string]interface{})
 	return formatted
 }
-func relatedTablesResultSetNotEmpty(queryResults map[string]interface{}, table string, field *descriptor.Field) bool {
-	fieldKey := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})
-	fieldKeyRelationshipWithTable := fieldKey[field.Relationship.WithTable].([]map[string]interface{})
-	return len(fieldKeyRelationshipWithTable) > 0
-}
+
 func buildForFieldTypeMoney(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.Type.Amount.FromColumn] != nil ||
 		queryResults[table].(map[string]interface{})[field.Type.Currency.FromColumn] != nil {
@@ -322,22 +274,6 @@ func buildForFieldTypeDateTime(formatted, queryResults map[string]interface{}, t
 	}
 	formatted[field.Key] = nil
 	return formatted
-}
-func stringify(value interface{}) (stringified interface{}) {
-	if value == nil {
-		return nil
-	}
-	switch v := value.(type) {
-	case int64:
-		stringified = fmt.Sprintf("%d", v)
-	case float64:
-		stringified = fmt.Sprintf("%f", v)
-	case time.Time:
-		stringified = v.String()
-	case string:
-		stringified = v
-	}
-	return stringified
 }
 
 func buildForFieldTypeOther(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
@@ -385,4 +321,49 @@ func resultAsWorkflowMoneyType(field *descriptor.Field, queryResults map[string]
 		"currency": currency,
 	}
 	return result
+}
+
+func relatedTablesResultSetNotEmpty(queryResults map[string]interface{}, table string, field *descriptor.Field) bool {
+	fieldKey := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})
+	fieldKeyRelationshipWithTable := fieldKey[field.Relationship.WithTable].([]map[string]interface{})
+	return len(fieldKeyRelationshipWithTable) > 0
+}
+func stringify(value interface{}) (stringified interface{}) {
+	if value == nil {
+		return nil
+	}
+	switch v := value.(type) {
+	case int64:
+		stringified = fmt.Sprintf("%d", v)
+	case float64:
+		stringified = fmt.Sprintf("%f", v)
+	case time.Time:
+		stringified = v.String()
+	case string:
+		stringified = v
+	case map[string]interface{}:
+		idAndNameStringified := make(map[string]interface{})
+		for ki, vi := range v {
+			idAndNameStringified[ki] = stringify(vi)
+		}
+		stringified = idAndNameStringified
+	}
+	return stringified
+}
+
+func tableHasRelationships(queryResults map[string]interface{}, table string, field *descriptor.Field) bool {
+	return field.Relationship != nil && queryResults[table].(map[string]interface{})[field.Key] != nil
+}
+
+func withRelationshipFieldsOmitted(table string) (fields []*descriptor.Field) {
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		table,
+	)
+	for _, field := range typeDescriptor.Fields {
+		if field.Relationship == nil {
+			fields = append(fields, field)
+		}
+	}
+	return fields
 }

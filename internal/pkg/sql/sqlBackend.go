@@ -236,7 +236,7 @@ func (s *SqlBackend) retrieveSchemaMappingWithRelationships(query, table string)
 			"unable to get the data types of database table columns",
 		)
 	}
-	return s.newSchemaMapping(columnsPrepended, columnTypes)
+	return s.NewSchemaMapping(columnsPrepended, columnTypes)
 }
 
 // prependTablenameToColumns will prepend the table name to each column name

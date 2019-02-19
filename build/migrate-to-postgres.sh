@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS equipment (
 INSERT INTO equipment (name, acquisition_cost, purchase_date)
   VALUES
   ('Bialetti Moka Express 6 cup', 25.95, '2017-12-11 12:00:00.123'),
-  ('Sanremo Café Racer', 8477.85,'2017-12-12 12:00:00.123'),
+  ('Sanremo Café Racer', 8477.85,'2017-12-12 12:00:00.123456'),
   ('Buntfink SteelKettle', 39.95,'2017-12-12 12:00:00'),
   ('Copper Coffee Pot Cezve', 49.95,'2017-12-12 12:00:00');
 
@@ -69,14 +69,17 @@ CREATE TABLE IF NOT EXISTS recipes (
   equipment_id integer,
   name text,
   instructions text,
+  creation_date timestamp(3) with time zone,
+  last_accessed date,
+  last_modified timestamp without time zone,
   foreign key (equipment_id) references equipment(id),
   primary key (id)
 );
-INSERT INTO recipes (name, instructions, equipment_id)
+INSERT INTO recipes (name, instructions, equipment_id, creation_date, last_accessed, last_modified)
   VALUES
-  ('Espresso single shot','do this', 2),
-  ('Ibrik (turkish) coffee', 'do that', 4),
-  ('Filter coffee', 'do bar', 3);
+  ('Espresso single shot','do this', 2, '2017-12-13T23:00:00.123', '2017-01-13', '2017-12-14T00:00:00.123'),
+  ('Ibrik (turkish) coffee', 'do that', 4, '2017-12-13T23:00:00.123', '2017-01-13', '2017-12-14T00:00:00.123456'),
+  ('Filter coffee', 'do bar', 3, '2017-12-13T23:00:00.123', '2017-01-13', '2017-12-14T00:00:00');
 
 CREATE TABLE IF NOT EXISTS ingredient_recipe (
   id serial,

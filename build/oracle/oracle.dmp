@@ -6,7 +6,7 @@ CREATE TABLE equipment (
   primary key ("id")
 );
 INSERT INTO equipment ("name", "acquisition_cost", "purchase_date")
-  VALUES ('Bialetti Moka Express 6 cup',25.95,to_timestamp_tz('2017-12-12T12:00:00.123+00:00', 'YYYY-MM-DD"T"HH24:MI:SSXFFTZH:TZM'));
+  VALUES ('Bialetti Moka Express 6 cup',25.95,to_timestamp_tz('2017-12-11T12:00:00.123+00:00', 'YYYY-MM-DD"T"HH24:MI:SSXFFTZH:TZM'));
 INSERT INTO equipment ("name", "acquisition_cost", "purchase_date")
   VALUES ('Sanremo Café Racer',8477.85,to_timestamp_tz('2017-12-12T12:00:00.123456+00:00', 'YYYY-MM-DD"T"HH24:MI:SSXFFTZH:TZM'));
 INSERT INTO equipment ("name", "acquisition_cost", "purchase_date")

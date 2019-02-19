@@ -40,17 +40,17 @@ var (
   },
   "id": "2",
   "name": "Sanremo Café Racer",
-  "purchaseDate": "2017-12-12T12:00:00.000Z",
+  "purchaseDate": "2017-12-12T12:00:00.123Z",
   "recipes": [%s]
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
-      "creationDate": null,
+      "creationDate": "2017-12-13T23:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
-      "lastAccessed": null,
-      "lastModified": null,
+      "lastAccessed": "2017-01-13T00:00:00.000Z",
+      "lastModified": "2017-12-14T00:00:00.123Z",
       "name": "Espresso single shot"
     }
   `},
@@ -118,13 +118,13 @@ var (
 			},
 			RowsAsCsv: "1,2,Espresso single shot,do this",
 			ExpectedResults: `{
-  "creationDate": null,
+  "creationDate": "2017-12-13T23:00:00.123Z",
   "equipment": {%s},
   "equipmentId": 2,
   "id": "1",
   "instructions": "do this",
-  "lastAccessed": null,
-  "lastModified": null,
+  "lastAccessed": "2017-01-13T00:00:00.000Z",
+  "lastModified": "2017-12-14T00:00:00.123Z",
   "name": "Espresso single shot"
 }`,
 			ExpectedResultsRelationships: []interface{}{`
@@ -134,7 +134,7 @@ var (
     },
     "id": "2",
     "name": "Sanremo Café Racer",
-    "purchaseDate": "2017-12-12T12:00:00.000Z"
+    "purchaseDate": "2017-12-12T12:00:00.123Z"
   `},
 			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
 				rows := sqlmock.NewRows(columns).
@@ -306,12 +306,12 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
-      "creationDate": null,
+      "creationDate": "2017-12-13T23:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
-      "lastAccessed": null,
-      "lastModified": null,
+      "lastAccessed": "2017-01-13T00:00:00.000Z",
+      "lastModified": "2017-12-14T00:00:00.123Z",
       "name": "Espresso single shot"
     }
   `},
@@ -362,12 +362,12 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
-      "creationDate": null,
+      "creationDate": "2017-12-13T23:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
-      "lastAccessed": null,
-      "lastModified": null,
+      "lastAccessed": "2017-01-13T00:00:00.000Z",
+      "lastModified": "2017-12-14T00:00:00.123Z",
       "name": "Espresso single shot"
     }
   `},
@@ -422,12 +422,12 @@ var (
 }`,
 			ExpectedResultsRelationships: []interface{}{`
     {
-      "creationDate": null,
+      "creationDate": "2017-12-13T23:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
-      "lastAccessed": null,
-      "lastModified": null,
+      "lastAccessed": "2017-01-13T00:00:00.000Z",
+      "lastModified": "2017-12-14T00:00:00.123Z",
       "name": "Espresso single shot"
     }
   `},
