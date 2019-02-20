@@ -1,13 +1,11 @@
 package oracle
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -23,18 +21,23 @@ import (
 	"gopkg.in/goracle.v2"
 )
 
-type lastId struct {
-	id int64
-}
-type characterSet encoding.Encoding
-
 const (
 	dateTimeOracleFormat   = `'YYYY-MM-DD"T"HH24:MI:SSXFF3TZH:TZM'`
 	dateOracleFormat       = `'YYYY-MM-DD'`
 	timeOracleFormat       = `'YYYY-MM-DD"T"HH24:MI:SSXFF3'`
-	dateTimeGolangFormat   = `2006-01-02T15:04:05.999-07:00`
-	dateTimeWorkflowFormat = `2006-01-02T15:04:05.999Z`
+	dateTimeGolangFormat   = `2006-01-02T15:04:05.000-07:00`
+	dateTimeWorkflowFormat = `2006-01-02T15:04:05.000Z`
 )
+
+type Oracle struct {
+	*sqlBackend.SqlBackend
+	characterSet    characterSet
+	sessionTimeZone *time.Location
+}
+type lastId struct {
+	id int64
+}
+type characterSet encoding.Encoding
 
 var (
 	Universal         characterSet = unicode.UTF8
@@ -85,7 +88,7 @@ var (
 			`  :{{$index | add2}}` +
 			`{{end}}) RETURNING "{{.UniqueIDColumn}}" INTO "l_{{.UniqueIDColumn}}"; ` +
 			`DBMS_OUTPUT.PUT_LINE("l_{{.UniqueIDColumn}}"); ` +
-			`END;`,
+			"END;",
 		`DeleteSingle`: `DELETE FROM {{.TableName}} WHERE "{{.UniqueIDColumn}}" = :1`,
 		`GetTableSchema`: `SELECT * ` +
 			`FROM {{.TableName}} ` +
@@ -126,11 +129,6 @@ var (
 	}
 )
 
-type Oracle struct {
-	*sqlBackend.SqlBackend
-	characterSet characterSet
-}
-
 func (l *lastId) LastInsertId() (int64, error) {
 	return l.id, nil
 }
@@ -140,48 +138,16 @@ func (l *lastId) RowsAffected() (int64, error) {
 }
 func New() endpoint.Endpoint {
 	// Assume UTF-8 character set before checking
-	o := &Oracle{sqlBackend.New().(*sqlBackend.SqlBackend), Universal}
+	o := &Oracle{sqlBackend.New().(*sqlBackend.SqlBackend), Universal, time.UTC}
 	o.Templates = QueryTemplates
-	o.ExecContextFunc = wrapExecContext(o.DB, o.ExecContextFunc)
 	o.ExtractAndFormatQueryParamsAndValues = o.extractAndFormatQueryParamsAndValues
 	o.CastDatabaseTypeToGolangType = convertFromOracleDataType
-	o.CoerceExecArgsFunc = coerceExecArgsToOracleType
+	//	o.CoerceExecArgsFunc = coerceExecArgsToOracleType
 	o.NewSchemaMapping = o.newOracleSchemaMapping
 	o.OpenFunc = o.Open
 	return o
 }
-func driverSpecificInitialization(ctx context.Context, db *sql.DB) error {
-	log.When(config.Options.Logging).Infoln("[oracle] Performing driver specific initialization")
-	if err := goracle.EnableDbmsOutput(ctx, db); err != nil {
-		return err
-	}
-	return nil
-}
-func (o *Oracle) setCharacterSet() (err error) {
-	getCharacterSet :=
-		`SELECT VALUE FROM NLS_DATABASE_PARAMETERS WHERE PARAMETER = 'NLS_CHARACTERSET'`
-	var charSet string
-	err = o.DB.QueryRowContext(context.Background(), getCharacterSet).Scan(&charSet)
-	if err != nil {
-		log.When(config.Options.Logging).Infof("Error retrieving current character encoding from db: %s", err)
-		return fmt.Errorf("Error retrieving current character encoding from db: %s", err)
-	}
-	switch charSet {
-	case "AL32UTF8":
-		o.characterSet = Universal
-	case "WE8MSWIN1252":
-		o.characterSet = EuroSymbolSupport
-	default:
-		// Unsupported character set
-		return fmt.Errorf("Character set '%s' is not supported", charSet)
-	}
-	return nil
-}
 func (o *Oracle) Open(args ...interface{}) error {
-	log.When(config.Options.Logging).Infof(
-		"[backend] open connection to database %v\n",
-		config.Options.Database.Driver,
-	)
 	driver := args[0].(string)
 	url := args[1].(string)
 	log.When(config.Options.Logging).Infof(
@@ -193,73 +159,16 @@ func (o *Oracle) Open(args ...interface{}) error {
 		return fmt.Errorf("Error opening connection to database: %s", err)
 	}
 	o.DB = db
-	if err := driverSpecificInitialization(context.Background(), o.DB); err != nil {
-		log.When(config.Options.Logging).Infof("Error performing driver specific initialization: %s", err)
+	if err := driverSpecificInitialization(context.Background(), o); err != nil {
 		return fmt.Errorf("Error performing driver specific initialization: %s", err)
 	}
-	if err = o.setCharacterSet(); err != nil {
-		return err
-	}
 	o.QueryContextFunc = wrapQueryContext(o.characterSet, o.QueryContextFunc)
+	o.ExecContextFunc = wrapExecContext(o, o.ExecContextFunc)
 	err = o.SaveSchemaMapping()
 	if err != nil {
 		return fmt.Errorf("Error saving table schema: %s", err)
 	}
 	return nil
-}
-func (o *Oracle) extractAndFormatQueryParamsAndValues(tableName string, query url.Values) (formattedQueryValues map[string]string, err error) {
-	formattedQueryValues = make(map[string]string)
-	values := urlValuesWithoutFilter(query)
-	for k, v := range values {
-		columnName, columnType, ok := util.GetColumnNameAndTypeFromQueryParameterName(
-			config.Options.Descriptor.TypeDescriptors,
-			tableName,
-			k,
-		)
-		if ok {
-			formattedQueryValues[columnName], err = formatQueryValue(v[0], columnType)
-		}
-	}
-	return
-}
-func formatQueryValue(value, valueType string) (formatted string, err error) {
-	switch valueType {
-	case "datetime":
-
-		parsedDateTime, err := time.Parse(dateTimeWorkflowFormat, value)
-		if err != nil {
-			return "", err
-		}
-		log.When(config.Options.Logging).Infof("DATETIME: %+v\n", parsedDateTime)
-		formatted = fmt.Sprintf(
-			"to_timestamp_tz('%s', %s)",
-			parsedDateTime.Format("2006-01-02T15:04:05.999-07:00"),
-			dateTimeOracleFormat,
-		)
-	case "date":
-		parsedDate, err := time.Parse(dateTimeWorkflowFormat, value)
-		if err != nil {
-			return "", err
-		}
-		formatted = fmt.Sprintf(
-			"to_date('%s', %s)",
-			parsedDate.Format("2006-01-02"),
-			dateOracleFormat,
-		)
-	case "time":
-		parsedTime, err := time.Parse(dateTimeWorkflowFormat, value)
-		if err != nil {
-			return "", err
-		}
-		formatted = fmt.Sprintf(
-			"to_date('%s', %s)",
-			parsedTime.Format("2006-01-02T15:04:05.999"),
-			timeOracleFormat,
-		)
-	default:
-		formatted = fmt.Sprintf("%s", value)
-	}
-	return
 }
 func (o *Oracle) newOracleSchemaMapping(columnsWithTable []string, columnTypes []*sql.ColumnType) (*descriptor.SchemaMapping, error) {
 	var backendTypes, golangTypes, workflowTypes []interface{}
@@ -300,6 +209,72 @@ func (o *Oracle) newOracleSchemaMapping(columnsWithTable []string, columnTypes [
 	}
 	return &descriptor.SchemaMapping{fieldNames, backendTypes, golangTypes, workflowTypes}, nil
 }
+func (o *Oracle) extractAndFormatQueryParamsAndValues(tableName string, query url.Values) (formattedQueryValues map[string]string, err error) {
+	formattedQueryValues = make(map[string]string)
+	values := urlValuesWithoutFilter(query)
+	for k, v := range values {
+		columnName, columnType, ok := util.GetColumnNameAndTypeFromQueryParameterName(
+			config.Options.Descriptor.TypeDescriptors,
+			tableName,
+			k,
+		)
+		if ok {
+			formattedQueryValues[columnName], err = formatQueryValue(v[0], columnType)
+		}
+	}
+	return
+}
+func (o *Oracle) setCharacterSet() (err error) {
+	log.When(config.Options.Logging).Infoln("[oracle] query characterset in use by db")
+	getCharacterSet :=
+		`SELECT VALUE FROM NLS_DATABASE_PARAMETERS WHERE PARAMETER = 'NLS_CHARACTERSET'`
+	var charSet string
+	err = o.DB.QueryRowContext(context.Background(), getCharacterSet).Scan(&charSet)
+	if err != nil {
+		log.When(config.Options.Logging).Infof("Error retrieving current character encoding from db: %s", err)
+		return fmt.Errorf("Error retrieving current character encoding from db: %s", err)
+	}
+	switch charSet {
+	case "AL32UTF8":
+		o.characterSet = Universal
+	case "WE8MSWIN1252":
+		o.characterSet = EuroSymbolSupport
+	default:
+		// Unsupported character set
+		return fmt.Errorf("Character set '%s' is not supported", charSet)
+	}
+	return nil
+}
+func driverSpecificInitialization(ctx context.Context, o *Oracle) error {
+	log.When(config.Options.Logging).Infoln("[oracle] performing driver specific initialization")
+	if err := goracle.EnableDbmsOutput(ctx, o.DB); err != nil {
+		return err
+	}
+	if err := o.setCharacterSet(); err != nil {
+		return err
+	}
+	if err := o.setSessionTimeZone(); err != nil {
+		return err
+	}
+	return nil
+}
+func (o *Oracle) setSessionTimeZone() error {
+	getSessionTimeZone :=
+		`SELECT SESSIONTIMEZONE FROM DUAL`
+	var sessionTimeZone string
+	err := o.DB.QueryRowContext(context.Background(), getSessionTimeZone).Scan(&sessionTimeZone)
+	if err != nil {
+		return err
+	}
+	log.When(config.Options.Logging).
+		Infof("[oracle] current session time zone is: %s\n", sessionTimeZone)
+	parsedTime, err := time.Parse("-07:00", sessionTimeZone)
+	if err != nil {
+		return err
+	}
+	o.sessionTimeZone = parsedTime.Location()
+	return nil
+}
 
 func wrapQueryContext(charSet characterSet, queryContext func(context.Context, string, ...interface{}) ([]interface{}, error)) func(context.Context, string, ...interface{}) ([]interface{}, error) {
 	return func(ctx context.Context, query string, args ...interface{}) ([]interface{}, error) {
@@ -315,6 +290,75 @@ func wrapQueryContext(charSet characterSet, queryContext func(context.Context, s
 		return resultsAsUtf8, err
 	}
 }
+func wrapExecContext(o *Oracle, execContext func(context.Context, string, ...interface{}) (sql.Result, error)) func(context.Context, string, ...interface{}) (sql.Result, error) {
+	return func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+		//lastInserted := bytes.NewBufferString("")
+		var id int64
+		var formattedArgs []interface{}
+		for _, arg := range args {
+			formattedArgs = append(formattedArgs, formatArg(arg, o.sessionTimeZone))
+		}
+		log.When(config.Options.Logging).Infof(
+			"[handler -> db] The following query: \n%s\nwill be executed with these args:\n%s\n",
+			query,
+			formattedArgs,
+		)
+		result, err := execContext(ctx, query, formattedArgs...)
+		if err != nil {
+			return nil, err
+		}
+		//	if err := goracle.ReadDbmsOutput(ctx, lastInserted, db); err != nil {
+		//		return nil, err
+		//	}
+		//	if lastInserted.String() != "" {
+		//		id, err = strconv.ParseInt(chomp(lastInserted.String()), 10, 64)
+		//		if err != nil {
+		//			return nil, err
+		//		}
+		//	}
+		result = &lastId{id}
+		return result, nil
+	}
+}
+func formatQueryValue(value, valueType string) (formatted string, err error) {
+	switch valueType {
+	case "datetime":
+
+		parsedDateTime, err := time.Parse(dateTimeWorkflowFormat, value)
+		if err != nil {
+			return "", err
+		}
+		formatted = fmt.Sprintf(
+			"to_timestamp_tz('%s', %s)",
+			parsedDateTime.Format("2006-01-02T15:04:05.999-07:00"),
+			dateTimeOracleFormat,
+		)
+	case "date":
+		parsedDate, err := time.Parse(dateTimeWorkflowFormat, value)
+		if err != nil {
+			return "", err
+		}
+		formatted = fmt.Sprintf(
+			"to_date('%s', %s)",
+			parsedDate.Format("2006-01-02"),
+			dateOracleFormat,
+		)
+	case "time":
+		parsedTime, err := time.Parse(dateTimeWorkflowFormat, value)
+		if err != nil {
+			return "", err
+		}
+		formatted = fmt.Sprintf(
+			"to_date('%s', %s)",
+			parsedTime.Format("2006-01-02T15:04:05.999"),
+			timeOracleFormat,
+		)
+	default:
+		formatted = fmt.Sprintf("%s", value)
+	}
+	return
+}
+
 func convertCharacterSetToUtf8(charSet characterSet, queryResult interface{}) (interface{}, error) {
 	var err error
 	utf8ResultOuter := make(map[string]interface{})
@@ -335,33 +379,6 @@ func convertCharacterSetToUtf8(charSet characterSet, queryResult interface{}) (i
 		utf8ResultOuter[ki] = utf8ResultInner
 	}
 	return utf8ResultOuter, nil
-}
-func wrapExecContext(db *sql.DB, execContext func(context.Context, string, ...interface{}) (sql.Result, error)) func(context.Context, string, ...interface{}) (sql.Result, error) {
-	return func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-		lastInserted := bytes.NewBufferString("")
-		var id int64
-		var formattedArgs []interface{}
-		for _, arg := range args {
-			formattedArgs = append(formattedArgs, formatArg(arg))
-		}
-		log.When(config.Options.Logging).Infof(
-			"[handler -> db] The following query: \n%s\nwill be executed with these args:\n%s\n",
-			query,
-			formattedArgs,
-		)
-		result, err := execContext(ctx, query, args...)
-		if err := goracle.ReadDbmsOutput(ctx, lastInserted, db); err != nil {
-			return nil, err
-		}
-		if lastInserted.String() != "" {
-			id, err = strconv.ParseInt(chomp(lastInserted.String()), 10, 64)
-			if err != nil {
-				return nil, err
-			}
-		}
-		result = &lastId{id}
-		return result, nil
-	}
 }
 func convertFromOracleDataType(fieldDataType string) interface{} {
 	switch {
@@ -390,36 +407,13 @@ func isOfDataType(ts []string, fieldDataType string) (result bool) {
 	return
 }
 
-func formatArg(arg interface{}) (formattedArg interface{}) {
+func formatArg(arg interface{}, location *time.Location) (formattedArg interface{}) {
 	switch v := arg.(type) {
 	case time.Time:
-		return v.Format(dateTimeGolangFormat)
+		return v.In(location)
 	default:
 		return v
 	}
-}
-
-func coerceExecArgsToOracleType(query string, columnNames []string, fields []*descriptor.Field) (queryWithFormatting string) {
-	queryWithFormatting = query
-	for _, field := range fields {
-		for i, column := range columnNames {
-			if field.FromColumn == column || field.Type.Amount.FromColumn == column {
-				queryParamToWrap := fmt.Sprintf(":%v", i+1)
-				re := regexp.MustCompile(queryParamToWrap)
-				switch field.Type.Kind {
-				case "datetime":
-					queryWithFormatting = re.ReplaceAllString(
-						query, fmt.Sprintf("to_timestamp_tz(%s, %s)", queryParamToWrap, dateTimeOracleFormat),
-					)
-				case "date", "time":
-					queryWithFormatting = re.ReplaceAllString(
-						query, fmt.Sprintf("to_date(%s, %s)", queryParamToWrap, dateOracleFormat),
-					)
-				}
-			}
-		}
-	}
-	return
 }
 
 func chomp(s string) string {
@@ -438,4 +432,39 @@ func urlValuesWithoutFilter(u url.Values) url.Values {
 		return u
 	}
 	return u
+}
+
+func coerceExecArgsToOracleType(query string, columnNames []string, fields []*descriptor.Field) (queryWithFormatting string) {
+	queryWithFormatting = query
+	for i, columnNameField := range intersection(columnNames, fields) {
+		field := columnNameField[1].(*descriptor.Field)
+		queryParamToWrap := fmt.Sprintf(":%v", i+1)
+		re := regexp.MustCompile(queryParamToWrap)
+		switch field.Type.Kind {
+		case "datetime":
+			queryWithFormatting = re.ReplaceAllString(
+				query, fmt.Sprintf("to_timestamp_tz(%s, %s)", queryParamToWrap, dateTimeOracleFormat),
+			)
+		case "date", "time":
+			queryWithFormatting = re.ReplaceAllString(
+				query, fmt.Sprintf("to_date(%s, %s)", queryParamToWrap, dateOracleFormat),
+			)
+		}
+	}
+	return
+}
+
+func intersection(columnNames []string, fields []*descriptor.Field) (result [][]interface{}) {
+	for _, field := range fields {
+		for _, column := range columnNames {
+			if field.Type.Name == "money" {
+				if field.Type.Amount.FromColumn == column {
+					result = append(result, []interface{}{column, field})
+				}
+			} else if field.FromColumn == column {
+				result = append(result, []interface{}{column, field})
+			}
+		}
+	}
+	return result
 }

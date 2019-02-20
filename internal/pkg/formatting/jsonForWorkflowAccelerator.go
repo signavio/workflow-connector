@@ -183,10 +183,11 @@ func buildResultFromQueryResultsWithoutRelationships(formatted, queryResults map
 	switch {
 	case field.Type.Name == "money":
 		formatted = buildForFieldTypeMoney(formatted, queryResults, table, field)
-	case field.Type.Kind == "date":
-		formatted = buildForFieldTypeDate(formatted, queryResults, table, field)
 	case field.Type.Kind == "datetime":
 		formatted = buildForFieldTypeDateTime(formatted, queryResults, table, field)
+	case field.Type.Kind == "date" ||
+		field.Type.Kind == "time":
+		formatted = buildForFieldTypeDateOrTime(formatted, queryResults, table, field)
 	default:
 		formatted = buildForFieldTypeOther(formatted, queryResults, table, field)
 	}
@@ -252,7 +253,8 @@ func buildForFieldTypeMoney(formatted, queryResults map[string]interface{}, tabl
 	formatted[field.Key] = nil
 	return formatted
 }
-func buildForFieldTypeDate(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
+
+func buildForFieldTypeDateOrTime(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
 		dateTime := queryResults[table].(map[string]interface{})[field.FromColumn].(time.Time)
 		// Don't convert dateTime to UTC since when a DATE type is coerced

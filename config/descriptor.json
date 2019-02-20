@@ -295,7 +295,7 @@
           "fromColumn" : "creation_date",
           "type" : {
               "name" : "date",
-              "kind": "datetime"
+              "kind": "date"
           }
         },
         {
@@ -304,7 +304,7 @@
           "fromColumn" : "last_accessed",
           "type" : {
               "name" : "date",
-              "kind": "date"
+              "kind": "time"
           }
         },
         {
