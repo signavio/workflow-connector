@@ -20,6 +20,7 @@ CREATE DATABASE ${POSTGRES_DATABASE};
 ALTER DATABASE ${POSTGRES_DATABASE} OWNER TO ${POSTGRES_USER};
 GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DATABASE} TO ${POSTGRES_USER};
 \connect ${POSTGRES_DATABASE};
+SET timezone='CET';
 SET ROLE ${POSTGRES_USER};
 BEGIN;
 
@@ -69,17 +70,17 @@ CREATE TABLE IF NOT EXISTS recipes (
   equipment_id integer,
   name text,
   instructions text,
-  creation_date timestamp(3) with time zone,
-  last_accessed date,
-  last_modified timestamp without time zone,
+  creation_date date,
+  last_accessed timestamp(3) without time zone,
+  last_modified timestamp with time zone,
   foreign key (equipment_id) references equipment(id),
   primary key (id)
 );
 INSERT INTO recipes (name, instructions, equipment_id, creation_date, last_accessed, last_modified)
   VALUES
-  ('Espresso single shot','do this', 2, '2017-12-13T00:00:00.123+01:00', '2017-01-13', '2017-12-14T00:00:00.123'),
-  ('Ibrik (turkish) coffee', 'do that', 4, '2017-12-13T00:00:00.123+01:00', '2017-01-13', '2017-12-14T00:00:00.123456'),
-  ('Filter coffee', 'do bar', 3, '2017-12-13T00:00:00.123+01:00', '2017-01-13', '2017-12-14T00:00:00');
+  ('Espresso single shot','do this', 2, '2017-12-13', '2017-01-13 00:00:01', '2017-12-14T01:00:00.123'),
+  ('Ibrik (turkish) coffee', 'do that', 4, '2017-12-13', '2017-01-13 00:00:02', '2017-12-14T01:00:00.123456'),
+  ('Filter coffee', 'do bar', 3, '2017-12-13', '2017-01-13 12:00:00', '2017-12-14T01:00:00');
 
 CREATE TABLE IF NOT EXISTS ingredient_recipe (
   id serial,

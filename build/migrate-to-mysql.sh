@@ -71,17 +71,17 @@ CREATE TABLE IF NOT EXISTS recipes (
   equipment_id integer,
   name text,
   instructions text,
-  creation_date timestamp(3),
-  last_accessed date,
+  creation_date date,
+  last_accessed timestamp(3),
   last_modified datetime(3),
   foreign key (equipment_id) references equipment(id),
   primary key (id)
 );
 INSERT INTO recipes (name, instructions, equipment_id, creation_date, last_accessed, last_modified)
   VALUES
-  ("Espresso single shot","do this", 2, "2017-12-13 00:00:00.123", "2017-01-13", "2017-12-14 00:00:00.123"),
-  ("Ibrik (turkish) coffee", "do that", 4, "2017-12-13 00:00:00.123", "2017-01-13", "2017-12-14 00:00:00.123456"),
-  ("Filter coffee", "do bar", 3, "2017-12-13 00:00:00.123", "2017-01-13", "2017-12-14 00:00:00");
+  ("Espresso single shot","do this", 2, "2017-12-13", "2017-01-13 01:00:01", "2017-12-14 00:00:00.123"),
+  ("Ibrik (turkish) coffee", "do that", 4, "2017-12-13", "2017-01-13 01:00:02", "2017-12-14 00:00:00.123456"),
+  ("Filter coffee", "do bar", 3, "2017-12-13", "2017-01-13 13:00:00", "2017-12-14 00:00:00");
 
 CREATE TABLE IF NOT EXISTS ingredient_recipe (
   id INT NOT NULL AUTO_INCREMENT,
