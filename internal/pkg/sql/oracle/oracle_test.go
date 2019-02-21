@@ -41,7 +41,7 @@ var (
 			Name: "Purchase Date",
 			Type: &descriptor.WorkflowType{
 				Name: "date",
-				Kind: "date",
+				Kind: "datetime",
 				Amount: &descriptor.Amount{
 					FromColumn: "",
 				},
@@ -66,7 +66,7 @@ var (
 	testCases = []*testCase{
 		&testCase{
 			Kind:        "success",
-			Name:        "it only wraps columns of `datetime` type with database specific date coersion function",
+			Name:        "it only wraps columns of `date` type with database specific date coersion function",
 			Fields:      commonFields,
 			ColumnNames: commonColumnNames,
 			QueryToCoerce: `UPDATE "equipment" ` +

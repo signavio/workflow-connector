@@ -142,7 +142,7 @@ func New() endpoint.Endpoint {
 	o.Templates = QueryTemplates
 	o.ExtractAndFormatQueryParamsAndValues = o.extractAndFormatQueryParamsAndValues
 	o.CastDatabaseTypeToGolangType = convertFromOracleDataType
-	//	o.CoerceExecArgsFunc = coerceExecArgsToOracleType
+	o.CoerceExecArgsFunc = coerceExecArgsToOracleType
 	o.NewSchemaMapping = o.newOracleSchemaMapping
 	o.OpenFunc = o.Open
 	return o
@@ -410,7 +410,7 @@ func isOfDataType(ts []string, fieldDataType string) (result bool) {
 func formatArg(arg interface{}, location *time.Location) (formattedArg interface{}) {
 	switch v := arg.(type) {
 	case time.Time:
-		return v.In(location)
+		return v.Format(dateTimeGolangFormat)
 	default:
 		return v
 	}

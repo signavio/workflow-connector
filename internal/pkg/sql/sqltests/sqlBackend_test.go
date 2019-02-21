@@ -2,17 +2,16 @@ package sqltests
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
-	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/app/endpoint"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
@@ -246,22 +245,17 @@ type testCase struct {
 	// A testCase contains the row data for each column in the mocked database
 	// table in csv format
 	RowsAsCsv string
-	// A testCase contains the SQL queries which should be executed against
-	// the mock database
-	ExpectedQueries func(sqlmock.Sqlmock, []string, string, ...driver.Value)
 	// A testCase contains the expected results that should be returned after
 	// the database has been queried and the results are processed
-	// by the formatter
-	ExpectedResults string
-	// A testCase contains the expected http status code that should be
+	// by the formatter, if a regular expression is needed it
+	// should be provided as second element of the array
+	ExpectedResults []string
+	// A testCase contains the expected http status code(s) that should be
 	// returned to the client
-	ExpectedStatusCode int
+	ExpectedStatusCodes []int
 	// A testCase contains the expected key-value pairs present in the http
 	// header that is returned to the client
 	ExpectedHeader http.Header
-	// A testCase contains the expected relationship results that are associated
-	// with this table
-	ExpectedResultsRelationships []interface{}
 	// A testCase contains the test data that a client would submit in an
 	// HTTP POST
 	PostData url.Values
@@ -276,56 +270,6 @@ func TestSqlBackends(t *testing.T) {
 	if viper.IsSet("db") {
 		testUsingDB = viper.Get("db").(string)
 	}
-	/*	if strings.Contains(testUsingDB, "mock") {
-		t.Run("Using mocked database", func(t *testing.T) {
-			ts, backend, mock, err := testOnMockedDB()
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			defer ts.Close()
-			for handlerName, testCases := range handlerTests {
-				t.Run(handlerName, func(t *testing.T) {
-					for _, tc := range testCases {
-						// The config.Descriptor in config.Options needs to be mocked
-						mockedDescriptorFile, err := mockDescriptorFile(tc.DescriptorFields...)
-						if err != nil {
-							t.Errorf("unexpected error: %v", err)
-							return
-						}
-						config.Options.Descriptor = config.ParseDescriptorFile(mockedDescriptorFile)
-						// mock the database table schema
-						backend.TableSchemas = make(map[string]*TableSchema)
-						backend.TableSchemas["equipment"] = tc.TableSchema
-						backend.TableSchemas["equipment\x00relationships"] = tc.TableSchema
-						backend.TableSchemas["recipes"] = tc.TableSchema
-						backend.TableSchemas["recipes\x00relationships"] = tc.TableSchema
-						backend.TransactDirectly = func(ctx context.Context, db *sql.DB, query string, args ...interface{}) (result sql.Result, err error) {
-							result, err = db.ExecContext(ctx, query, args...)
-							if err != nil {
-								return nil, err
-							}
-							return
-						}
-						// initialize mock database
-						tc.ExpectedQueries(mock, tc.ColumnNames, tc.RowsAsCsv)
-						t.Run(tc.Name, func(t *testing.T) {
-							tc.setExpectedResults(handlerName, true)
-							err := run(tc, ts)
-							if err != nil {
-								t.Errorf(err.Error())
-								return
-							}
-							if mockErr := mock.ExpectationsWereMet(); mockErr != nil {
-								t.Errorf("there were unfulfilled expectations: %s", mockErr)
-								return
-							}
-
-						})
-					}
-				})
-			}
-		})
-	}*/
 	switch {
 	case strings.Contains(testUsingDB, "sqlite"):
 		testSqlBackend(t, "sqlite", "sqlite3", sqlite.New)
@@ -376,7 +320,6 @@ func runTestCases(t *testing.T, testName string, testCases []testCase, ts *httpt
 			ts := newTestServer(endpoint)
 			defer ts.Close()
 			t.Run(tc.Name, func(t *testing.T) {
-				tc.setExpectedResults(testName, false)
 				err := run(tc, ts)
 				if err != nil {
 					t.Errorf(err.Error())
@@ -387,30 +330,6 @@ func runTestCases(t *testing.T, testName string, testCases []testCase, ts *httpt
 	})
 }
 
-func (tc *testCase) setExpectedResults(testName string, isMockDB bool) {
-	switch testName {
-	case "GetSingle", "UpdateSingle", "CreateSingle":
-		if isMockDB {
-			var emptyRelationships []interface{}
-			for i := 0; i < len(tc.ExpectedResultsRelationships); i++ {
-				emptyRelationships = append(emptyRelationships, "")
-			}
-
-			tc.ExpectedResults = fmt.Sprintf(
-				tc.ExpectedResults,
-				emptyRelationships...,
-			// TODO maybe we have to populate the array
-			// "",
-			)
-
-			return
-		}
-		tc.ExpectedResults = fmt.Sprintf(
-			tc.ExpectedResults,
-			tc.ExpectedResultsRelationships...,
-		)
-	}
-}
 func run(tc testCase, ts *httptest.Server) error {
 	switch tc.Kind {
 	case "success":
@@ -429,6 +348,7 @@ func run(tc testCase, ts *httptest.Server) error {
 		return fmt.Errorf("testcase should either be success or failure kind")
 	}
 }
+
 func itFails(tc testCase, ts *httptest.Server) error {
 	req := tc.Request()
 	u, err := url.Parse(ts.URL + req.URL.RequestURI())
@@ -448,14 +368,14 @@ func itFails(tc testCase, ts *httptest.Server) error {
 	if err != nil {
 		return fmt.Errorf("unexpected error: %v", err)
 	}
-	if res.StatusCode == tc.ExpectedStatusCode {
+	if !in(tc.ExpectedStatusCodes, res.StatusCode) {
 		return fmt.Errorf(
-			"expected code '%d' , instead we received: %d",
-			tc.ExpectedStatusCode,
+			"expected one of HTTP %+v, instead we received: %d",
+			tc.ExpectedStatusCodes,
 			res.StatusCode,
 		)
 	}
-	if string(got[:]) != tc.ExpectedResults {
+	if !match(string(got[:]), tc.ExpectedResults...) {
 		return fmt.Errorf(
 			"response doesn't match what we expected\nResponse:\n%s\nExpected:\n%s",
 			got,
@@ -486,14 +406,12 @@ func itSucceeds(tc testCase, ts *httptest.Server) error {
 	if err != nil {
 		return fmt.Errorf("unexpected error: %v", err)
 	}
-	if tc.ExpectedStatusCode != 0 {
-		if res.StatusCode != tc.ExpectedStatusCode {
-			return fmt.Errorf(
-				"expected HTTP %d, instead we received: %d",
-				tc.ExpectedStatusCode,
-				res.StatusCode,
-			)
-		}
+	if !in(tc.ExpectedStatusCodes, res.StatusCode) {
+		return fmt.Errorf(
+			"expected one of HTTP %+v, instead we received: %d",
+			tc.ExpectedStatusCodes,
+			res.StatusCode,
+		)
 	}
 	if tc.ExpectedHeader != nil {
 		if res.Header.Get("Location") == tc.ExpectedHeader.Get("Location") {
@@ -504,7 +422,7 @@ func itSucceeds(tc testCase, ts *httptest.Server) error {
 			)
 		}
 	}
-	if string(got[:]) != tc.ExpectedResults {
+	if !match(string(got[:]), tc.ExpectedResults...) {
 		return fmt.Errorf(
 			"response doesn't match what we expected\nResponse:\n%s\nExpected:\n%s",
 			got,
@@ -513,20 +431,6 @@ func itSucceeds(tc testCase, ts *httptest.Server) error {
 	}
 	return nil
 }
-
-//func testOnMockedDB() (ts *httptest.Server, b *Backend, mock sqlmock.Sqlmock, err error) {
-//	b = NewBackend("sqlmock")
-//	b.Templates = queryTemplates
-//	b.DB, mock, err = sqlmock.New()
-//	if err != nil {
-//		return nil, nil, mock, fmt.Errorf(
-//			"an error '%s' was not expected when opening a stub database connection",
-//			err,
-//		)
-//	}
-//	ts = newTestServer(b)
-//	return
-//}
 func newTestServer(e endpoint.Endpoint) *httptest.Server {
 	router := e.GetHandler().(*mux.Router)
 	ts := httptest.NewUnstartedServer(router)
@@ -549,4 +453,24 @@ func mockDescriptorFile(testCaseDescriptorFields ...string) (io.Reader, error) {
 		recipesDescriptorFields,
 	)
 	return strings.NewReader(mockedDescriptorFile), nil
+}
+
+func match(got string, expected ...string) (matched bool) {
+	var metaCharactersSubstituted string
+	quoteUnintentionalMetacharacters := regexp.QuoteMeta(expected[0])
+	if len(expected) > 1 {
+		metaCharactersSubstituted = fmt.Sprintf(quoteUnintentionalMetacharacters, expected...)
+	}
+	matched, err := regexp.MatchString(metaCharactersSubstituted, got)
+	if err != nil {
+		panic(err)
+	}
+	return
+}
+
+func in(statusCodes []int, a int) (result bool) {
+	for _, statusCode := range statusCodes {
+		result = a == statusCode
+	}
+	return
 }

@@ -1,12 +1,9 @@
 package sqltests
 
 import (
-	"database/sql/driver"
 	"net/http"
 	"net/url"
 	"strings"
-
-	sqlmock "github.com/DATA-DOG/go-sqlmock"
 )
 
 var (
@@ -32,8 +29,9 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "2,Sanremo Café Racer,8477.85,2017-12-12T12:00:00Z",
-			ExpectedResults: `{
+			RowsAsCsv:           "2,Sanremo Café Racer,8477.85,2017-12-12T12:00:00Z",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
   "acquisitionCost": {
     "amount": 8477.85,
     "currency": "EUR"
@@ -41,26 +39,18 @@ var (
   "id": "2",
   "name": "Sanremo Café Racer",
   "purchaseDate": "2017-12-12T12:00:00.123Z",
-  "recipes": [%s]
-}`,
-			ExpectedResultsRelationships: []interface{}{`
+  "recipes": [
     {
-      "creationDate": "2017-12-12T23:00:00.123Z",
+      "creationDate": "2017-12-13T00:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
-      "lastAccessed": "2017-01-13T00:00:00.000Z",
+      "lastAccessed": "%sT00:00:01.000Z",
       "lastModified": "2017-12-14T00:00:00.123Z",
       "name": "Espresso single shot"
     }
-  `},
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				rows := sqlmock.NewRows(columns).
-					FromCSVString(rowsAsCsv)
-				mock.ExpectQuery("SELECT . FROM (.+) WHERE (.+) = (.+)").
-					WithArgs("2").
-					WillReturnRows(rows)
-			},
+  ]
+}`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment/2", nil)
 				return req
@@ -81,22 +71,15 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "",
-			ExpectedResults: `{
+			RowsAsCsv:           "",
+			ExpectedStatusCodes: []int{http.StatusNotFound},
+			ExpectedResults: []string{`{
   "status": {
     "code": 404,
     "description": "Resource with uniqueID '42' not found in equipment table"
   }
 }
-%s`,
-			ExpectedResultsRelationships: []interface{}{""},
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				rows := sqlmock.NewRows(columns).
-					FromCSVString(rowsAsCsv)
-				mock.ExpectQuery("SELECT . FROM (.+) WHERE (.+) = (.+)").
-					WithArgs("42").
-					WillReturnRows(rows)
-			},
+%s`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment/42", nil)
 				return req
@@ -116,18 +99,10 @@ var (
 				"recipes\x00name",
 				"recipes\x00instructions",
 			},
-			RowsAsCsv: "1,2,Espresso single shot,do this",
-			ExpectedResults: `{
-  "creationDate": "2017-12-12T23:00:00.123Z",
-  "equipment": {%s},
-  "equipmentId": 2,
-  "id": "1",
-  "instructions": "do this",
-  "lastAccessed": "2017-01-13T00:00:00.000Z",
-  "lastModified": "2017-12-14T00:00:00.123Z",
-  "name": "Espresso single shot"
-}`,
-			ExpectedResultsRelationships: []interface{}{`
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
+  "creationDate": "2017-12-13T00:00:00.123Z",
+  "equipment": {
     "acquisitionCost": {
       "amount": 8477.85,
       "currency": "EUR"
@@ -135,14 +110,14 @@ var (
     "id": "2",
     "name": "Sanremo Café Racer",
     "purchaseDate": "2017-12-12T12:00:00.123Z"
-  `},
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				rows := sqlmock.NewRows(columns).
-					FromCSVString(rowsAsCsv)
-				mock.ExpectQuery("SELECT . FROM (.+) WHERE (.+) = (.+)").
-					WithArgs("1").
-					WillReturnRows(rows)
-			},
+  },
+  "equipmentId": 2,
+  "id": "1",
+  "instructions": "do this",
+  "lastAccessed": "%sT00:00:01.000Z",
+  "lastModified": "2017-12-14T00:00:00.123Z",
+  "name": "Espresso single shot"
+}`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/recipes/1", nil)
 				return req
@@ -164,11 +139,8 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "1,Bialetti Moka Express 6 cup,25.95,2017-12-11T12:00:00Z\n" +
-				"2,Sanremo Café Racer,8477.85,2017-12-12T12:00:00Z\n" +
-				"3,Buntfink SteelKettle,39.95,2017-12-12T12:00:00Z\n" +
-				"4,Copper Coffee Pot Cezve,49.95,2017-12-12T12:00:00Z",
-			ExpectedResults: `[
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`[
   {
     "acquisitionCost": {
       "amount": 25.95,
@@ -205,13 +177,7 @@ var (
     "name": "Copper Coffee Pot Cezve",
     "purchaseDate": "2017-12-12T12:00:00.000Z"
   }
-]`,
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				rows := sqlmock.NewRows(columns).
-					FromCSVString(rowsAsCsv)
-				mock.ExpectQuery("SELECT . FROM (.+)").
-					WillReturnRows(rows)
-			},
+]`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment", nil)
 				return req
@@ -233,8 +199,7 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "5,French Press,35.99,2017-04-02T00:00:00Z",
-			ExpectedResults: `{
+			ExpectedResults: []string{`{
   "acquisitionCost": {
     "amount": 35.99,
     "currency": "EUR"
@@ -242,29 +207,12 @@ var (
   "id": "5",
   "name": "French Press",
   "purchaseDate": "2017-04-02T00:00:00.000Z",
-  "recipes": [%s]
-}`,
-			ExpectedStatusCode: http.StatusCreated,
+  "recipes": []
+}`},
+			ExpectedStatusCodes: []int{http.StatusCreated, http.StatusNoContent},
 			ExpectedHeader: http.Header(map[string][]string{
 				"Location": []string{"/equipment/5"},
 			}),
-			ExpectedResultsRelationships: []interface{}{""},
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				mock.ExpectBegin()
-				mock.ExpectExec("INSERT INTO (.+)\\(id, name, acquisition_cost, purchase_date\\) VALUES\\(., ., ., .\\)").
-					// insert id specifically instead of relying on the autoincrement feature
-					// of the database. This allows us to run our tests multiple times on
-					// the test database in such a way that the state of the database
-					// before running the tests *is equal to* the state after
-					// runnning the tests
-					WithArgs("5", "French Press", "35.99", "2017-04-02T00:00:00Z").
-					WillReturnResult(sqlmock.NewResult(5, 1))
-				mock.ExpectCommit()
-				rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)
-				mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
-					WithArgs("5").
-					WillReturnRows(rows)
-			},
 			Request: func() *http.Request {
 				postData := url.Values{}
 				postData.Set("id", "5")
@@ -292,9 +240,9 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "2,Sanremo Café Racer,9283.99,2017-12-12T12:00:00Z",
+			ExpectedStatusCodes: []int{http.StatusOK},
 			// purchaseDate is rounded to the nearest second
-			ExpectedResults: `{
+			ExpectedResults: []string{`{
   "acquisitionCost": {
     "amount": 9283.99,
     "currency": "EUR"
@@ -302,30 +250,18 @@ var (
   "id": "2",
   "name": "Sanremo Café Racer",
   "purchaseDate": "2017-12-01T12:34:56.789Z",
-  "recipes": [%s]
-}`,
-			ExpectedResultsRelationships: []interface{}{`
+  "recipes": [
     {
-      "creationDate": "2017-12-12T23:00:00.123Z",
+      "creationDate": "2017-12-13T00:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
-      "lastAccessed": "2017-01-13T00:00:00.000Z",
+      "lastAccessed": "%sT00:00:01.000Z",
       "lastModified": "2017-12-14T00:00:00.123Z",
       "name": "Espresso single shot"
     }
-  `},
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				mock.ExpectBegin()
-				mock.ExpectExec("UPDATE (.+) SET name = ., acquisition_cost = ., purchase_date = . WHERE (.+) = .").
-					WithArgs("Sanremo Café Racer", "9283.99", "2017-12-01T12:34:56.789Z", "2").
-					WillReturnResult(sqlmock.NewResult(2, 1))
-				mock.ExpectCommit()
-				rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)
-				mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
-					WithArgs("2").
-					WillReturnRows(rows)
-			},
+  ]
+}`, ".*"},
 			Request: func() *http.Request {
 				postData := url.Values{}
 				postData.Set("name", "Sanremo Café Racer")
@@ -349,39 +285,27 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "2,Sanremo Café Racer,8477.85,null",
-			ExpectedResults: `{
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
   "acquisitionCost": {
     "amount": 8477.85,
     "currency": "EUR"
   },
   "id": "2",
   "name": "Sanremo Café Racer",
-  "purchaseDate": null,
-  "recipes": [%s]
-}`,
-			ExpectedResultsRelationships: []interface{}{`
+  "purchaseDate": %s,
+  "recipes": [
     {
-      "creationDate": "2017-12-12T23:00:00.123Z",
+      "creationDate": "2017-12-13T00:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
-      "lastAccessed": "2017-01-13T00:00:00.000Z",
+      "lastAccessed": "%sT00:00:01.000Z",
       "lastModified": "2017-12-14T00:00:00.123Z",
       "name": "Espresso single shot"
     }
-  `},
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				mock.ExpectBegin()
-				mock.ExpectExec("UPDATE (.+) SET name = ., acquisition_cost = ., purchase_date = . WHERE (.+) = .").
-					WithArgs("Sanremo Café Racer", 8477.85, "2017-12-12T12:00:00Z", "2").
-					WillReturnResult(sqlmock.NewResult(2, 1))
-				mock.ExpectCommit()
-				rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)
-				mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
-					WithArgs("2").
-					WillReturnRows(rows)
-			},
+  ]
+}`, `(null|"0001-01-01T00:00:00.000Z")`, ".*"},
 			Request: func() *http.Request {
 				body := strings.NewReader(
 					`{"name": "Sanremo Café Racer", "acquisitionCost": 8477.85, "purchaseDate": null}`,
@@ -409,42 +333,30 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "2,Sanremo Café Racer,8477.85,2017-12-12T12:00:00Z",
-			ExpectedResults: `{
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
   "acquisitionCost": {
     "amount": 8477.85,
     "currency": "EUR"
   },
   "id": "2",
   "name": "Sanremo Café Racer",
-  "purchaseDate": "2017-12-12T12:00:00.000Z",
-  "recipes": [%s]
-}`,
-			ExpectedResultsRelationships: []interface{}{`
+  "purchaseDate": "2017-12-12T12:00:00.123Z",
+  "recipes": [
     {
-      "creationDate": "2017-12-12T23:00:00.123Z",
+      "creationDate": "2017-12-13T00:00:00.123Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
-      "lastAccessed": "2017-01-13T00:00:00.000Z",
+      "lastAccessed": "%sT00:00:01.000Z",
       "lastModified": "2017-12-14T00:00:00.123Z",
       "name": "Espresso single shot"
     }
-  `},
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				mock.ExpectBegin()
-				mock.ExpectExec("UPDATE (.+) SET name = ., acquisition_cost = ., purchase_date = . WHERE (.+) = .").
-					WithArgs("Sanremo Café Racer", 8477.85, "2017-12-12T12:00:00Z", "2").
-					WillReturnResult(sqlmock.NewResult(2, 1))
-				mock.ExpectCommit()
-				rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)
-				mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
-					WithArgs("2").
-					WillReturnRows(rows)
-			},
+  ]
+}`, ".*"},
 			Request: func() *http.Request {
 				body := strings.NewReader(
-					`{"name": "Sanremo Café Racer", "acquisitionCost": 8477.85, "purchaseDate": "2017-12-12T12:00:00Z"}`,
+					`{"name": "Sanremo Café Racer", "acquisitionCost": 8477.85, "purchaseDate": "2017-12-12T12:00:00.123Z"}`,
 				)
 				req, _ := http.NewRequest(
 					"PATCH",
@@ -470,26 +382,14 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "",
-			ExpectedResults: `{
+			ExpectedStatusCodes: []int{http.StatusNotFound},
+			ExpectedResults: []string{`{
   "status": {
     "code": 404,
     "description": "Resource with uniqueID '42' not found in equipment table"
   }
 }
-%s`,
-			ExpectedResultsRelationships: []interface{}{""},
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				mock.ExpectBegin()
-				mock.ExpectExec("UPDATE (.+) SET name = ., acquisition_cost = . WHERE (.+) = .").
-					WithArgs("Sanremo Café Racer", "512.23", "42").
-					WillReturnResult(sqlmock.NewResult(0, 0))
-				mock.ExpectCommit()
-				rows := sqlmock.NewRows(columns).FromCSVString(rowsAsCsv)
-				mock.ExpectQuery("SELECT . FROM (.+) AS (.+) WHERE (.+) = (.+)").
-					WithArgs("42").
-					WillReturnRows(rows)
-			},
+%s`},
 			Request: func() *http.Request {
 				postData := url.Values{}
 				postData.Set("name", "Sanremo Café Racer")
@@ -514,20 +414,13 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "",
-			ExpectedResults: `{
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
   "status": {
     "code": 200,
     "description": "Resource with uniqueID '5' successfully deleted from equipment table"
   }
-}`,
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				mock.ExpectBegin()
-				mock.ExpectExec("DELETE FROM (.+) WHERE (.+) = (.+)").
-					WithArgs("5").
-					WillReturnResult(sqlmock.NewResult(4, 1))
-				mock.ExpectCommit()
-			},
+}`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("DELETE", "/equipment/5", nil)
 				return req
@@ -548,21 +441,14 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			RowsAsCsv: "",
-			ExpectedResults: `{
+			ExpectedStatusCodes: []int{http.StatusNotFound},
+			ExpectedResults: []string{`{
   "status": {
     "code": 404,
     "description": "Resource with uniqueID '42' not found in equipment table"
   }
 }
-`,
-			ExpectedQueries: func(mock sqlmock.Sqlmock, columns []string, rowsAsCsv string, args ...driver.Value) {
-				mock.ExpectBegin()
-				mock.ExpectExec("DELETE FROM (.+) WHERE (.+) = (.+)").
-					WithArgs("42").
-					WillReturnResult(sqlmock.NewResult(0, 0))
-				mock.ExpectCommit()
-			},
+`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("DELETE", "/equipment/42", nil)
 				return req

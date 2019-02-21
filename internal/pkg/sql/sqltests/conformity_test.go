@@ -79,10 +79,10 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			ExpectedResults: func() string {
+			ExpectedResults: []string{func() string {
 				json, _ := json.MarshalIndent(config.Options.Descriptor, "", "  ")
 				return string(json[:])
-			}(),
+			}()},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/", nil)
 				return req
@@ -103,11 +103,11 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			ExpectedStatusCode: 501,
-			ExpectedResults: func() string {
+			ExpectedStatusCodes: []int{http.StatusInternalServerError},
+			ExpectedResults: []string{func() string {
 				json, _ := json.MarshalIndent(config.Options.Descriptor, "", "  ")
 				return string(json[:])
-			}(),
+			}()},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/", nil)
 				return req
