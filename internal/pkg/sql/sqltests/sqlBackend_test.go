@@ -375,7 +375,7 @@ func itFails(tc testCase, ts *httptest.Server) error {
 			res.StatusCode,
 		)
 	}
-	if !match(string(got[:]), tc.ExpectedResults...) {
+	if !match(string(got[:]), tc.ExpectedResults[0], tc.ExpectedResults[1:]...) {
 		return fmt.Errorf(
 			"response doesn't match what we expected\nResponse:\n%s\nExpected:\n%s",
 			got,
@@ -422,7 +422,7 @@ func itSucceeds(tc testCase, ts *httptest.Server) error {
 			)
 		}
 	}
-	if !match(string(got[:]), tc.ExpectedResults...) {
+	if !match(string(got[:]), tc.ExpectedResults[0], tc.ExpectedResults[1:]...) {
 		return fmt.Errorf(
 			"response doesn't match what we expected\nResponse:\n%s\nExpected:\n%s",
 			got,
@@ -455,13 +455,18 @@ func mockDescriptorFile(testCaseDescriptorFields ...string) (io.Reader, error) {
 	return strings.NewReader(mockedDescriptorFile), nil
 }
 
-func match(got string, expected ...string) (matched bool) {
+func match(got, expected string, regexps ...string) (matched bool) {
 	var metaCharactersSubstituted string
-	quoteUnintentionalMetacharacters := regexp.QuoteMeta(expected[0])
-	if len(expected) > 1 {
-		metaCharactersSubstituted = fmt.Sprintf(quoteUnintentionalMetacharacters, expected...)
+	var regexpsToUse []interface{}
+	for _, regexp := range regexps {
+		regexpsToUse = append(regexpsToUse, regexp)
+	}
+	quoteUnintentionalMetacharacters := regexp.QuoteMeta(expected)
+	if len(regexps) > 1 {
+		metaCharactersSubstituted = fmt.Sprintf(quoteUnintentionalMetacharacters, regexpsToUse...)
 	}
 	matched, err := regexp.MatchString(metaCharactersSubstituted, got)
+	fmt.Printf("MATCHED? %v\n MATCH: \n%s\nGOT:\n%s", matched, metaCharactersSubstituted, got)
 	if err != nil {
 		panic(err)
 	}
@@ -470,7 +475,9 @@ func match(got string, expected ...string) (matched bool) {
 
 func in(statusCodes []int, a int) (result bool) {
 	for _, statusCode := range statusCodes {
-		result = a == statusCode
+		if a == statusCode {
+			result = true
+		}
 	}
 	return
 }

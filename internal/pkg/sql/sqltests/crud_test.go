@@ -41,7 +41,7 @@ var (
   "purchaseDate": "2017-12-12T12:00:00.123Z",
   "recipes": [
     {
-      "creationDate": "2017-12-13T00:00:00.123Z",
+      "creationDate": "2017-12-13T00:00:00.000Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
@@ -79,7 +79,7 @@ var (
     "description": "Resource with uniqueID '42' not found in equipment table"
   }
 }
-%s`},
+`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment/42", nil)
 				return req
@@ -101,7 +101,7 @@ var (
 			},
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
-  "creationDate": "2017-12-13T00:00:00.123Z",
+  "creationDate": "2017-12-13T00:00:00.000Z",
   "equipment": {
     "acquisitionCost": {
       "amount": 8477.85,
@@ -252,7 +252,7 @@ var (
   "purchaseDate": "2017-12-01T12:34:56.789Z",
   "recipes": [
     {
-      "creationDate": "2017-12-13T00:00:00.123Z",
+      "creationDate": "2017-12-13T00:00:00.000Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
@@ -296,7 +296,7 @@ var (
   "purchaseDate": %s,
   "recipes": [
     {
-      "creationDate": "2017-12-13T00:00:00.123Z",
+      "creationDate": "2017-12-13T00:00:00.000Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",
@@ -344,7 +344,7 @@ var (
   "purchaseDate": "2017-12-12T12:00:00.123Z",
   "recipes": [
     {
-      "creationDate": "2017-12-13T00:00:00.123Z",
+      "creationDate": "2017-12-13T00:00:00.000Z",
       "equipmentId": 2,
       "id": "1",
       "instructions": "do this",

@@ -23,6 +23,7 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
+			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "acquisitionCost": {
     "amount": 39.95,

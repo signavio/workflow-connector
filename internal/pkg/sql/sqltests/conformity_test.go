@@ -79,6 +79,7 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
+			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{func() string {
 				json, _ := json.MarshalIndent(config.Options.Descriptor, "", "  ")
 				return string(json[:])
@@ -103,7 +104,7 @@ var (
 				"equipment\x00acquisition_cost",
 				"equipment\x00purchase_date",
 			},
-			ExpectedStatusCodes: []int{http.StatusInternalServerError},
+			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{func() string {
 				json, _ := json.MarshalIndent(config.Options.Descriptor, "", "  ")
 				return string(json[:])

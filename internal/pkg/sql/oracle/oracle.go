@@ -35,7 +35,8 @@ type Oracle struct {
 	sessionTimeZone *time.Location
 }
 type lastId struct {
-	id int64
+	id           int64
+	rowsAffected int64
 }
 type characterSet encoding.Encoding
 
@@ -134,7 +135,7 @@ func (l *lastId) LastInsertId() (int64, error) {
 }
 
 func (l *lastId) RowsAffected() (int64, error) {
-	return 0, nil
+	return l.rowsAffected, nil
 }
 func New() endpoint.Endpoint {
 	// Assume UTF-8 character set before checking
@@ -307,6 +308,8 @@ func wrapExecContext(o *Oracle, execContext func(context.Context, string, ...int
 		if err != nil {
 			return nil, err
 		}
+		rowsAffected, _ := result.RowsAffected()
+		log.When(config.Options.Logging).Infof("RESULT: %+v\n", rowsAffected)
 		//	if err := goracle.ReadDbmsOutput(ctx, lastInserted, db); err != nil {
 		//		return nil, err
 		//	}
@@ -316,7 +319,7 @@ func wrapExecContext(o *Oracle, execContext func(context.Context, string, ...int
 		//			return nil, err
 		//		}
 		//	}
-		result = &lastId{id}
+		result = &lastId{id, rowsAffected}
 		return result, nil
 	}
 }
