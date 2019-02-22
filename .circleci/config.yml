@@ -123,6 +123,45 @@ jobs:
             POSTGRES_DATABASE_URL: "postgres://signavio@localhost:5432/circle_test?sslmode=disable"
           command: go test -v ./... -args -db postgres
 
+  oracle_12c:
+    docker:
+      - image: circleci/golang:1.11
+      - image: sath89/oracle-12c
+    working_directory: ~/github.com/signavio/workflow-connector
+    steps:
+      - checkout
+      - run:
+          name: Copy config to XDG_HOME_DIR
+          command: |
+            mkdir -p ~/.config/workflow-connector
+            cp ~/github.com/signavio/workflow-connector/config/* \
+            ~/.config/workflow-connector/
+      - run:
+          name: Update packages
+          command: |
+            sudo apt-get update
+      - run:
+          name: Waiting for oracle to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 1521 && echo Success && exit 0
+              echo -n .
+              sleep 6
+            done
+            echo Failed waiting for Oracle && exit 1
+      - run:
+          name: Migrate coffee example to oracle database
+          environment:
+            POSTGRES_DATABASE: circle_test
+          command: build/migrate-to-oracle.sh
+      - run:
+          name: Run tests on a oracle database
+          environment:
+            ORACLE_DATABASE_URL: "oracle://system:oracle@localhost/xe"
+          command: go test -v ./... -args -db oracle
+
+
 workflows:
   version: 2
   db_tests:
@@ -130,3 +169,4 @@ workflows:
       - mysql_5.7
       - postgres_9.4
       - postgres_10.6
+      - oracle_12c
