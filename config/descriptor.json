@@ -319,6 +319,64 @@
      ],
       "optionsAvailable" : true,
       "fetchOneAvailable" : true
+    },
+    {
+      "key" : "zeroRows",
+      "name" : "Empty table",
+      "tableName": "zero_rows",
+      "columnAsOptionName": "name",
+      "uniqueIdColumn": "id",
+      "recordType": "value",
+      "parameters": [],
+      "fields" : [
+        {
+          "key" : "id",
+          "name" : "ID",
+          "fromColumn" : "id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "name",
+          "name" : "Name",
+          "fromColumn" : "name",
+          "type" : {
+            "name" : "text"
+          }
+        }
+     ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
+    },
+    {
+      "key" : "oneRows",
+      "name" : "Table with one row",
+      "tableName": "one_rows",
+      "columnAsOptionName": "name",
+      "uniqueIdColumn": "id",
+      "recordType": "value",
+      "parameters": [],
+      "fields" : [
+        {
+          "key" : "id",
+          "name" : "ID",
+          "fromColumn" : "id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "name",
+          "name" : "Name",
+          "fromColumn" : "name",
+          "type" : {
+            "name" : "text"
+          }
+        }
+     ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
     }
   ],
   "version": 1,

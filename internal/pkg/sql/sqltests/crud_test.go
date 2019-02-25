@@ -38,7 +38,7 @@ var (
       "name": "Espresso single shot"
     }
   ]
-}`},
+}`, `.*`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment/2", nil)
 				return req
@@ -54,8 +54,7 @@ var (
     "code": 404,
     "description": "Resource with uniqueID '42' not found in equipment table"
   }
-}
-`},
+}`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment/42", nil)
 				return req
@@ -82,7 +81,7 @@ var (
   "lastAccessed": "%sT00:00:01.000Z",
   "lastModified": "2017-12-14T00:00:00.123Z",
   "name": "Espresso single shot"
-}`},
+}`, `.*`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/recipes/1", nil)
 				return req
@@ -90,6 +89,31 @@ var (
 		},
 	}
 	getCollectionTestCases = []testCase{
+		{
+			Kind:                "success",
+			Name:                "it returns 200 OK with empty array when querying an empty table",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults:     []string{`[]`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/zeroRows", nil)
+				return req
+			},
+		},
+		{
+			Kind:                "success",
+			Name:                "it returns 200 OK with a single result in an array when querying a table containing one row",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`[
+  {
+    "id": "1",
+    "name": "TESTNAME"
+  }
+]`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/oneRows", nil)
+				return req
+			},
+		},
 		{
 			Kind:                "success",
 			Name:                "it succeeds when equipment table contains more than one column",
@@ -141,8 +165,8 @@ var (
 	createSingleTestCases = []testCase{
 		{
 			Kind: "success",
-			Name: "it succeeds when provided with valid parameters as URL parameters",
-			ExpectedResults: []string{`{
+			Name: "it returns a 200 OK with the newly created resource or a 204 No Content when provided with valid URL parameters on POST",
+			ExpectedResults: []string{`%s{
   "acquisitionCost": {
     "amount": 35.99,
     "currency": "EUR"
@@ -151,7 +175,7 @@ var (
   "name": "French Press",
   "purchaseDate": "2017-04-02T00:00:00.000Z",
   "recipes": []
-}`},
+}%s`, `(`, `|^$)`},
 			ExpectedStatusCodes: []int{http.StatusCreated, http.StatusNoContent},
 			ExpectedHeader: http.Header(map[string][]string{
 				"Location": []string{"/equipment/5"},
@@ -167,13 +191,32 @@ var (
 				return req
 			},
 		},
+		{
+			Kind: "success",
+			Name: "it returns a 200 OK with the newly created resource or a 204 No Content when creating a new resource in an empty table",
+			ExpectedResults: []string{`%s{
+  "id": "1",
+  "name": "Graef CM800 Coffee Burr Grinder"
+}%s`, `(`, `|^$)`},
+			ExpectedStatusCodes: []int{http.StatusCreated, http.StatusNoContent},
+			ExpectedHeader: http.Header(map[string][]string{
+				"Location": []string{"/zeroRows/1"},
+			}),
+			Request: func() *http.Request {
+				postData := url.Values{}
+				postData.Set("id", "1")
+				postData.Set("name", "Graef CM800 Coffee Burr Grinder")
+				req, _ := http.NewRequest("POST", "/zeroRows", strings.NewReader(postData.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				return req
+			},
+		},
 	}
 	updateSingleTestCases = []testCase{
 		{
 			Kind:                "success",
 			Name:                "it succeeds when provided with valid parameters as URL parameters",
 			ExpectedStatusCodes: []int{http.StatusOK},
-			// purchaseDate is rounded to the nearest second
 			ExpectedResults: []string{`{
   "acquisitionCost": {
     "amount": 9283.99,
@@ -193,7 +236,7 @@ var (
       "name": "Espresso single shot"
     }
   ]
-}`, ".*"},
+}`, `.*`},
 			Request: func() *http.Request {
 				postData := url.Values{}
 				postData.Set("name", "Sanremo Café Racer")
@@ -288,7 +331,7 @@ var (
     "description": "Resource with uniqueID '42' not found in equipment table"
   }
 }
-%s`},
+`},
 			Request: func() *http.Request {
 				postData := url.Values{}
 				postData.Set("name", "Sanremo Café Racer")
@@ -315,6 +358,21 @@ var (
 			},
 		},
 		{
+			Kind:                "success",
+			Name:                "it succeeds in deleting an existing resource from the zeroRows table",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
+  "status": {
+    "code": 200,
+    "description": "Resource with uniqueID '1' successfully deleted from zero_rows table"
+  }
+}`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("DELETE", "/zeroRows/1", nil)
+				return req
+			},
+		},
+		{
 
 			Kind:                "failure",
 			Name:                "it fails and returns 404 NOT FOUND when trying to delete a non existent id",
@@ -324,8 +382,7 @@ var (
     "code": 404,
     "description": "Resource with uniqueID '42' not found in equipment table"
   }
-}
-`},
+}`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("DELETE", "/equipment/42", nil)
 				return req

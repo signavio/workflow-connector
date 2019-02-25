@@ -199,7 +199,7 @@ func itFails(tc testCase, ts *httptest.Server) error {
 		return fmt.Errorf(
 			"response doesn't match what we expected\nResponse:\n%s\nExpected:\n%s",
 			got,
-			tc.ExpectedResults,
+			interpolateRegexp(tc.ExpectedResults[0], tc.ExpectedResults[1:]...),
 		)
 	}
 	return nil
@@ -246,7 +246,7 @@ func itSucceeds(tc testCase, ts *httptest.Server) error {
 		return fmt.Errorf(
 			"response doesn't match what we expected\nResponse:\n%s\nExpected:\n%s",
 			got,
-			tc.ExpectedResults,
+			interpolateRegexp(tc.ExpectedResults[0], tc.ExpectedResults[1:]...),
 		)
 	}
 	return nil
@@ -266,23 +266,29 @@ func newTestServer(e endpoint.Endpoint) *httptest.Server {
 }
 
 func match(got, expected string, regexps ...string) (matched bool) {
-	var metaCharactersSubstituted string
-	var regexpsToUse []interface{}
-	for _, regexp := range regexps {
-		regexpsToUse = append(regexpsToUse, regexp)
-	}
-	quoteUnintentionalMetacharacters := regexp.QuoteMeta(expected)
-	if len(regexps) > 1 {
-		metaCharactersSubstituted = fmt.Sprintf(quoteUnintentionalMetacharacters, regexpsToUse...)
-	}
-	matched, err := regexp.MatchString(metaCharactersSubstituted, got)
-	fmt.Printf("MATCHED? %v\n MATCH: \n%s\nGOT:\n%s", matched, metaCharactersSubstituted, got)
+	expectedWithRegexp := interpolateRegexp(expected, regexps...)
+	matched, err := regexp.MatchString(expectedWithRegexp, got)
 	if err != nil {
 		panic(err)
 	}
 	return
 }
 
+func interpolateRegexp(expected string, regexps ...string) (interpolatedRegexp string) {
+	var regexpsToUse []interface{}
+	for _, regexp := range regexps {
+		regexpsToUse = append(regexpsToUse, regexp)
+	}
+	quoteUnintentionalMetacharacters := regexp.QuoteMeta(expected)
+	interpolatedRegexp = quoteUnintentionalMetacharacters
+	if len(regexps) > 0 {
+		interpolatedRegexp = fmt.Sprintf(
+			quoteUnintentionalMetacharacters,
+			regexpsToUse...,
+		)
+	}
+	return
+}
 func in(statusCodes []int, a int) (result bool) {
 	for _, statusCode := range statusCodes {
 		if a == statusCode {

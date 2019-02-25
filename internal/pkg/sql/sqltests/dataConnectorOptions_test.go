@@ -34,8 +34,7 @@ var (
     "code": 404,
     "description": "Resource with uniqueID '42' not found in equipment table"
   }
-}
-`},
+}`},
 
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment/42", nil)
@@ -76,7 +75,7 @@ var (
 		{
 			Kind: "success",
 			Name: "it succeeds when equipment table contains more than one column" +
-				" and returns three records when we filter on purchaseDate",
+				" and returns two records when we filter on purchaseDate",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`[
   {
@@ -101,12 +100,12 @@ var (
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`[
   {
-    "id": "2",
-    "name": "Sanremo Café Racer"
+    "id": "3",
+    "name": "Buntfink SteelKettle"
   }
 ]`},
 			Request: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/equipment/options?filter=San&purchaseDate=2017-12-12T12:00:00.123Z", nil)
+				req, _ := http.NewRequest("GET", "/equipment/options?filter=tee&purchaseDate=2017-12-12T12:00:00.000Z", nil)
 				return req
 			},
 		},
