@@ -2,7 +2,6 @@ module github.com/signavio/workflow-connector
 
 require (
 	cloud.google.com/go v0.33.1 // indirect
-	github.com/DATA-DOG/go-sqlmock v1.3.0
 	github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/mux v1.6.2

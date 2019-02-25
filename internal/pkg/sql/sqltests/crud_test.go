@@ -16,20 +16,8 @@ var (
 	}
 	getSingleTestCases = []testCase{
 		{
-			Kind: "success",
-			Name: "it succeeds when equipment table contains more than one column",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
-			RowsAsCsv:           "2,Sanremo Café Racer,8477.85,2017-12-12T12:00:00Z",
+			Kind:                "success",
+			Name:                "it succeeds when equipment table contains more than one column",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "acquisitionCost": {
@@ -58,20 +46,8 @@ var (
 		},
 		{
 
-			Kind: "failure",
-			Name: "it fails and returns 404 NOT FOUND when querying a non existent equipment id",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
-			RowsAsCsv:           "",
+			Kind:                "failure",
+			Name:                "it fails and returns 404 NOT FOUND when querying a non existent equipment id",
 			ExpectedStatusCodes: []int{http.StatusNotFound},
 			ExpectedResults: []string{`{
   "status": {
@@ -86,19 +62,8 @@ var (
 			},
 		},
 		{
-			Kind: "success",
-			Name: "it succeeds when recipes table contains more than one column",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonRecipesTableSchema,
-			ColumnNames: []string{
-				"recipes\x00id",
-				"recipes\x00equipment_id",
-				"recipes\x00name",
-				"recipes\x00instructions",
-			},
+			Kind:                "success",
+			Name:                "it succeeds when recipes table contains more than one column",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "creationDate": "2017-12-13T00:00:00.000Z",
@@ -126,19 +91,8 @@ var (
 	}
 	getCollectionTestCases = []testCase{
 		{
-			Kind: "success",
-			Name: "it succeeds when equipment table contains more than one column",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "success",
+			Name:                "it succeeds when equipment table contains more than one column",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`[
   {
@@ -188,17 +142,6 @@ var (
 		{
 			Kind: "success",
 			Name: "it succeeds when provided with valid parameters as URL parameters",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
 			ExpectedResults: []string{`{
   "acquisitionCost": {
     "amount": 35.99,
@@ -227,19 +170,8 @@ var (
 	}
 	updateSingleTestCases = []testCase{
 		{
-			Kind: "success",
-			Name: "it succeeds when provided with valid parameters as URL parameters",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "success",
+			Name:                "it succeeds when provided with valid parameters as URL parameters",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			// purchaseDate is rounded to the nearest second
 			ExpectedResults: []string{`{
@@ -272,19 +204,8 @@ var (
 			},
 		},
 		{
-			Kind: "success",
-			Name: "it succeeds when user explicitely wants to insert a null value",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "success",
+			Name:                "it succeeds when user explicitely wants to insert a null value",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "acquisitionCost": {
@@ -320,19 +241,8 @@ var (
 			},
 		},
 		{
-			Kind: "success",
-			Name: "it succeeds when provided with valid parameters as json in the request body",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "success",
+			Name:                "it succeeds when provided with valid parameters as json in the request body",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "acquisitionCost": {
@@ -369,19 +279,8 @@ var (
 		},
 		{
 
-			Kind: "failure",
-			Name: "it fails and returns 404 NOT FOUND when trying to update a non existent id",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "failure",
+			Name:                "it fails and returns 404 NOT FOUND when trying to update a non existent id",
 			ExpectedStatusCodes: []int{http.StatusNotFound},
 			ExpectedResults: []string{`{
   "status": {
@@ -401,19 +300,8 @@ var (
 	}
 	deleteSingleTestCases = []testCase{
 		{
-			Kind: "success",
-			Name: "it succeeds in deleting an existing resource",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "success",
+			Name:                "it succeeds in deleting an existing resource",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "status": {
@@ -428,19 +316,8 @@ var (
 		},
 		{
 
-			Kind: "failure",
-			Name: "it fails and returns 404 NOT FOUND when trying to delete a non existent id",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "failure",
+			Name:                "it fails and returns 404 NOT FOUND when trying to delete a non existent id",
 			ExpectedStatusCodes: []int{http.StatusNotFound},
 			ExpectedResults: []string{`{
   "status": {

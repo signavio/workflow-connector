@@ -13,17 +13,8 @@ var (
 	}
 	getSingleAsOptionTestCases = []testCase{
 		{
-			Kind: "success",
-			Name: "it succeeds when equipment table contains more than one column",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-			},
+			Kind:                "success",
+			Name:                "it succeeds when equipment table contains more than one column",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "id": "1",
@@ -35,19 +26,8 @@ var (
 			},
 		},
 		{
-			Kind: "failure",
-			Name: "it fails and returns 404 NOT FOUND when querying a non existent id",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "failure",
+			Name:                "it fails and returns 404 NOT FOUND when querying a non existent id",
 			ExpectedStatusCodes: []int{http.StatusNotFound},
 			ExpectedResults: []string{`{
   "status": {
@@ -65,17 +45,8 @@ var (
 	}
 	getCollectionAsOptionsTestCases = []testCase{
 		{
-			Kind: "success",
-			Name: "it succeeds when equipment table contains more than one column",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-			},
+			Kind:                "success",
+			Name:                "it succeeds when equipment table contains more than one column",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`[
   {
@@ -106,15 +77,6 @@ var (
 			Kind: "success",
 			Name: "it succeeds when equipment table contains more than one column" +
 				" and returns three records when we filter on purchaseDate",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-			},
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`[
   {
@@ -136,15 +98,6 @@ var (
 			Name: "it succeeds when equipment table contains more than one column" +
 				" and returns one record when we filter on purchaseDate and provide" +
 				" a filter query",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-			},
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`[
   {
@@ -160,17 +113,8 @@ var (
 	}
 	getCollectionAsOptionsFilterableTestCases = []testCase{
 		{
-			Kind: "success",
-			Name: "it succeeds when equipment table contains more than one column",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-			},
+			Kind:                "success",
+			Name:                "it succeeds when equipment table contains more than one column",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`[
   {

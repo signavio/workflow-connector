@@ -66,19 +66,8 @@ var (
 	}
 	getDescriptorTestCases = []testCase{
 		{
-			Kind: "success",
-			Name: "it succeeds with proper descriptor file",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "success",
+			Name:                "it succeeds with proper descriptor file",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{func() string {
 				json, _ := json.MarshalIndent(config.Options.Descriptor, "", "  ")
@@ -91,19 +80,8 @@ var (
 		},
 		{
 
-			Kind: "failure",
-			Name: "it fails with invalid json",
-			DescriptorFields: []string{
-				invalidEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "failure",
+			Name:                "it fails with invalid json",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{func() string {
 				json, _ := json.MarshalIndent(config.Options.Descriptor, "", "  ")

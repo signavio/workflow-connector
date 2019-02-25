@@ -25,6 +25,19 @@ USE ${MYSQL_DATABASE};
 SET time_zone = "+01:00";
 BEGIN;
 
+CREATE TABLE IF NOT EXISTS zero_rows (
+  id INT NOT NULL AUTO_INCREMENT,
+  name text,
+  primary key (id)
+);
+CREATE TABLE IF NOT EXISTS one_rows (
+  id INT NOT NULL AUTO_INCREMENT,
+  name text,
+  primary key (id)
+);
+INSERT INTO one_rows (name)
+  VALUES
+  ("TESTNAME");
 CREATE TABLE IF NOT EXISTS equipment (
   id INT NOT NULL AUTO_INCREMENT,
   name text,

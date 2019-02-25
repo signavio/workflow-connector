@@ -10,19 +10,8 @@ var (
 	}
 	getCollectionFilterableTestCases = []testCase{
 		{
-			Kind: "success",
-			Name: "it succeeds when filtering equipment table using column name",
-			DescriptorFields: []string{
-				commonEquipmentDescriptorFields,
-				commonRecipesDescriptorFields,
-			},
-			TableSchema: commonEquipmentTableSchema,
-			ColumnNames: []string{
-				"equipment\x00id",
-				"equipment\x00name",
-				"equipment\x00acquisition_cost",
-				"equipment\x00purchase_date",
-			},
+			Kind:                "success",
+			Name:                "it succeeds when filtering equipment table using column name",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "acquisitionCost": {
