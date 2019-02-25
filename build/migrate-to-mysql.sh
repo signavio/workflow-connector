@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 
-MYSQL_HOST=${MYSQL_HOST:=localhost}
+MYSQL_HOST=${MYSQL_HOST:=127.0.0.1}
 MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST:="%"}
-MYSQL_USER=${MYSQL_USER:=signavio}
+MYSQL_USER=${MYSQL_USER:=root}
 MYSQL_DATABASE=${MYSQL_DATABASE:=signavio_test}
 # Source sensitive environment variables from .env
 if [ -f .env ]

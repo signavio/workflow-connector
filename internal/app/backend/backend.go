@@ -27,7 +27,7 @@ type Backend struct {
 	GetFilterPredicateMappingFunc        func(filter.Predicate) string
 	GetQueryTemplateFunc                 func(string) string
 	CoerceExecArgsFunc                   func(string, []string, []*descriptor.Field) string
-	CastDatabaseTypeToGolangType         func(string) interface{}
+	CastBackendTypeToGolangType         func(string) interface{}
 	QueryContextFunc                     func(context.Context, string, ...interface{}) ([]interface{}, error)
 	ExecContextFunc                      func(context.Context, string, ...interface{}) (sql.Result, error)
 	ExtractAndFormatQueryParamsAndValues func(string, url.Values) (map[string]string, error)

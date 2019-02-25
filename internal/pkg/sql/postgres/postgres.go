@@ -117,7 +117,7 @@ func New() endpoint.Endpoint {
 	p := &Postgres{sqlBackend.New().(*sqlBackend.SqlBackend)}
 	p.ExecContextFunc = execContext(p.SqlBackend)
 	p.Templates = QueryTemplates
-	p.CastDatabaseTypeToGolangType = convertFromPostgresDataType
+	p.CastBackendTypeToGolangType = convertFromPostgresDataType
 	return p
 }
 

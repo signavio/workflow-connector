@@ -300,7 +300,7 @@ func (s *SqlBackend) newSchemaMapping(columnsWithTable []string, columnTypes []*
 				"unable to get the type in use by the backend",
 			)
 		}
-		golangType := s.CastDatabaseTypeToGolangType(backendType)
+		golangType := s.CastBackendTypeToGolangType(backendType)
 		if golangType == nil {
 			return nil, fmt.Errorf(
 				"unable to get the native golang type",

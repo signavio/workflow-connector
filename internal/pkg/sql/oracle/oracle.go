@@ -142,7 +142,7 @@ func New() endpoint.Endpoint {
 	o := &Oracle{sqlBackend.New().(*sqlBackend.SqlBackend), Universal, time.UTC}
 	o.Templates = QueryTemplates
 	o.ExtractAndFormatQueryParamsAndValues = o.extractAndFormatQueryParamsAndValues
-	o.CastDatabaseTypeToGolangType = convertFromOracleDataType
+	o.CastBackendTypeToGolangType = convertFromOracleDataType
 	o.CoerceExecArgsFunc = coerceExecArgsToOracleType
 	o.NewSchemaMapping = o.newOracleSchemaMapping
 	o.OpenFunc = o.Open
@@ -191,7 +191,7 @@ func (o *Oracle) newOracleSchemaMapping(columnsWithTable []string, columnTypes [
 				backendType = "INTEGER"
 			}
 		}
-		golangType := o.CastDatabaseTypeToGolangType(backendType)
+		golangType := o.CastBackendTypeToGolangType(backendType)
 		if golangType == nil {
 			return nil, fmt.Errorf(
 				"unable to get the native golang type",
