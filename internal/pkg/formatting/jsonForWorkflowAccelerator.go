@@ -78,17 +78,19 @@ func (f *standardFormatter) Format(req *http.Request, results []interface{}) (JS
 }
 func (f *getCollectionFormatter) Format(req *http.Request, results []interface{}) (JSONResults []byte, err error) {
 	if len(results) == 0 {
-		return []byte("{}"), nil
+		return []byte("[]"), nil
 	}
 	tableName := req.Context().Value(util.ContextKey("table")).(string)
 	fields := withRelationshipFieldsOmitted(tableName)
+	var formattedResults []interface{}
 	if len(results) == 1 {
 		log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set == 1")
 		formattedResult := formatAsAWorkflowType(
 			results[0].(map[string]interface{}), req, tableName, fields,
 		)
+		formattedResults = append(formattedResults, formattedResult)
 		log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
-		JSONResults, err = json.MarshalIndent(&formattedResult, "", "  ")
+		JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +98,6 @@ func (f *getCollectionFormatter) Format(req *http.Request, results []interface{}
 		return
 	}
 	log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set > 1")
-	var formattedResults []interface{}
 	for _, result := range results {
 		formattedResult := formatAsAWorkflowType(
 			result.(map[string]interface{}), req, tableName, fields,

@@ -99,7 +99,7 @@ type Sqlite struct {
 func New() endpoint.Endpoint {
 	s := &Sqlite{sqlBackend.New().(*sqlBackend.SqlBackend)}
 	s.Templates = QueryTemplates
-	s.CastDatabaseTypeToGolangType = convertFromSqliteDataType
+	s.CastBackendTypeToGolangType = convertFromSqliteDataType
 	return s
 }
 

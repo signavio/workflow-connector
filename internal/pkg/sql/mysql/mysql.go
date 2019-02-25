@@ -100,7 +100,7 @@ type Mysql struct {
 func New() endpoint.Endpoint {
 	m := &Mysql{sqlBackend.New().(*sqlBackend.SqlBackend)}
 	m.Templates = QueryTemplates
-	m.CastDatabaseTypeToGolangType = convertFromMysqlDataType
+	m.CastBackendTypeToGolangType = convertFromMysqlDataType
 	return m
 }
 
