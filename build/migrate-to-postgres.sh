@@ -24,6 +24,28 @@ SET timezone='CET';
 SET ROLE ${POSTGRES_USER};
 BEGIN;
 
+CREATE TABLE IF NOT EXISTS zero_rows (
+  id serial,
+  name text,
+  primary key (id)
+);
+CREATE TABLE IF NOT EXISTS one_rows (
+  id serial,
+  name text,
+  primary key (id)
+);
+INSERT INTO one_rows (name)
+  VALUES
+  ('TESTNAME');
+
+CREATE TABLE IF NOT EXISTS equipment (
+  id INT NOT NULL AUTO_INCREMENT,
+  name text,
+  acquisition_cost decimal(10,5),
+  purchase_date timestamp(3) null,
+  primary key (id)
+);
+
 CREATE TABLE IF NOT EXISTS equipment (
   id serial,
   name text,
