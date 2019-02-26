@@ -8,36 +8,17 @@ import (
 
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
-	"github.com/signavio/workflow-connector/internal/pkg/log"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
 type QueryTemplate struct {
-	Vars         []string
-	TemplateData interface{}
-}
-
-type ExecTemplate struct {
-	QueryTemplate
+	Vars               []string
+	TemplateData       interface{}
 	ColumnNames        []string
 	CoerceExecArgsFunc func(string, []string, []*descriptor.Field) string
 }
 
-func (q *QueryTemplate) Interpolate() (interpolatedQueryTemplate string, err error) {
-	queryTemplate, err := template.New("dbquery").Parse(q.Vars[0])
-	if err != nil {
-		return "", err
-	}
-	query := bytes.NewBufferString("")
-	err = queryTemplate.Execute(query, q.TemplateData)
-	if err != nil {
-		return "", err
-	}
-	return query.String(), nil
-}
-
-func (e *ExecTemplate) Interpolate(ctx context.Context, requestData map[string]interface{}) (interpolatedQuery string, args []interface{}, err error) {
-	tableName := ctx.Value(util.ContextKey("table")).(string)
+func (e *QueryTemplate) Interpolate(ctx context.Context, requestData map[string]interface{}) (interpolatedQuery string, args []interface{}, err error) {
 	templateText := e.Vars[0]
 	funcMap := template.FuncMap{
 		"add2": func(x int) int {
@@ -52,6 +33,9 @@ func (e *ExecTemplate) Interpolate(ctx context.Context, requestData map[string]i
 		"tail": func(x []string) []string {
 			return x[1:]
 		},
+		"format": func(a string) string {
+			return a
+		},
 	}
 	queryTemplate, err := template.New("dbquery").Funcs(funcMap).Parse(templateText)
 	if err != nil {
@@ -62,32 +46,15 @@ func (e *ExecTemplate) Interpolate(ctx context.Context, requestData map[string]i
 	if err != nil {
 		return "", nil, err
 	}
-	queryFormatted := e.withDatabaseSpecificFormatting(query.String(), tableName, e.ColumnNames)
-	args, err = buildExecQueryArgs(ctx, requestData)
+	args, err = CoerceRequestDataToGolangNativeTypes(ctx, requestData)
 	if err != nil {
 		return "", nil, err
 	}
-	log.When(config.Options.Logging).Infof(
-		"[handler <- query] interpolated query string: \n%s\nwill be provided the following args:\n%s\n",
-		queryFormatted,
-		args,
-	)
-	return queryFormatted, args, nil
+	return query.String(), args, nil
 
 }
-
-func (e *ExecTemplate) withDatabaseSpecificFormatting(query, tableName string, columnNames []string) string {
-	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
-		config.Options.Descriptor.TypeDescriptors,
-		tableName,
-	)
-	queryWithFormatting := e.CoerceExecArgsFunc(query, columnNames, typeDescriptor.Fields)
-	return queryWithFormatting
-}
-
-func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{}) (args []interface{}, err error) {
+func CoerceRequestDataToGolangNativeTypes(ctx context.Context, requestData map[string]interface{}) (args []interface{}, err error) {
 	currentTable := ctx.Value(util.ContextKey("table")).(string)
-	id := ctx.Value(util.ContextKey("id")).(string)
 	td := util.GetTypeDescriptorUsingDBTableName(config.Options.Descriptor.TypeDescriptors, currentTable)
 	var val interface{}
 	var ok bool
@@ -143,9 +110,6 @@ func buildExecQueryArgs(ctx context.Context, requestData map[string]interface{})
 				}
 			}
 		}
-	}
-	if id != "" {
-		args = append(args, id)
 	}
 	return
 }

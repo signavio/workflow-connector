@@ -40,18 +40,16 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, msg.Error(), http.StatusBadRequest)
 		return
 	}
-	execTemplate := &query.ExecTemplate{
-		QueryTemplate: query.QueryTemplate{
-			Vars: []string{queryTemplateUninterpolated},
-			TemplateData: struct {
-				TableName      string
-				ColumnNames    []string
-				UniqueIDColumn string
-			}{
-				TableName:      table,
-				ColumnNames:    columnNames,
-				UniqueIDColumn: uniqueIDColumn,
-			},
+	queryTemplate := query.QueryTemplate{
+		Vars: []string{queryTemplateUninterpolated},
+		TemplateData: struct {
+			TableName      string
+			ColumnNames    []string
+			UniqueIDColumn string
+		}{
+			TableName:      table,
+			ColumnNames:    columnNames,
+			UniqueIDColumn: uniqueIDColumn,
 		},
 		ColumnNames:        columnNames,
 		CoerceExecArgsFunc: b.GetCoerceExecArgsFunc(),
@@ -59,7 +57,7 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
 	log.When(config.Options.Logging).Infoln("[handler -> backend] interpolate query string")
-	queryString, args, err := execTemplate.Interpolate(req.Context(), requestData)
+	queryString, args, err := queryTemplate.Interpolate(req.Context(), requestData)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,

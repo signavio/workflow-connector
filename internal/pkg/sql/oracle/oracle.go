@@ -68,8 +68,8 @@ var (
 		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM {{.TableName}} ` +
 			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%' ` +
-			`{{range $key, $value := .ParamsWithValues}}` +
-			`AND "{{$key}}" = {{$value}}` +
+			`{{range $index, $element := .ColumnNames}}` +
+			`AND "{{$element}}" = :{{(add2 $index)}} ` +
 			`{{end}}`,
 		`UpdateSingle`: `UPDATE {{.TableName}} ` +
 			`SET "{{.ColumnNames | head}}" = :1` +
@@ -295,16 +295,7 @@ func wrapExecContext(o *Oracle, execContext func(context.Context, string, ...int
 	return func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 		//lastInserted := bytes.NewBufferString("")
 		var id int64
-		var formattedArgs []interface{}
-		for _, arg := range args {
-			formattedArgs = append(formattedArgs, formatArg(arg, o.sessionTimeZone))
-		}
-		log.When(config.Options.Logging).Infof(
-			"[handler -> db] The following query: \n%s\nwill be executed with these args:\n%s\n",
-			query,
-			formattedArgs,
-		)
-		result, err := execContext(ctx, query, formattedArgs...)
+		result, err := execContext(ctx, query, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -409,16 +400,6 @@ func isOfDataType(ts []string, fieldDataType string) (result bool) {
 	}
 	return
 }
-
-func formatArg(arg interface{}, location *time.Location) (formattedArg interface{}) {
-	switch v := arg.(type) {
-	case time.Time:
-		return v.Format(dateTimeGolangFormat)
-	default:
-		return v
-	}
-}
-
 func chomp(s string) string {
 	return s[0:strings.IndexRune(s, '\n')]
 }

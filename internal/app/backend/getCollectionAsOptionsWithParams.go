@@ -17,8 +17,8 @@ func (b *Backend) GetCollectionAsOptionsWithParams(rw http.ResponseWriter, req *
 	table := req.Context().Value(util.ContextKey("table")).(string)
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
 	columnAsOptionName := req.Context().Value(util.ContextKey("columnAsOptionName")).(string)
-	//paramsWithValues := mapQueryParameterNamesToColumnNames(table, req.URL.Query())
-	paramsWithValues, err := b.ExtractAndFormatQueryParamsAndValues(table, req.URL.Query())
+	var args []interface{}
+	requestData, err := util.ParseDataForm(req)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusBadRequest,
@@ -27,6 +27,21 @@ func (b *Backend) GetCollectionAsOptionsWithParams(rw http.ResponseWriter, req *
 		http.Error(rw, msg.Error(), http.StatusBadRequest)
 		return
 	}
+	columnNames := getColumnNamesFromRequestData(table, requestData)
+	if len(columnNames) == 0 {
+		msg := &util.ResponseMessage{
+			Code: http.StatusBadRequest,
+			Msg: fmt.Sprintf(
+				"the request data contains *one or more* fields "+
+					"that are not present in the database\n"+
+					"request data:\n%v\n"+
+					"fields available in database table:\n%v\n",
+				requestData, b.GetSchemaMapping(table).FieldNames),
+		}
+		http.Error(rw, msg.Error(), http.StatusBadRequest)
+		return
+	}
+	log.When(config.Options.Logging).Infof("[HANDLER] COLUMN NAMES: %s\n", columnNames)
 	filter := fmt.Sprintf("%%%s%%", mux.Vars(req)["filter"])
 	queryUninterpolated := b.GetQueryTemplate(routeName)
 	queryTemplate := &query.QueryTemplate{
@@ -34,19 +49,21 @@ func (b *Backend) GetCollectionAsOptionsWithParams(rw http.ResponseWriter, req *
 		TemplateData: struct {
 			TableName          string
 			UniqueIDColumn     string
-			ParamsWithValues   map[string]string
 			ColumnAsOptionName string
+			ColumnNames        []string
 		}{
 			TableName:          table,
 			UniqueIDColumn:     uniqueIDColumn,
-			ParamsWithValues:   paramsWithValues,
 			ColumnAsOptionName: columnAsOptionName,
+			ColumnNames:        columnNames,
 		},
+		ColumnNames:        columnNames,
+		CoerceExecArgsFunc: b.GetCoerceExecArgsFunc(),
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s", routeName)
 
 	log.When(config.Options.Logging).Infoln("[handler -> backend] interpolate query string")
-	queryString, err := queryTemplate.Interpolate()
+	queryString, args, err := queryTemplate.Interpolate(req.Context(), requestData)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,
@@ -57,8 +74,13 @@ func (b *Backend) GetCollectionAsOptionsWithParams(rw http.ResponseWriter, req *
 	}
 	log.When(config.Options.Logging).Infof("[handler <- backend]\n%s\n", queryString)
 
-	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
-	results, err := b.QueryContext(req.Context(), queryString, filter)
+	log.When(config.Options.Logging).Infof(
+		"[handler -> db] get query results using\nquery string:\n%s"+
+			"\nwith the following args:\n%s\n",
+		queryString,
+		append([]interface{}{filter}, args...),
+	)
+	results, err := b.QueryContext(req.Context(), queryString, append([]interface{}{filter}, args...)...)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,

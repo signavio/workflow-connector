@@ -156,6 +156,9 @@ func AppendNoDuplicates(list []map[string]interface{}, item map[string]interface
 }
 
 func ParseDataForm(req *http.Request) (data map[string]interface{}, err error) {
+	if req.Method == "GET" {
+		return parseURLValues(req)
+	}
 	switch req.Header.Get("Content-Type") {
 	case "application/json":
 		return parseApplicationJSON(req)
@@ -164,8 +167,19 @@ func ParseDataForm(req *http.Request) (data map[string]interface{}, err error) {
 	}
 }
 
-func parseFormURLEncoded(req *http.Request) (data map[string]interface{}, err error) {
+func parseURLValues(req *http.Request) (data map[string]interface{}, err error) {
+	u := req.URL.Query()
+	data = make(map[string]interface{})
+	// We assume the last occurence of a provided
+	// query will be the one the user actually
+	// wants to use
+	for k, v := range u {
+		data[k] = v[len(v)-1]
+	}
+	return data, nil
+}
 
+func parseFormURLEncoded(req *http.Request) (data map[string]interface{}, err error) {
 	if err := req.ParseForm(); err != nil {
 		return nil, err
 	}

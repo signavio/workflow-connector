@@ -3,6 +3,7 @@
 package sql
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -150,7 +151,10 @@ func (s *SqlBackend) populateBackendSchemaMapping(tableName, templateName string
 			TableName: tableName,
 		},
 	}
-	query, err := queryTemplate.Interpolate()
+	query, _, err := queryTemplate.Interpolate(
+		context.WithValue(context.Background(), util.ContextKey("table"), tableName),
+		nil,
+	)
 	if err != nil {
 		return err
 	}
@@ -176,7 +180,10 @@ func (s *SqlBackend) addRelationshipsToBackendSchemaMapping(tableName, templateN
 			UniqueIDColumn: uniqueIDColumn,
 		},
 	}
-	query, err := queryTemplate.Interpolate()
+	query, _, err := queryTemplate.Interpolate(
+		context.WithValue(context.Background(), util.ContextKey("table"), tableName),
+		nil,
+	)
 	if err != nil {
 		return err
 

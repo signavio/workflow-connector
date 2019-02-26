@@ -42,18 +42,16 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, msg.Error(), http.StatusBadRequest)
 		return
 	}
-	execTemplate := &query.ExecTemplate{
-		QueryTemplate: query.QueryTemplate{
-			Vars: []string{queryTemplateUninterpolated},
-			TemplateData: struct {
-				TableName      string
-				ColumnNames    []string
-				UniqueIDColumn string
-			}{
-				TableName:      table,
-				ColumnNames:    columnNames,
-				UniqueIDColumn: uniqueIDColumn,
-			},
+	queryTemplate := &query.QueryTemplate{
+		Vars: []string{queryTemplateUninterpolated},
+		TemplateData: struct {
+			TableName      string
+			ColumnNames    []string
+			UniqueIDColumn string
+		}{
+			TableName:      table,
+			ColumnNames:    columnNames,
+			UniqueIDColumn: uniqueIDColumn,
 		},
 		ColumnNames:        columnNames,
 		CoerceExecArgsFunc: b.GetCoerceExecArgsFunc(),
@@ -61,7 +59,7 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
 	log.When(config.Options.Logging).Infoln("[handler -> query] interpolate query string")
-	queryString, args, err := execTemplate.Interpolate(req.Context(), requestData)
+	queryString, args, err := queryTemplate.Interpolate(req.Context(), requestData)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,
@@ -71,8 +69,13 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
-	result, err := b.ExecContext(req.Context(), queryString, args...)
+	log.When(config.Options.Logging).Infof(
+		"[handler -> db] get query results using\nquery string:\n%s"+
+			"\nwith the following args:\n%s\n",
+		queryString,
+		append(args, id),
+	)
+	result, err := b.ExecContext(req.Context(), queryString, append(args, id)...)
 	if err == sql.ErrNoRows {
 		msg := &util.ResponseMessage{
 			Code: http.StatusNotFound,

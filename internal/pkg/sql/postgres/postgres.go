@@ -43,8 +43,8 @@ var (
 		"GetCollectionAsOptionsWithParams": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
 			"WHERE CAST ({{.ColumnAsOptionName}} AS TEXT) ILIKE $1 " +
-			"{{range $key, $value := .ParamsWithValues}}" +
-			"AND {{$key}} = '{{$value}}'" +
+			`{{range $index, $element := .ColumnNames}}` +
+			`AND "{{$element}}" = ${{(add2 $index)}} ` +
 			"{{end}} " +
 			"ORDER BY {{.UniqueIDColumn}} ASC",
 		"UpdateSingle": "UPDATE {{.TableName}} " +

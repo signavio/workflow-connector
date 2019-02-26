@@ -35,7 +35,7 @@ func (b *Backend) GetCollectionAsOptionsFilterable(rw http.ResponseWriter, req *
 	log.When(config.Options.Logging).Infof("[handler] %s", routeName)
 
 	log.When(config.Options.Logging).Infoln("[handler -> backend] interpolate query string")
-	queryString, err := queryTemplate.Interpolate()
+	queryString, _, err := queryTemplate.Interpolate(req.Context(), nil)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,

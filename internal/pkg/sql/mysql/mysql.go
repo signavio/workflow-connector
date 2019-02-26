@@ -40,9 +40,9 @@ var (
 		"GetCollectionAsOptionsWithParams": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
 			"FROM {{.TableName}} " +
 			"WHERE {{.ColumnAsOptionName}} LIKE ? " +
-			"{{range $key, $value := .ParamsWithValues}}" +
-			"AND {{$key}} = '{{$value}}'" +
-			"{{end}}",
+			`{{range $index, $element := .ColumnNames}}` +
+			`AND {{$element}} = ? ` +
+			`{{end}}`,
 		"UpdateSingle": "UPDATE {{.TableName}} SET {{.ColumnNames | head}}" +
 			" = ?{{range .ColumnNames | tail}}, {{.}} = ?{{end}} WHERE {{.UniqueIDColumn}} = ?",
 		"CreateSingle": "INSERT INTO {{.TableName}}({{.ColumnNames | head}}" +

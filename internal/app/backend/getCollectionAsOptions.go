@@ -30,7 +30,7 @@ func (b *Backend) GetCollectionAsOptions(rw http.ResponseWriter, req *http.Reque
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
 	log.When(config.Options.Logging).Infoln("[handler] interpolate query string")
-	queryString, err := queryTemplate.Interpolate()
+	queryString, _, err := queryTemplate.Interpolate(req.Context(), nil)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,
