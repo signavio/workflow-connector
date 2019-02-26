@@ -39,7 +39,7 @@ INSERT INTO one_rows (name)
   ('TESTNAME');
 
 CREATE TABLE IF NOT EXISTS equipment (
-  id INT NOT NULL AUTO_INCREMENT,
+  id serial,
   name text,
   acquisition_cost decimal(10,5),
   purchase_date timestamp(3) null,
