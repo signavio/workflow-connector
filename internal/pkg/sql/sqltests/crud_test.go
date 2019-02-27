@@ -185,7 +185,7 @@ var (
 				postData.Set("id", "5")
 				postData.Set("name", "French Press")
 				postData.Set("acquisitionCost", "35.99")
-				postData.Set("purchaseDate", "2017-04-02T00:00:00Z")
+				postData.Set("purchaseDate", "2017-04-02T00:00:00.000Z")
 				req, _ := http.NewRequest("POST", "/equipment", strings.NewReader(postData.Encode()))
 				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				return req

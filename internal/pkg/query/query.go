@@ -15,7 +15,7 @@ type QueryTemplate struct {
 	Vars             []string
 	TemplateData     interface{}
 	ColumnNames      []string
-	CoerceArgFuncs   map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool)
+	CoerceArgFuncs   map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool, error)
 	QueryFormatFuncs map[string]func() string
 }
 
@@ -88,36 +88,60 @@ func (e *QueryTemplate) Interpolate(ctx context.Context, requestData map[string]
 	return query.String(), args, nil
 
 }
-func CoerceRequestDataToGolangNativeTypes(ctx context.Context, requestData map[string]interface{}, coerceArgFuncs map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool)) (args []interface{}, err error) {
+func CoerceRequestDataToGolangNativeTypes(ctx context.Context, requestData map[string]interface{}, coerceArgFuncs map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool, error)) (args []interface{}, err error) {
 	currentTable := ctx.Value(util.ContextKey("table")).(string)
 	td := util.GetTypeDescriptorUsingDBTableName(config.Options.Descriptor.TypeDescriptors, currentTable)
 	for _, field := range td.Fields {
 		switch field.Type.Name {
 		case "money":
-			if result, ok := coerceArgFuncs["money"](requestData, field); ok {
+			result, ok, err := coerceArgFuncs["money"](requestData, field)
+			if err != nil {
+				return args, err
+			}
+			if ok {
 				args = append(args, result)
 			}
 		case "datetime":
-			if result, ok := coerceArgFuncs["datetime"](requestData, field); ok {
+			result, ok, err := coerceArgFuncs["datetime"](requestData, field)
+			if err != nil {
+				return args, err
+			}
+			if ok {
 				args = append(args, result)
 			}
 		case "date":
 			switch field.Type.Kind {
 			case "date":
-				if result, ok := coerceArgFuncs["date"](requestData, field); ok {
+				result, ok, err := coerceArgFuncs["date"](requestData, field)
+				if err != nil {
+					return args, err
+				}
+				if ok {
 					args = append(args, result)
 				}
 			case "datetime":
-				if result, ok := coerceArgFuncs["datetime"](requestData, field); ok {
+				result, ok, err := coerceArgFuncs["datetime"](requestData, field)
+				if err != nil {
+					return args, err
+				}
+				if ok {
 					args = append(args, result)
 				}
 			case "time":
-				if result, ok := coerceArgFuncs["time"](requestData, field); ok {
+				result, ok, err := coerceArgFuncs["time"](requestData, field)
+				if err != nil {
+					return args, err
+				}
+				if ok {
 					args = append(args, result)
 				}
 			}
 		default:
-			if result, ok := coerceArgFuncs["default"](requestData, field); ok {
+			result, ok, err := coerceArgFuncs["default"](requestData, field)
+			if err != nil {
+				return args, err
+			}
+			if ok {
 				args = append(args, result)
 			}
 		}

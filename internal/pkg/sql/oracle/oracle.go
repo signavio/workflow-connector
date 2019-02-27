@@ -158,7 +158,7 @@ var (
 			return "%s"
 		},
 	}
-	oracleDateTimeArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+	oracleDateTimeArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool, err error) {
 		dateTimeWorkflowFormat := `2006-01-02T15:04:05.000Z`
 		dateTimeGolangFormat := `2006-01-02T15:04:05.000-07:00`
 		if result, ok := requestData[field.Key]; ok {
@@ -168,20 +168,16 @@ var (
 					dateTimeWorkflowFormat, stringifiedDateTime, time.UTC,
 				)
 				if err != nil {
-					log.When(config.Options.Logging).Infof(
-						"[backend] error when trying to coerce arg of type 'datetime': %s\n",
-						err,
-					)
-					return nil, ok
+					return nil, ok, err
 				}
 				formattedDateTime := parsedDateTime.Format(dateTimeGolangFormat)
-				return formattedDateTime, ok
+				return formattedDateTime, ok, nil
 			}
-			return result, ok
+			return result, ok, nil
 		}
 		return
 	}
-	oracleDateArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+	oracleDateArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool, err error) {
 		dateTimeWorkflowFormat := `2006-01-02T15:04:05.000Z`
 		dateGolangFormat := `2006-01-02`
 		if result, ok := requestData[field.Key]; ok {
@@ -191,20 +187,16 @@ var (
 					dateTimeWorkflowFormat, stringifiedDateTime, time.UTC,
 				)
 				if err != nil {
-					log.When(config.Options.Logging).Infof(
-						"[backend] error when trying to coerce arg of type 'datetime': %s\n",
-						err,
-					)
-					return nil, ok
+					return nil, ok, err
 				}
 				formattedDateTime := parsedDateTime.Format(dateGolangFormat)
-				return formattedDateTime, ok
+				return formattedDateTime, ok, nil
 			}
-			return result, ok
+			return result, ok, nil
 		}
 		return
 	}
-	oracleTimeArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+	oracleTimeArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool, err error) {
 		dateTimeWorkflowFormat := `2006-01-02T15:04:05.000Z`
 		timeGolangFormat := `2006-01-02T15:04:05.000`
 		if result, ok := requestData[field.Key]; ok {
@@ -214,16 +206,12 @@ var (
 					dateTimeWorkflowFormat, stringifiedDateTime, time.UTC,
 				)
 				if err != nil {
-					log.When(config.Options.Logging).Infof(
-						"[backend] error when trying to coerce arg of type 'datetime': %s\n",
-						err,
-					)
-					return nil, ok
+					return nil, ok, err
 				}
 				formattedDateTime := parsedDateTime.Format(timeGolangFormat)
-				return formattedDateTime, ok
+				return formattedDateTime, ok, nil
 			}
-			return result, ok
+			return result, ok, nil
 		}
 		return
 	}

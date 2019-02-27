@@ -63,10 +63,10 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 	queryString, args, err := queryTemplate.Interpolate(req.Context(), requestData)
 	if err != nil {
 		msg := &util.ResponseMessage{
-			Code: http.StatusInternalServerError,
+			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		}
-		http.Error(rw, msg.Error(), http.StatusInternalServerError)
+		http.Error(rw, msg.Error(), http.StatusBadRequest)
 		return
 	}
 

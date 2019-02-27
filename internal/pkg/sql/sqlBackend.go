@@ -30,7 +30,7 @@ var (
 			filter.Equal: "=",
 		}
 	}
-	coerceArgDateTimeFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+	coerceArgDateTimeFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool, err error) {
 		dateTimeWorkflowFormat := `2006-01-02T15:04:05.000Z`
 		if result, ok := requestData[field.Key]; ok {
 			if result != nil {
@@ -39,29 +39,25 @@ var (
 					dateTimeWorkflowFormat, stringifiedDateTime, time.UTC,
 				)
 				if err != nil {
-					log.When(config.Options.Logging).Infof(
-						"[backend] error when trying to coerce arg of type 'datetime': %s\n",
-						err,
-					)
-					return nil, ok
+					return nil, ok, err
 				}
-				return parsedDateTime, ok
+				return parsedDateTime, ok, nil
 			}
-			return result, ok
+			return result, ok, nil
 		}
 		return
 	}
-	coerceArgFuncs = map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool){
-		"default": func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+	coerceArgFuncs = map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool, error){
+		"default": func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool, err error) {
 			result, ok = requestData[field.Key]
-			return
+			return result, ok, nil
 		},
-		"money": func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+		"money": func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool, err error) {
 			if result, ok = requestData[field.Type.Amount.Key]; ok {
-				return result, ok
+				return result, ok, nil
 			}
 			if result, ok := requestData[field.Type.Currency.Key]; ok {
-				return result, ok
+				return result, ok, nil
 			}
 			return
 		},

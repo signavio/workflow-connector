@@ -38,10 +38,10 @@ func (b *Backend) GetSingle(rw http.ResponseWriter, req *http.Request) {
 	queryString, _, err := queryTemplate.Interpolate(req.Context(), nil)
 	if err != nil {
 		msg := &util.ResponseMessage{
-			Code: http.StatusInternalServerError,
+			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		}
-		http.Error(rw, msg.Error(), http.StatusInternalServerError)
+		http.Error(rw, msg.Error(), http.StatusBadRequest)
 		return
 	}
 	log.When(config.Options.Logging).Infoln(queryString)

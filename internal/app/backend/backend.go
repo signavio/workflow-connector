@@ -25,7 +25,7 @@ type Backend struct {
 	GetSchemaMappingFunc          func(string) *descriptor.SchemaMapping
 	GetFilterPredicateMappingFunc func(filter.Predicate) string
 	GetQueryTemplateFunc          func(string) string
-	CoerceArgFuncs                map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool)
+	CoerceArgFuncs                map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool, error)
 	QueryFormatFuncs              map[string]func() string
 	BackendFormattingFuncs        map[string]func(string) (string, error)
 	CastBackendTypeToGolangType   func(string) interface{}
@@ -107,7 +107,7 @@ func (b *Backend) Open(args ...interface{}) error {
 	return b.OpenFunc(args...)
 }
 
-func (b *Backend) GetCoerceArgFuncs() map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool) {
+func (b *Backend) GetCoerceArgFuncs() map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool, error) {
 	return b.CoerceArgFuncs
 }
 

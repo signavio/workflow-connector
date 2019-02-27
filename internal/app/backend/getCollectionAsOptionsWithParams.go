@@ -66,10 +66,10 @@ func (b *Backend) GetCollectionAsOptionsWithParams(rw http.ResponseWriter, req *
 	queryString, args, err := queryTemplate.Interpolate(req.Context(), requestData)
 	if err != nil {
 		msg := &util.ResponseMessage{
-			Code: http.StatusInternalServerError,
+			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		}
-		http.Error(rw, msg.Error(), http.StatusInternalServerError)
+		http.Error(rw, msg.Error(), http.StatusBadRequest)
 		return
 	}
 	log.When(config.Options.Logging).Infof("[handler <- backend]\n%s\n", queryString)

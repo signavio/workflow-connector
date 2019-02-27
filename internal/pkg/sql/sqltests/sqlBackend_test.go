@@ -137,8 +137,6 @@ func testSqlBackend(t *testing.T, name, driver string, newEndpointFunc func() en
 func runTestCases(t *testing.T, testName string, testCases []testCase, ts *httptest.Server, endpoint endpoint.Endpoint) {
 	t.Run(testName, func(t *testing.T) {
 		for _, tc := range testCases {
-			ts := newTestServer(endpoint)
-			defer ts.Close()
 			t.Run(tc.Name, func(t *testing.T) {
 				err := run(tc, ts)
 				if err != nil {
