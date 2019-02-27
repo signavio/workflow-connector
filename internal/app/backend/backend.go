@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -23,17 +22,18 @@ var (
 )
 
 type Backend struct {
-	GetSchemaMappingFunc                 func(string) *descriptor.SchemaMapping
-	GetFilterPredicateMappingFunc        func(filter.Predicate) string
-	GetQueryTemplateFunc                 func(string) string
-	CoerceExecArgsFunc                   func(string, []string, []*descriptor.Field) string
-	CastBackendTypeToGolangType         func(string) interface{}
-	QueryContextFunc                     func(context.Context, string, ...interface{}) ([]interface{}, error)
-	ExecContextFunc                      func(context.Context, string, ...interface{}) (sql.Result, error)
-	ExtractAndFormatQueryParamsAndValues func(string, url.Values) (map[string]string, error)
-	OpenFunc                             func(...interface{}) error
-	CreateTxFunc                         func(time.Duration) (uuid.UUID, error)
-	CommitTxFunc                         func(string) error
+	GetSchemaMappingFunc          func(string) *descriptor.SchemaMapping
+	GetFilterPredicateMappingFunc func(filter.Predicate) string
+	GetQueryTemplateFunc          func(string) string
+	CoerceArgFuncs                map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool)
+	QueryFormatFuncs              map[string]func() string
+	BackendFormattingFuncs        map[string]func(string) (string, error)
+	CastBackendTypeToGolangType   func(string) interface{}
+	QueryContextFunc              func(context.Context, string, ...interface{}) ([]interface{}, error)
+	ExecContextFunc               func(context.Context, string, ...interface{}) (sql.Result, error)
+	OpenFunc                      func(...interface{}) error
+	CreateTxFunc                  func(time.Duration) (uuid.UUID, error)
+	CommitTxFunc                  func(string) error
 }
 
 func appendHandlers(r *mux.Router, b *Backend) *mux.Router {
@@ -107,8 +107,12 @@ func (b *Backend) Open(args ...interface{}) error {
 	return b.OpenFunc(args...)
 }
 
-func (b *Backend) GetCoerceExecArgsFunc() func(string, []string, []*descriptor.Field) string {
-	return b.CoerceExecArgsFunc
+func (b *Backend) GetCoerceArgFuncs() map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool) {
+	return b.CoerceArgFuncs
+}
+
+func (b *Backend) GetQueryFormatFuncs() map[string]func() string {
+	return b.QueryFormatFuncs
 }
 
 func (b *Backend) GetQueryTemplate(name string) string {

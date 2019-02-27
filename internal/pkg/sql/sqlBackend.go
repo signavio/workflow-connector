@@ -7,9 +7,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/signavio/workflow-connector/internal/app/backend"
 	"github.com/signavio/workflow-connector/internal/app/endpoint"
@@ -30,6 +30,45 @@ var (
 			filter.Equal: "=",
 		}
 	}
+	coerceArgDateTimeFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+		dateTimeWorkflowFormat := `2006-01-02T15:04:05.000Z`
+		if result, ok := requestData[field.Key]; ok {
+			if result != nil {
+				stringifiedDateTime := result.(string)
+				parsedDateTime, err := time.ParseInLocation(
+					dateTimeWorkflowFormat, stringifiedDateTime, time.UTC,
+				)
+				if err != nil {
+					log.When(config.Options.Logging).Infof(
+						"[backend] error when trying to coerce arg of type 'datetime': %s\n",
+						err,
+					)
+					return nil, ok
+				}
+				return parsedDateTime, ok
+			}
+			return result, ok
+		}
+		return
+	}
+	coerceArgFuncs = map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool){
+		"default": func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+			result, ok = requestData[field.Key]
+			return
+		},
+		"money": func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+			if result, ok = requestData[field.Type.Amount.Key]; ok {
+				return result, ok
+			}
+			if result, ok := requestData[field.Type.Currency.Key]; ok {
+				return result, ok
+			}
+			return
+		},
+		"datetime": coerceArgDateTimeFunc,
+		"date":     coerceArgDateTimeFunc,
+		"time":     coerceArgDateTimeFunc,
+	}
 )
 
 type SqlBackend struct {
@@ -47,17 +86,12 @@ func New() endpoint.Endpoint {
 	s.Backend = &backend.Backend{}
 	s.GetSchemaMappingFunc = s.getSchemaMapping
 	s.GetQueryTemplateFunc = s.getQueryTemplate
-	s.CoerceExecArgsFunc = func(query string, columnNames []string, fields []*descriptor.Field) string {
-		return query
-	}
+	s.CoerceArgFuncs = coerceArgFuncs
 	s.OpenFunc = s.open
 	s.CommitTxFunc = s.commitTx
 	s.CreateTxFunc = s.createTx
 	s.QueryContextFunc = s.queryContext
 	s.ExecContextFunc = s.execContext
-	s.ExtractAndFormatQueryParamsAndValues = func(table string, query url.Values) (map[string]string, error) {
-		return make(map[string]string), nil
-	}
 	s.SchemaMapping = make(map[string]*descriptor.SchemaMapping)
 	s.FilterPredicateMapping = filterPredicateMapping()
 	s.GetFilterPredicateMappingFunc = s.getFilterPredicateMapping
@@ -150,6 +184,7 @@ func (s *SqlBackend) populateBackendSchemaMapping(tableName, templateName string
 		}{
 			TableName: tableName,
 		},
+		CoerceArgFuncs: s.GetCoerceArgFuncs(),
 	}
 	query, _, err := queryTemplate.Interpolate(
 		context.WithValue(context.Background(), util.ContextKey("table"), tableName),
@@ -179,6 +214,7 @@ func (s *SqlBackend) addRelationshipsToBackendSchemaMapping(tableName, templateN
 			Relations:      relationships,
 			UniqueIDColumn: uniqueIDColumn,
 		},
+		CoerceArgFuncs: s.GetCoerceArgFuncs(),
 	}
 	query, _, err := queryTemplate.Interpolate(
 		context.WithValue(context.Background(), util.ContextKey("table"), tableName),

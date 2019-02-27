@@ -31,6 +31,7 @@ func (b *Backend) GetSingleAsOption(rw http.ResponseWriter, req *http.Request) {
 			UniqueIDColumn:     uniqueIDColumn,
 			ColumnAsOptionName: columnAsOptionName,
 		},
+		CoerceArgFuncs: b.GetCoerceArgFuncs(),
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s", routeName)
 

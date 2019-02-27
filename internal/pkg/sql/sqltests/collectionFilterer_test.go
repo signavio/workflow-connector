@@ -29,5 +29,25 @@ var (
 				return req
 			},
 		},
+		{
+			Kind:                "success",
+			Name:                "it succeeds when filtering equipment table using purchase date",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`[
+  {
+    "acquisitionCost": {
+      "amount": 25.95,
+      "currency": "EUR"
+    },
+    "id": "1",
+    "name": "Bialetti Moka Express 6 cup",
+    "purchaseDate": "2017-12-11T12:00:00.123Z"
+  }
+]`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/equipment?filter=purchaseDate+eq+2017-12-11T12:00:00.123Z", nil)
+				return req
+			},
+		},
 	}
 )

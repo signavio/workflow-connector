@@ -30,6 +30,7 @@ func (b *Backend) GetSingle(rw http.ResponseWriter, req *http.Request) {
 			Relations:      relations,
 			UniqueIDColumn: uniqueIDColumn,
 		},
+		CoerceArgFuncs: b.GetCoerceArgFuncs(),
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 

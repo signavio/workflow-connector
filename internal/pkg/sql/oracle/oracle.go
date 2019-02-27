@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"net/url"
-	"regexp"
 	"strings"
 	"time"
 
@@ -23,9 +21,11 @@ import (
 
 const (
 	dateTimeOracleFormat   = `'YYYY-MM-DD"T"HH24:MI:SSXFF3TZH:TZM'`
-	dateOracleFormat       = `'YYYY-MM-DD'`
-	timeOracleFormat       = `'YYYY-MM-DD"T"HH24:MI:SSXFF3'`
 	dateTimeGolangFormat   = `2006-01-02T15:04:05.000-07:00`
+	dateOracleFormat       = `'YYYY-MM-DD'`
+	dateGolangFormat       = `2006-01-02`
+	timeOracleFormat       = `'YYYY-MM-DD"T"HH24:MI:SSXFF3'`
+	timeGolangFormat       = `2006-01-02T15:04:05.000`
 	dateTimeWorkflowFormat = `2006-01-02T15:04:05.000Z`
 )
 
@@ -59,7 +59,7 @@ var (
 			`FROM {{.TableName}}`,
 		`GetCollectionFilterable`: `SELECT * ` +
 			`FROM {{.TableName}} ` +
-			`WHERE "{{.FilterOnColumn}}" {{.Operator}} :1`,
+			`WHERE "{{.FilterOnColumn}}" {{$.Operator}} {{(format -1 .FilterOnColumn)}}`,
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM {{.TableName}}`,
 		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
@@ -69,12 +69,14 @@ var (
 			`FROM {{.TableName}} ` +
 			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%' ` +
 			`{{range $index, $element := .ColumnNames}}` +
-			`AND "{{$element}}" = :{{(add2 $index)}} ` +
+			`AND "{{$element}}" = {{(format $index $element)}} ` +
 			`{{end}}`,
 		`UpdateSingle`: `UPDATE {{.TableName}} ` +
-			`SET "{{.ColumnNames | head}}" = :1` +
+			`{{with $firstColumn := .ColumnNames | head}}` +
+			`SET "{{$firstColumn}}" = {{(format -1 $firstColumn)}}` +
+			`{{end}}` +
 			`{{range $index, $element := .ColumnNames | tail}},` +
-			`  "{{$element}}" = :{{(add2 $index)}}` +
+			`  "{{$element}}" = {{(format $index $element)}}` +
 			`{{end}} ` +
 			`WHERE "{{.UniqueIDColumn}}"= :{{(lenPlus1 .ColumnNames)}}`,
 		`CreateSingle`: `DECLARE "l_{{.UniqueIDColumn}}" nvarchar2(256); ` +
@@ -84,9 +86,11 @@ var (
 			`{{range .ColumnNames | tail}},` +
 			`  "{{.}}"` +
 			`{{end}}) ` +
-			`VALUES(:1` +
+			`{{with $firstColumn := .ColumnNames | head}}` +
+			`VALUES({{(format -1 $firstColumn)}}` +
+			`{{end}}` +
 			`{{range $index, $element := .ColumnNames | tail}},` +
-			`  :{{$index | add2}}` +
+			`  {{format $index $element}}` +
 			`{{end}}) RETURNING "{{.UniqueIDColumn}}" INTO "l_{{.UniqueIDColumn}}"; ` +
 			`DBMS_OUTPUT.PUT_LINE("l_{{.UniqueIDColumn}}"); ` +
 			"END;",
@@ -128,6 +132,101 @@ var (
 	boolean = []string{
 		"BOOL",
 	}
+	oracleQueryFormatFuncs = map[string]func() string{
+		"datetime": func() string {
+			dateTimeOracleFormat := `'YYYY-MM-DD"T"HH24:MI:SSXFF3TZH:TZM'`
+			return fmt.Sprintf(
+				"to_timestamp_tz(%%s, %s)",
+				dateTimeOracleFormat,
+			)
+		},
+		"date": func() string {
+			dateOracleFormat := `'YYYY-MM-DD'`
+			return fmt.Sprintf(
+				"to_date(%%s, %s)",
+				dateOracleFormat,
+			)
+		},
+		"time": func() string {
+			timeOracleFormat := `'YYYY-MM-DD"T"HH24:MI:SSXFF3'`
+			return fmt.Sprintf(
+				"to_date(%%s, %s)",
+				timeOracleFormat,
+			)
+		},
+		"default": func() string {
+			return "%s"
+		},
+	}
+	oracleDateTimeArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+		dateTimeWorkflowFormat := `2006-01-02T15:04:05.000Z`
+		dateTimeGolangFormat := `2006-01-02T15:04:05.000-07:00`
+		if result, ok := requestData[field.Key]; ok {
+			if result != nil {
+				stringifiedDateTime := result.(string)
+				parsedDateTime, err := time.ParseInLocation(
+					dateTimeWorkflowFormat, stringifiedDateTime, time.UTC,
+				)
+				if err != nil {
+					log.When(config.Options.Logging).Infof(
+						"[backend] error when trying to coerce arg of type 'datetime': %s\n",
+						err,
+					)
+					return nil, ok
+				}
+				formattedDateTime := parsedDateTime.Format(dateTimeGolangFormat)
+				return formattedDateTime, ok
+			}
+			return result, ok
+		}
+		return
+	}
+	oracleDateArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+		dateTimeWorkflowFormat := `2006-01-02T15:04:05.000Z`
+		dateGolangFormat := `2006-01-02`
+		if result, ok := requestData[field.Key]; ok {
+			if result != nil {
+				stringifiedDateTime := result.(string)
+				parsedDateTime, err := time.ParseInLocation(
+					dateTimeWorkflowFormat, stringifiedDateTime, time.UTC,
+				)
+				if err != nil {
+					log.When(config.Options.Logging).Infof(
+						"[backend] error when trying to coerce arg of type 'datetime': %s\n",
+						err,
+					)
+					return nil, ok
+				}
+				formattedDateTime := parsedDateTime.Format(dateGolangFormat)
+				return formattedDateTime, ok
+			}
+			return result, ok
+		}
+		return
+	}
+	oracleTimeArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool) {
+		dateTimeWorkflowFormat := `2006-01-02T15:04:05.000Z`
+		timeGolangFormat := `2006-01-02T15:04:05.000`
+		if result, ok := requestData[field.Key]; ok {
+			if result != nil {
+				stringifiedDateTime := result.(string)
+				parsedDateTime, err := time.ParseInLocation(
+					dateTimeWorkflowFormat, stringifiedDateTime, time.UTC,
+				)
+				if err != nil {
+					log.When(config.Options.Logging).Infof(
+						"[backend] error when trying to coerce arg of type 'datetime': %s\n",
+						err,
+					)
+					return nil, ok
+				}
+				formattedDateTime := parsedDateTime.Format(timeGolangFormat)
+				return formattedDateTime, ok
+			}
+			return result, ok
+		}
+		return
+	}
 )
 
 func (l *lastId) LastInsertId() (int64, error) {
@@ -141,9 +240,13 @@ func New() endpoint.Endpoint {
 	// Assume UTF-8 character set before checking
 	o := &Oracle{sqlBackend.New().(*sqlBackend.SqlBackend), Universal, time.UTC}
 	o.Templates = QueryTemplates
-	o.ExtractAndFormatQueryParamsAndValues = o.extractAndFormatQueryParamsAndValues
 	o.CastBackendTypeToGolangType = convertFromOracleDataType
-	o.CoerceExecArgsFunc = coerceExecArgsToOracleType
+	oracleSpecificArgFuncs := o.CoerceArgFuncs
+	oracleSpecificArgFuncs["datetime"] = oracleDateTimeArgFunc
+	oracleSpecificArgFuncs["date"] = oracleDateArgFunc
+	oracleSpecificArgFuncs["time"] = oracleTimeArgFunc
+	o.CoerceArgFuncs = oracleSpecificArgFuncs
+	o.QueryFormatFuncs = oracleQueryFormatFuncs
 	o.NewSchemaMapping = o.newOracleSchemaMapping
 	o.OpenFunc = o.Open
 	return o
@@ -209,21 +312,6 @@ func (o *Oracle) newOracleSchemaMapping(columnsWithTable []string, columnTypes [
 		fieldNames = append(fieldNames, columnsWithTable[i])
 	}
 	return &descriptor.SchemaMapping{fieldNames, backendTypes, golangTypes, workflowTypes}, nil
-}
-func (o *Oracle) extractAndFormatQueryParamsAndValues(tableName string, query url.Values) (formattedQueryValues map[string]string, err error) {
-	formattedQueryValues = make(map[string]string)
-	values := urlValuesWithoutFilter(query)
-	for k, v := range values {
-		columnName, columnType, ok := util.GetColumnNameAndTypeFromQueryParameterName(
-			config.Options.Descriptor.TypeDescriptors,
-			tableName,
-			k,
-		)
-		if ok {
-			formattedQueryValues[columnName], err = formatQueryValue(v[0], columnType)
-		}
-	}
-	return
 }
 func (o *Oracle) setCharacterSet() (err error) {
 	log.When(config.Options.Logging).Infoln("[oracle] query characterset in use by db")
@@ -314,45 +402,6 @@ func wrapExecContext(o *Oracle, execContext func(context.Context, string, ...int
 		return result, nil
 	}
 }
-func formatQueryValue(value, valueType string) (formatted string, err error) {
-	switch valueType {
-	case "datetime":
-
-		parsedDateTime, err := time.Parse(dateTimeWorkflowFormat, value)
-		if err != nil {
-			return "", err
-		}
-		formatted = fmt.Sprintf(
-			"to_timestamp_tz('%s', %s)",
-			parsedDateTime.Format("2006-01-02T15:04:05.999-07:00"),
-			dateTimeOracleFormat,
-		)
-	case "date":
-		parsedDate, err := time.Parse(dateTimeWorkflowFormat, value)
-		if err != nil {
-			return "", err
-		}
-		formatted = fmt.Sprintf(
-			"to_date('%s', %s)",
-			parsedDate.Format("2006-01-02"),
-			dateOracleFormat,
-		)
-	case "time":
-		parsedTime, err := time.Parse(dateTimeWorkflowFormat, value)
-		if err != nil {
-			return "", err
-		}
-		formatted = fmt.Sprintf(
-			"to_date('%s', %s)",
-			parsedTime.Format("2006-01-02T15:04:05.999"),
-			timeOracleFormat,
-		)
-	default:
-		formatted = fmt.Sprintf("%s", value)
-	}
-	return
-}
-
 func convertCharacterSetToUtf8(charSet characterSet, queryResult interface{}) (interface{}, error) {
 	var err error
 	utf8ResultOuter := make(map[string]interface{})
@@ -402,53 +451,4 @@ func isOfDataType(ts []string, fieldDataType string) (result bool) {
 }
 func chomp(s string) string {
 	return s[0:strings.IndexRune(s, '\n')]
-}
-
-func urlValuesWithoutFilter(u url.Values) url.Values {
-	if len(u["filter"]) > 1 {
-		// There exists a type descriptor with a field whose key name
-		// is  literaly 'filter', assume the second occurence of
-		// 'filter' is the actual parameter upon which we
-		// want to prefilter the result set
-		val := u["filter"][1]
-		u.Del("filter")
-		u.Add("filter", val)
-		return u
-	}
-	return u
-}
-
-func coerceExecArgsToOracleType(query string, columnNames []string, fields []*descriptor.Field) (queryWithFormatting string) {
-	queryWithFormatting = query
-	for i, columnNameField := range intersection(columnNames, fields) {
-		field := columnNameField[1].(*descriptor.Field)
-		queryParamToWrap := fmt.Sprintf(":%v", i+1)
-		re := regexp.MustCompile(queryParamToWrap)
-		switch field.Type.Kind {
-		case "datetime":
-			queryWithFormatting = re.ReplaceAllString(
-				query, fmt.Sprintf("to_timestamp_tz(%s, %s)", queryParamToWrap, dateTimeOracleFormat),
-			)
-		case "date", "time":
-			queryWithFormatting = re.ReplaceAllString(
-				query, fmt.Sprintf("to_date(%s, %s)", queryParamToWrap, dateOracleFormat),
-			)
-		}
-	}
-	return
-}
-
-func intersection(columnNames []string, fields []*descriptor.Field) (result [][]interface{}) {
-	for _, field := range fields {
-		for _, column := range columnNames {
-			if field.Type.Name == "money" {
-				if field.Type.Amount.FromColumn == column {
-					result = append(result, []interface{}{column, field})
-				}
-			} else if field.FromColumn == column {
-				result = append(result, []interface{}{column, field})
-			}
-		}
-	}
-	return result
 }

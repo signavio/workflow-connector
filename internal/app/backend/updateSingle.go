@@ -53,8 +53,9 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 			ColumnNames:    columnNames,
 			UniqueIDColumn: uniqueIDColumn,
 		},
-		ColumnNames:        columnNames,
-		CoerceExecArgsFunc: b.GetCoerceExecArgsFunc(),
+		ColumnNames:      columnNames,
+		CoerceArgFuncs:   b.GetCoerceArgFuncs(),
+		QueryFormatFuncs: b.GetQueryFormatFuncs(),
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 

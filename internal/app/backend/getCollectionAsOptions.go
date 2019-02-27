@@ -26,6 +26,7 @@ func (b *Backend) GetCollectionAsOptions(rw http.ResponseWriter, req *http.Reque
 		UniqueIDColumn:     uniqueIDColumn,
 		ColumnAsOptionName: columnAsOptionName,
 	},
+		CoerceArgFuncs: b.GetCoerceArgFuncs(),
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 

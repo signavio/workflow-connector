@@ -36,6 +36,8 @@ func (b *Backend) GetCollectionFilterable(rw http.ResponseWriter, req *http.Requ
 			FilterOnColumn: string(filterExpression.Arguments[0]),
 			Operator:       b.GetFilterPredicateMapping(filterExpression.Predicate),
 		},
+		CoerceArgFuncs:   b.GetCoerceArgFuncs(),
+		QueryFormatFuncs: b.GetQueryFormatFuncs(),
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 

@@ -31,6 +31,7 @@ func (b *Backend) GetCollectionAsOptionsFilterable(rw http.ResponseWriter, req *
 			UniqueIDColumn:     uniqueIDColumn,
 			ColumnAsOptionName: columnAsOptionName,
 		},
+		CoerceArgFuncs: b.GetCoerceArgFuncs(),
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s", routeName)
 

@@ -41,7 +41,6 @@ func (b *Backend) GetCollectionAsOptionsWithParams(rw http.ResponseWriter, req *
 		http.Error(rw, msg.Error(), http.StatusBadRequest)
 		return
 	}
-	log.When(config.Options.Logging).Infof("[HANDLER] COLUMN NAMES: %s\n", columnNames)
 	filter := fmt.Sprintf("%%%s%%", mux.Vars(req)["filter"])
 	queryUninterpolated := b.GetQueryTemplate(routeName)
 	queryTemplate := &query.QueryTemplate{
@@ -57,8 +56,9 @@ func (b *Backend) GetCollectionAsOptionsWithParams(rw http.ResponseWriter, req *
 			ColumnAsOptionName: columnAsOptionName,
 			ColumnNames:        columnNames,
 		},
-		ColumnNames:        columnNames,
-		CoerceExecArgsFunc: b.GetCoerceExecArgsFunc(),
+		ColumnNames:      columnNames,
+		CoerceArgFuncs:   b.GetCoerceArgFuncs(),
+		QueryFormatFuncs: b.GetQueryFormatFuncs(),
 	}
 	log.When(config.Options.Logging).Infof("[handler] %s", routeName)
 

@@ -3,8 +3,8 @@ package query
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"text/template"
-	"time"
 
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
@@ -12,14 +12,17 @@ import (
 )
 
 type QueryTemplate struct {
-	Vars               []string
-	TemplateData       interface{}
-	ColumnNames        []string
-	CoerceExecArgsFunc func(string, []string, []*descriptor.Field) string
+	Vars             []string
+	TemplateData     interface{}
+	ColumnNames      []string
+	CoerceArgFuncs   map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool)
+	QueryFormatFuncs map[string]func() string
 }
 
 func (e *QueryTemplate) Interpolate(ctx context.Context, requestData map[string]interface{}) (interpolatedQuery string, args []interface{}, err error) {
 	templateText := e.Vars[0]
+	currentTable := ctx.Value(util.ContextKey("table")).(string)
+
 	funcMap := template.FuncMap{
 		"add2": func(x int) int {
 			return x + 2
@@ -33,9 +36,41 @@ func (e *QueryTemplate) Interpolate(ctx context.Context, requestData map[string]
 		"tail": func(x []string) []string {
 			return x[1:]
 		},
-		"format": func(a string) string {
-			return a
-		},
+		"format": func(tableName string, queryFormatFuncs map[string]func() string) func(int, string) string {
+			return func(idx int, columnName string) string {
+
+				nextIdx := fmt.Sprintf(":%d", idx+2)
+				td := util.GetTypeDescriptorUsingDBTableName(config.Options.Descriptor.TypeDescriptors, tableName)
+				for _, field := range td.Fields {
+					switch field.Type.Name {
+					case "money":
+						if field.Type.Amount.FromColumn == columnName {
+							return fmt.Sprintf(queryFormatFuncs["default"](), nextIdx)
+						}
+						if field.Type.Currency.FromColumn == columnName {
+							return fmt.Sprintf(queryFormatFuncs["default"](), nextIdx)
+						}
+					case "date":
+						if field.FromColumn == columnName {
+							if field.Type.Kind == "datetime" {
+								return fmt.Sprintf(queryFormatFuncs["datetime"](), nextIdx)
+							}
+							if field.Type.Kind == "date" {
+								return fmt.Sprintf(queryFormatFuncs["date"](), nextIdx)
+							}
+							if field.Type.Kind == "time" {
+								return fmt.Sprintf(queryFormatFuncs["time"](), nextIdx)
+							}
+						}
+					default:
+						if field.FromColumn == columnName {
+							return fmt.Sprintf(queryFormatFuncs["default"](), nextIdx)
+						}
+					}
+				}
+				return nextIdx
+			}
+		}(currentTable, e.QueryFormatFuncs),
 	}
 	queryTemplate, err := template.New("dbquery").Funcs(funcMap).Parse(templateText)
 	if err != nil {
@@ -46,70 +81,79 @@ func (e *QueryTemplate) Interpolate(ctx context.Context, requestData map[string]
 	if err != nil {
 		return "", nil, err
 	}
-	args, err = CoerceRequestDataToGolangNativeTypes(ctx, requestData)
+	args, err = CoerceRequestDataToGolangNativeTypes(ctx, requestData, e.CoerceArgFuncs)
 	if err != nil {
 		return "", nil, err
 	}
 	return query.String(), args, nil
 
 }
-func CoerceRequestDataToGolangNativeTypes(ctx context.Context, requestData map[string]interface{}) (args []interface{}, err error) {
+func CoerceRequestDataToGolangNativeTypes(ctx context.Context, requestData map[string]interface{}, coerceArgFuncs map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool)) (args []interface{}, err error) {
 	currentTable := ctx.Value(util.ContextKey("table")).(string)
 	td := util.GetTypeDescriptorUsingDBTableName(config.Options.Descriptor.TypeDescriptors, currentTable)
-	var val interface{}
-	var ok bool
-	appendRequestDataToArgs := func(args []interface{}, val interface{}) []interface{} {
-		switch v := val.(type) {
-		case string:
-			return append(args, v)
-		case bool:
-			return append(args, v)
-		case float64:
-			return append(args, v)
-		case time.Time:
-			return append(args, v)
-		case nil:
-			return append(args, nil)
-		}
-		return []interface{}{}
-	}
 	for _, field := range td.Fields {
 		switch field.Type.Name {
 		case "money":
-			if val, ok = requestData[field.Type.Amount.Key]; ok {
-				if val == nil {
-					args = appendRequestDataToArgs(args, nil)
-				} else {
-					args = appendRequestDataToArgs(args, val)
+			if result, ok := coerceArgFuncs["money"](requestData, field); ok {
+				args = append(args, result)
+			}
+		case "datetime":
+			if result, ok := coerceArgFuncs["datetime"](requestData, field); ok {
+				args = append(args, result)
+			}
+		case "date":
+			switch field.Type.Kind {
+			case "date":
+				if result, ok := coerceArgFuncs["date"](requestData, field); ok {
+					args = append(args, result)
 				}
-			}
-			if val, ok = requestData[field.Type.Currency.Key]; ok {
-				args = appendRequestDataToArgs(args, val)
-			}
-		case "datetime", "date", "time":
-			if val, ok = requestData[field.Key]; ok {
-				if val == nil {
-					args = appendRequestDataToArgs(args, nil)
-				} else {
-					stringifiedDateTime := val.(string)
-					parsedDateTime, err := time.ParseInLocation(
-						"2006-01-02T15:04:05.999Z", stringifiedDateTime, time.UTC,
-					)
-					if err != nil {
-						return nil, err
-					}
-					args = appendRequestDataToArgs(args, parsedDateTime)
+			case "datetime":
+				if result, ok := coerceArgFuncs["datetime"](requestData, field); ok {
+					args = append(args, result)
+				}
+			case "time":
+				if result, ok := coerceArgFuncs["time"](requestData, field); ok {
+					args = append(args, result)
 				}
 			}
 		default:
-			if val, ok = requestData[field.Key]; ok {
-				if val == nil {
-					args = appendRequestDataToArgs(args, nil)
-				} else {
-					args = appendRequestDataToArgs(args, val)
-				}
+			if result, ok := coerceArgFuncs["default"](requestData, field); ok {
+				args = append(args, result)
 			}
 		}
 	}
 	return
+}
+
+func format(idx int, columnName string, tableName string, queryFormatFuncs map[string]func() string) string {
+	nextIdx := fmt.Sprintf(":%d", idx+2)
+	td := util.GetTypeDescriptorUsingDBTableName(config.Options.Descriptor.TypeDescriptors, tableName)
+	for _, field := range td.Fields {
+		switch field.Type.Name {
+		case "money":
+			if field.Type.Amount.FromColumn == columnName {
+				return fmt.Sprintf(queryFormatFuncs["default"](), nextIdx)
+			}
+			if field.Type.Currency.Key == columnName {
+				return fmt.Sprintf(queryFormatFuncs["default"](), nextIdx)
+			}
+		case "date":
+			if field.FromColumn == columnName {
+				if field.Type.Kind == "datetime" {
+					return fmt.Sprintf(queryFormatFuncs["datetime"](), nextIdx)
+				}
+				if field.Type.Kind == "date" {
+					return fmt.Sprintf(queryFormatFuncs["date"](), nextIdx)
+				}
+				if field.Type.Kind == "time" {
+					return fmt.Sprintf(queryFormatFuncs["time"](), nextIdx)
+				}
+			}
+		default:
+			if field.FromColumn == columnName {
+				return fmt.Sprintf(queryFormatFuncs["default"](), nextIdx)
+			}
+		}
+	}
+	return nextIdx
 }
