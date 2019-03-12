@@ -179,7 +179,23 @@ func buildResultFromQueryResultsUsingField(ctx context.Context, formatted, query
 }
 
 func buildResultFromQueryResultsWithoutRelationships(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		table,
+	)
 	switch {
+	case field.FromColumn == typeDescriptor.ColumnAsOptionName:
+		// Workflow Accelerator expects `columnAsOptionName`
+		// to be called `name` and be of type string
+		formatted["name"] = stringify(
+			queryResults[table].(map[string]interface{})[field.FromColumn],
+		)
+	case field.FromColumn == typeDescriptor.UniqueIdColumn:
+		// Workflow Accelerator expects `uniqueIdColumn`
+		// to be called `id` and be of type string
+		formatted["id"] = stringify(
+			queryResults[table].(map[string]interface{})[field.FromColumn],
+		)
 	case field.Type.Name == "money":
 		formatted = buildForFieldTypeMoney(formatted, queryResults, table, field)
 	case field.Type.Kind == "datetime":
@@ -290,27 +306,12 @@ func buildForFieldTypeDateTime(formatted, queryResults map[string]interface{}, t
 }
 
 func buildForFieldTypeOther(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
-	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
-		config.Options.Descriptor.TypeDescriptors,
-		table,
-	)
-	switch field.FromColumn {
-	case typeDescriptor.ColumnAsOptionName:
-		// Workflow Accelerator expects `columnAsOptionName`
-		// to be called `name` and be of type string
-		formatted["name"] = stringify(
-			queryResults[table].(map[string]interface{})[field.FromColumn],
-		)
-	case typeDescriptor.UniqueIdColumn:
-		// Workflow Accelerator expects `uniqueIdColumn`
-		// to be called `id` and be of type string
-		formatted["id"] = stringify(
-			queryResults[table].(map[string]interface{})[field.FromColumn],
-		)
-	default:
+	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
 		formatted[field.Key] =
 			queryResults[table].(map[string]interface{})[field.FromColumn]
+		return formatted
 	}
+	formatted[field.Key] = nil
 	return formatted
 }
 

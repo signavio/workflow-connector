@@ -30,7 +30,7 @@ var (
   "recipes": [
     {
       "creationDate": "2017-12-13T00:00:00.000Z",
-      "equipmentId": 2,
+      "equipmentId": "2",
       "id": "1",
       "instructions": "do this",
       "lastAccessed": "%sT00:00:01.000Z",
@@ -75,7 +75,7 @@ var (
     "name": "Sanremo Café Racer",
     "purchaseDate": "2017-12-12T12:00:00.123Z"
   },
-  "equipmentId": 2,
+  "equipmentId": "2",
   "id": "1",
   "instructions": "do this",
   "lastAccessed": "%sT00:00:01.000Z",
@@ -228,7 +228,7 @@ var (
   "recipes": [
     {
       "creationDate": "2017-12-13T00:00:00.000Z",
-      "equipmentId": 2,
+      "equipmentId": "2",
       "id": "1",
       "instructions": "do this",
       "lastAccessed": "%sT00:00:01.000Z",
@@ -261,7 +261,7 @@ var (
   "recipes": [
     {
       "creationDate": "2017-12-13T00:00:00.000Z",
-      "equipmentId": 2,
+      "equipmentId": "2",
       "id": "1",
       "instructions": "do this",
       "lastAccessed": "%sT00:00:01.000Z",
@@ -298,7 +298,7 @@ var (
   "recipes": [
     {
       "creationDate": "2017-12-13T00:00:00.000Z",
-      "equipmentId": 2,
+      "equipmentId": "2",
       "id": "1",
       "instructions": "do this",
       "lastAccessed": "%sT00:00:01.000Z",
