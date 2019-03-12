@@ -274,7 +274,7 @@ func (o *Oracle) newOracleSchemaMapping(columnsWithTable []string, columnTypes [
 		} else if backendType == "NUMBER" {
 
 			_, scale, ok := columnTypes[i].DecimalSize()
-			if ok && scale == 0 {
+			if ok && scale < 1 {
 				// The goracle driver in use treats a NUMBER(p,0) as a float64
 				// even if the scale == 0, this makes stringifying an id of
 				// type NUMBER(38,0) a pain since it appears as "1.00000"
@@ -376,7 +376,6 @@ func wrapExecContext(o *Oracle, execContext func(context.Context, string, ...int
 			return nil, err
 		}
 		rowsAffected, _ := result.RowsAffected()
-		log.When(config.Options.Logging).Infof("RESULT: %+v\n", rowsAffected)
 		//	if err := goracle.ReadDbmsOutput(ctx, lastInserted, db); err != nil {
 		//		return nil, err
 		//	}
