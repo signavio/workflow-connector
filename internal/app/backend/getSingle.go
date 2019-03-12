@@ -72,7 +72,7 @@ func (b *Backend) GetSingle(rw http.ResponseWriter, req *http.Request) {
 	log.When(config.Options.Logging).Infof("[handler <- db] query results: \n%s\n", results)
 
 	log.When(config.Options.Logging).Infoln("[handler -> formatter] format results as json")
-	formattedResults, err := formatting.Standard.Format(req, results)
+	formattedResults, err := formatting.Standard.Format(req.Context(), results)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,
