@@ -187,7 +187,7 @@ func buildResultFromQueryResultsWithoutRelationships(ctx context.Context, format
 	case field.Type.Kind == "date" ||
 		field.Type.Kind == "time":
 		formatted = buildForFieldTypeDateOrTime(formatted, queryResults, table, field)
-	case field.Type.Kind == "text":
+	case field.Type.Name == "text":
 		formatted = buildForFieldTypeText(formatted, queryResults, table, field)
 	default:
 		formatted = buildForFieldTypeOther(formatted, queryResults, table, field)
