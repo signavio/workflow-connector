@@ -43,10 +43,13 @@ type Field struct {
 }
 
 type WorkflowType struct {
-	Name     string    `json:"name,omitempty"`
-	Kind     string    `json:"kind,omitempty"`
-	Amount   *Amount   `json:"amount,omitempty"`
-	Currency *Currency `json:"currency,omitempty"`
+	Name        string       `json:"name,omitempty"`
+	Kind        string       `json:"kind,omitempty"`
+	Amount      *Amount      `json:"amount,omitempty"`
+	Currency    *Currency    `json:"currency,omitempty"`
+	Options     []*Option    `json:"options,omitempty"`
+	ElementType *ElementType `json:"elementType,omitempty"`
+	MultiLine   bool         `json:"multiLine,omitempty"`
 }
 type Amount struct {
 	Key        string `json:"key,omitempty"`
@@ -57,6 +60,14 @@ type Currency struct {
 	Key        string `json:"key,omitempty"`
 	FromColumn string `json:"fromColumn,omitempty"`
 	Value      string `json:"value,omitempty"`
+}
+
+type Option struct {
+	Id   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+type ElementType struct {
+	Name string `json:"name,omitempty"`
 }
 
 type Relationship struct {
