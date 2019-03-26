@@ -54,10 +54,10 @@
           "key" : "recipes",
           "name" : "Used in recipes",
           "type" : {
-            "name" : "list"
-          },
-          "elementType": {
-            "name": "text"
+            "name" : "list",
+            "elementType": {
+              "name": "text"
+            }
           },
           "relationship": {
             "kind": "oneToMany",
