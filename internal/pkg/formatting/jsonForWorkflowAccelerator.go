@@ -222,42 +222,79 @@ func buildAndRecursivelyResolveRelationships(ctx context.Context, formatted, que
 }
 
 func relationshipKindIsOneToMany(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		field.Relationship.WithTable,
+	)
 	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
-		var results []map[string]interface{}
 		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
-		for _, r := range relatedResults {
-			// remove relationships keys from recursively resolved subset
-			fields := withRelationshipFieldsOmitted(field.Relationship.WithTable)
-			results = append(results, formatAsAWorkflowType(
-				ctx,
-				map[string]interface{}{field.Relationship.WithTable: r},
-				field.Relationship.WithTable,
-				fields,
-			))
+		if clientWantsDenormalizedResultSet(
+			ctx.Value(util.ContextKey("denormalize")).(string),
+		) {
+			var results []map[string]interface{}
+			results = denormalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
+			formatted[field.Key] = results
+			return formatted
 		}
+		var results []interface{}
+		results = normalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
 		formatted[field.Key] = results
-	} else {
-		formatted[field.Key] = []interface{}{}
+		return formatted
 	}
+	formatted[field.Key] = []interface{}{}
+	return formatted
+}
+func relationshipKindIsXToOne(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		field.Relationship.WithTable,
+	)
+	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
+		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
+		if clientWantsDenormalizedResultSet(
+			ctx.Value(util.ContextKey("denormalize")).(string),
+		) {
+			var results map[string]interface{}
+			results = denormalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)[0]
+			formatted[field.Key] = results
+			return formatted
+		}
+		var results interface{}
+		results = normalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)[0]
+		formatted[field.Key] = results
+		return formatted
+	}
+	formatted[field.Key] = nil
 	return formatted
 }
 
-func relationshipKindIsXToOne(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
-	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
-		var result map[string]interface{}
-		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
+func denormalizeResultSet(ctx context.Context, relatedResults []map[string]interface{}, field *descriptor.Field, uniqueIdColumn string) (results []map[string]interface{}) {
+	for _, r := range relatedResults {
+		// remove relationships keys from recursively resolved subset
 		fields := withRelationshipFieldsOmitted(field.Relationship.WithTable)
-		result = formatAsAWorkflowType(
+		resolvedRelationship := formatAsAWorkflowType(
 			ctx,
-			map[string]interface{}{field.Relationship.WithTable: relatedResults[0]},
+			map[string]interface{}{field.Relationship.WithTable: r},
 			field.Relationship.WithTable,
 			fields,
 		)
-		formatted[field.Key] = result
-		return formatted
+		results = append(results, resolvedRelationship)
 	}
-	formatted[field.Key] = make(map[string]interface{})
-	return formatted
+	return results
+}
+func normalizeResultSet(ctx context.Context, relatedResults []map[string]interface{}, field *descriptor.Field, uniqueIdColumn string) (results []interface{}) {
+	for _, r := range relatedResults {
+		// remove relationships keys from recursively resolved subset
+		fields := withRelationshipFieldsOmitted(field.Relationship.WithTable)
+		resolvedRelationship := formatAsAWorkflowType(
+			ctx,
+			map[string]interface{}{field.Relationship.WithTable: r},
+			field.Relationship.WithTable,
+			fields,
+		)
+		results = append(results, resolvedRelationship[uniqueIdColumn])
+	}
+	return
 }
 
 func buildForFieldTypeMoney(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
@@ -369,6 +406,9 @@ func tableHasRelationships(queryResults map[string]interface{}, table string, fi
 	return field.Relationship != nil && queryResults[table].(map[string]interface{})[field.Key] != nil
 }
 
+func clientWantsDenormalizedResultSet(queryValue string) bool {
+	return queryValue != ""
+}
 func withRelationshipFieldsOmitted(table string) (fields []*descriptor.Field) {
 	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
 		config.Options.Descriptor.TypeDescriptors,

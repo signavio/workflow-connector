@@ -17,7 +17,28 @@ var (
 	getSingleTestCases = []testCase{
 		{
 			Kind:                "success",
-			Name:                "it succeeds when equipment table contains more than one column",
+			Name:                "it succeeds when equipment table contains more than one column and returns associated recipes normalized",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
+  "acquisitionCost": {
+    "amount": 8477.85,
+    "currency": "EUR"
+  },
+  "id": "2",
+  "name": "Sanremo Café Racer",
+  "purchaseDate": "2017-12-12T12:00:00.123Z",
+  "recipes": [
+    "1"
+  ]
+}`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/equipment/2", nil)
+				return req
+			},
+		},
+		{
+			Kind:                "success",
+			Name:                "it succeeds when equipment table contains more than one column and returns associated recipes denormalized when provided with the query option",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "acquisitionCost": {
@@ -40,7 +61,7 @@ var (
   ]
 }`, `.*`},
 			Request: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/equipment/2", nil)
+				req, _ := http.NewRequest("GET", "/equipment/2?denormalize=true", nil)
 				return req
 			},
 		},
@@ -62,7 +83,26 @@ var (
 		},
 		{
 			Kind:                "success",
-			Name:                "it succeeds when recipes table contains more than one column",
+			Name:                "it succeeds when recipes table contains more than one column and returns associated equipment normalized",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
+  "creationDate": "2017-12-13T00:00:00.000Z",
+  "equipment": "2",
+  "equipmentId": "2",
+  "id": "1",
+  "instructions": "do this",
+  "lastAccessed": "%sT00:00:01.000Z",
+  "lastModified": "2017-12-14T00:00:00.123Z",
+  "name": "Espresso single shot"
+}`, `.*`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/recipes/1", nil)
+				return req
+			},
+		},
+		{
+			Kind:                "success",
+			Name:                "it succeeds when recipes table contains more than one column and returns associated equipment denormalized when provided with the query option",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`{
   "creationDate": "2017-12-13T00:00:00.000Z",
@@ -83,7 +123,7 @@ var (
   "name": "Espresso single shot"
 }`, `.*`},
 			Request: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/recipes/1", nil)
+				req, _ := http.NewRequest("GET", "/recipes/1?denormalize=true", nil)
 				return req
 			},
 		},
@@ -226,17 +266,9 @@ var (
   "name": "Sanremo Café Racer",
   "purchaseDate": "2017-12-01T12:34:56.789Z",
   "recipes": [
-    {
-      "creationDate": "2017-12-13T00:00:00.000Z",
-      "equipmentId": "2",
-      "id": "1",
-      "instructions": "do this",
-      "lastAccessed": "%sT00:00:01.000Z",
-      "lastModified": "2017-12-14T00:00:00.123Z",
-      "name": "Espresso single shot"
-    }
+    "1"
   ]
-}`, `.*`},
+}`},
 			Request: func() *http.Request {
 				postData := url.Values{}
 				postData.Set("name", "Sanremo Café Racer")
@@ -259,17 +291,9 @@ var (
   "name": "Sanremo Café Racer",
   "purchaseDate": %s,
   "recipes": [
-    {
-      "creationDate": "2017-12-13T00:00:00.000Z",
-      "equipmentId": "2",
-      "id": "1",
-      "instructions": "do this",
-      "lastAccessed": "%sT00:00:01.000Z",
-      "lastModified": "2017-12-14T00:00:00.123Z",
-      "name": "Espresso single shot"
-    }
+    "1"
   ]
-}`, `(null|"0001-01-01T00:00:00.000Z")`, ".*"},
+}`, `(null|"0001-01-01T00:00:00.000Z")`},
 			Request: func() *http.Request {
 				body := strings.NewReader(
 					`{"name": "Sanremo Café Racer", "acquisitionCost": 8477.85, "purchaseDate": null}`,
@@ -296,17 +320,9 @@ var (
   "name": "Sanremo Café Racer",
   "purchaseDate": "2017-12-12T12:00:00.123Z",
   "recipes": [
-    {
-      "creationDate": "2017-12-13T00:00:00.000Z",
-      "equipmentId": "2",
-      "id": "1",
-      "instructions": "do this",
-      "lastAccessed": "%sT00:00:01.000Z",
-      "lastModified": "2017-12-14T00:00:00.123Z",
-      "name": "Espresso single shot"
-    }
+    "1"
   ]
-}`, ".*"},
+}`},
 			Request: func() *http.Request {
 				body := strings.NewReader(
 					`{"name": "Sanremo Café Racer", "acquisitionCost": 8477.85, "purchaseDate": "2017-12-12T12:00:00.123Z"}`,
