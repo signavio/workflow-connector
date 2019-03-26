@@ -54,13 +54,16 @@
           "key" : "recipes",
           "name" : "Used in recipes",
           "type" : {
-            "name" : "text"
+            "name" : "list"
+          },
+          "elementType": {
+            "name": "text"
           },
           "relationship": {
-              "kind": "oneToMany",
-              "withTable": "recipes",
-              "localTableUniqueIdColumn": "id",
-              "foreignTableUniqueIdColumn": "equipment_id"
+            "kind": "oneToMany",
+            "withTable": "recipes",
+            "localTableUniqueIdColumn": "id",
+            "foreignTableUniqueIdColumn": "equipment_id"
           }
         }
       ],
