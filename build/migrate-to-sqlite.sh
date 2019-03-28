@@ -2,11 +2,27 @@
 
 cat << __EOF__ | sqlite3 test.db
 BEGIN;
-DROP TABLE IF EXISTS equipment;
-DROP TABLE IF EXISTS ingredients;
-DROP TABLE IF EXISTS inventory;
-DROP TABLE IF EXISTS recipes;
+DROP TABLE IF EXISTS zero_rows;
+DROP TABLE IF EXISTS one_rows;
 DROP TABLE IF EXISTS ingredient_recipe;
+DROP TABLE IF EXISTS inventory;
+DROP TABLE IF EXISTS ingredients;
+DROP TABLE IF EXISTS recipes;
+DROP TABLE IF EXISTS equipment;
+
+
+CREATE TABLE IF NOT EXISTS zero_rows (
+  id integer primary key autoincrement,
+  name text
+);
+
+CREATE TABLE IF NOT EXISTS one_rows (
+  id integer primary key autoincrement,
+  name text
+);
+INSERT INTO 'one_rows' ('name')
+  VALUES
+  ('TESTNAME');
 
 CREATE TABLE IF NOT EXISTS equipment (
   id integer primary key autoincrement,
