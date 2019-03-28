@@ -142,11 +142,12 @@ func (f *getCollectionAsOptionsFormatter) Format(ctx context.Context, results []
 			stringify(result.(map[string]interface{})[tableName]),
 		)
 	}
+	formattedResultsSubset := subsetForPerformance(formattedResults)
 	log.When(config.Options.Logging).Infof(
 		"[formatter <- asWorkflowType] formattedResult(s): \n%+v ...\n",
 		formattedResults,
 	)
-	JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
+	JSONResults, err = json.MarshalIndent(&formattedResultsSubset, "", "  ")
 	if err != nil {
 		return nil, err
 	}
@@ -408,6 +409,14 @@ func tableHasRelationships(queryResults map[string]interface{}, table string, fi
 
 func clientWantsDenormalizedResultSet(queryValue string) bool {
 	return queryValue != ""
+}
+func subsetForPerformance(in []interface{}) []interface{} {
+	// To avoid performance issues, return only the first
+	// 42 results when querying the /options route
+	if len(in) > 42 {
+		return in[0:42]
+	}
+	return in
 }
 func withRelationshipFieldsOmitted(table string) (fields []*descriptor.Field) {
 	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
