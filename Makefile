@@ -60,7 +60,7 @@ endif
 
 IMAGE := $(REGISTRY)/$(BIN)-$(ARCH)-$(OS)
 
-BUILD_IMAGE ?= golang:1.11-stretch
+BUILD_IMAGE ?= golang:1.12-stretch
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
 # If you want to build AND push all containers, see the 'all-push' rule.

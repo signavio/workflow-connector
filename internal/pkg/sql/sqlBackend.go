@@ -96,10 +96,6 @@ func New() endpoint.Endpoint {
 }
 
 func (s *SqlBackend) open(args ...interface{}) error {
-	log.When(config.Options.Logging).Infof(
-		"[backend] open connection to database %v\n",
-		config.Options.Database.Driver,
-	)
 	driver := args[0].(string)
 	url := args[1].(string)
 	log.When(config.Options.Logging).Infof(
