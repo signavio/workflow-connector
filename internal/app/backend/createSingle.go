@@ -67,6 +67,9 @@ func (b *Backend) CreateSingle(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, msg.Error(), http.StatusBadRequest)
 		return
 	}
+	log.When(config.Options.Logging).Infoln(queryString)
+
+	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
 	result, err := b.ExecContext(req.Context(), queryString, args...)
 	if err != nil {
 		msg := &util.ResponseMessage{

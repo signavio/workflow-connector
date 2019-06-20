@@ -17,46 +17,46 @@ const (
 var (
 	QueryTemplates = map[string]string{
 		"GetSingle": "SELECT * " +
-			"FROM {{.TableName}} AS _{{.TableName}}" +
+			"FROM `{{.TableName}}` AS `_{{.TableName}}`" +
 			"{{range .Relations}}" +
-			"   LEFT JOIN {{.Relationship.WithTable}}" +
-			"   ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-			"   = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}" +
+			"   LEFT JOIN `{{.Relationship.WithTable}}`" +
+			"   ON `{{.Relationship.WithTable}}`.`{{.Relationship.ForeignTableUniqueIDColumn}}`" +
+			"   = `_{{$.TableName}}`.`{{.Relationship.LocalTableUniqueIDColumn}}`" +
 			"{{end}}" +
-			" WHERE _{{$.TableName}}.{{.UniqueIDColumn}} = ?",
-		"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-			"FROM {{.TableName}} " +
-			"WHERE {{.UniqueIDColumn}} = ?",
+			" WHERE `_{{$.TableName}}`.`{{.UniqueIDColumn}}` = ?",
+		"GetSingleAsOption": "SELECT `{{.UniqueIDColumn}}`, `{{.ColumnAsOptionName}}` " +
+			"FROM `{{.TableName}}` " +
+			"WHERE `{{.UniqueIDColumn}}` = ?",
 		"GetCollection": "SELECT * " +
-			"FROM {{.TableName}}",
+			"FROM `{{.TableName}}`",
 		"GetCollectionFilterable": "SELECT * " +
-			"FROM {{.TableName}} " +
-			"WHERE {{.FilterOnColumn}} {{.Operator}} ?",
-		"GetCollectionAsOptions": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-			"FROM {{.TableName}}",
-		"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-			"FROM {{.TableName}} " +
-			"WHERE {{.ColumnAsOptionName}} LIKE ?",
-		"GetCollectionAsOptionsWithParams": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-			"FROM {{.TableName}} " +
-			"WHERE {{.ColumnAsOptionName}} LIKE ? " +
-			`{{range $index, $element := .ColumnNames}}` +
-			`AND {{$element}} = ? ` +
-			`{{end}}`,
-		"UpdateSingle": "UPDATE {{.TableName}} SET {{.ColumnNames | head}}" +
-			" = ?{{range .ColumnNames | tail}}, {{.}} = ?{{end}} WHERE {{.UniqueIDColumn}} = ?",
-		"CreateSingle": "INSERT INTO {{.TableName}}({{.ColumnNames | head}}" +
-			"{{range .ColumnNames | tail}}, {{.}}{{end}}) " +
+			"FROM `{{.TableName}}` " +
+			"WHERE `{{.FilterOnColumn}}` {{.Operator}} ?",
+		"GetCollectionAsOptions": "SELECT `{{.UniqueIDColumn}}`, `{{.ColumnAsOptionName}}` " +
+			"FROM `{{.TableName}}`",
+		"GetCollectionAsOptionsFilterable": "SELECT `{{.UniqueIDColumn}}`, `{{.ColumnAsOptionName}}` " +
+			"FROM `{{.TableName}}` " +
+			"WHERE `{{.ColumnAsOptionName}}` LIKE ?",
+		"GetCollectionAsOptionsWithParams": "SELECT `{{.UniqueIDColumn}}`, `{{.ColumnAsOptionName}}` " +
+			"FROM `{{.TableName}}` " +
+			"WHERE `{{.ColumnAsOptionName}}` LIKE ? " +
+			"{{range $index, $element := .ColumnNames}}" +
+			"AND `{{$element}}` = ? " +
+			"{{end}}",
+		"UpdateSingle": "UPDATE `{{.TableName}}` SET `{{.ColumnNames | head}}`" +
+			" = ?{{range .ColumnNames | tail}}, `{{.}}` = ?{{end}} WHERE `{{.UniqueIDColumn}}` = ?",
+		"CreateSingle": "INSERT INTO `{{.TableName}}`(`{{.ColumnNames | head}}`" +
+			"{{range .ColumnNames | tail}}, `{{.}}`{{end}}) " +
 			"VALUES(?{{range .ColumnNames | tail}}, ?{{end}})",
-		"DeleteSingle": "DELETE FROM {{.TableName}} WHERE {{.UniqueIDColumn}} = ?",
+		"DeleteSingle": "DELETE FROM `{{.TableName}}` WHERE `{{.UniqueIDColumn}}` = ?",
 		"GetTableSchema": "SELECT * " +
-			"FROM {{.TableName}} " +
+			"FROM `{{.TableName}}` " +
 			"LIMIT 1",
-		"GetTableWithRelationshipsSchema": "SELECT * FROM {{.TableName}} AS _{{.TableName}}" +
+		"GetTableWithRelationshipsSchema": "SELECT * FROM `{{.TableName}}` AS `_{{.TableName}}`" +
 			"{{range .Relations}}" +
-			" LEFT JOIN {{.Relationship.WithTable}}" +
-			" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-			" = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}{{end}} LIMIT 1",
+			" LEFT JOIN `{{.Relationship.WithTable}}`" +
+			" ON `{{.Relationship.WithTable}}`.`{{.Relationship.ForeignTableUniqueIDColumn}}`" +
+			" = `_{{$.TableName}}`.`{{.Relationship.LocalTableUniqueIDColumn}}`{{end}} LIMIT 1",
 	}
 	integer = []string{
 		"BIGINT",

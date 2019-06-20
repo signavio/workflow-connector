@@ -156,6 +156,24 @@ var (
 		},
 		{
 			Kind:                "success",
+			Name:                "it returns 200 OK with a single result in an array when querying a table containing unconventionally named columns",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`[
+  {
+    "bentSki": "bar",
+    "id": "1",
+    "jackBob": %s,
+    "name": "foo",
+    "utf8String": "baz"
+  }
+]`, `(null|"")`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/funnyColumnNames", nil)
+				return req
+			},
+		},
+		{
+			Kind:                "success",
 			Name:                "it succeeds when equipment table contains more than one column",
 			ExpectedStatusCodes: []int{http.StatusOK},
 			ExpectedResults: []string{`[
@@ -233,6 +251,32 @@ var (
 		},
 		{
 			Kind: "success",
+			Name: "it returns a 200 OK with the newly created resource or a 204 No Content when provided with valid URL parameters on POST in the funny column names table",
+			ExpectedResults: []string{`%s{
+  "bentSki": "bar2",
+  "id": "2",
+  "jackBob": "foobar2",
+  "name": "foo2",
+  "utf8String": "baz2"
+}%s`, `(`, `|^$)`},
+			ExpectedStatusCodes: []int{http.StatusCreated, http.StatusNoContent},
+			ExpectedHeader: http.Header(map[string][]string{
+				"Location": []string{"/funnyColumnNames/2"},
+			}),
+			Request: func() *http.Request {
+				postData := url.Values{}
+				postData.Set("id", "2")
+				postData.Set("bentSki", "bar2")
+				postData.Set("jackBob", "foobar2")
+				postData.Set("cupSmith", "foo2")
+				postData.Set("utf8String", "baz2")
+				req, _ := http.NewRequest("POST", "/funnyColumnNames", strings.NewReader(postData.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				return req
+			},
+		},
+		{
+			Kind: "success",
 			Name: "it returns a 200 OK with the newly created resource or a 204 No Content when creating a new resource in an empty table",
 			ExpectedResults: []string{`%s{
   "id": "1",
@@ -275,6 +319,25 @@ var (
 				postData.Set("acquisitionCost", "9283.99")
 				postData.Set("purchaseDate", "2017-12-01T12:34:56.789Z")
 				req, _ := http.NewRequest("PATCH", "/equipment/2?"+postData.Encode(), nil)
+				return req
+			},
+		},
+		{
+			Kind:                "success",
+			Name:                "it succeeds in updating a resource in the funny columns table when provided with valid parameters as URL parameters ",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
+  "bentSki": "bar2",
+  "id": "2",
+  "jackBob": "foobar22",
+  "name": "foo2",
+  "utf8String": "new baz2"
+}`},
+			Request: func() *http.Request {
+				postData := url.Values{}
+				postData.Set("jackBob", "foobar22")
+				postData.Set("utf8String", "new baz2")
+				req, _ := http.NewRequest("PATCH", "/funnyColumnNames/2?"+postData.Encode(), nil)
 				return req
 			},
 		},
@@ -385,6 +448,21 @@ var (
 }`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("DELETE", "/zeroRows/1", nil)
+				return req
+			},
+		},
+		{
+			Kind:                "success",
+			Name:                "it succeeds in deleting an existing resource from the funnyColumnNames table",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`{
+  "status": {
+    "code": 200,
+    "description": "Resource with uniqueID '2' successfully deleted from funny column names table"
+  }
+}`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("DELETE", "/funnyColumnNames/2", nil)
 				return req
 			},
 		},

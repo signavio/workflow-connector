@@ -380,6 +380,59 @@
      ],
       "optionsAvailable" : true,
       "fetchOneAvailable" : true
+    },
+    {
+      "key" : "funnyColumnNames",
+      "name" : "Table containing strange column names",
+      "tableName": "funny column names",
+      "columnAsOptionName": "cup smith",
+      "uniqueIdColumn": "id",
+      "recordType": "value",
+      "parameters": [],
+      "fields" : [
+        {
+          "key" : "id",
+          "name" : "ID",
+          "fromColumn" : "id",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "jackBob",
+          "name" : "jackBob",
+          "fromColumn" : "jack_bob",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "cupSmith",
+          "name" : "cup smith",
+          "fromColumn" : "cup smith",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "bentSki",
+          "name" : "bent ski",
+          "fromColumn" : "bent.ski;",
+          "type" : {
+            "name" : "text"
+          }
+        },
+        {
+          "key" : "utf8String",
+          "name" : "utf8 string ڣ",
+          "fromColumn" : "utf8 string ڣ",
+          "type" : {
+            "name" : "text"
+          }
+        }
+     ],
+      "optionsAvailable" : true,
+      "fetchOneAvailable" : true
     }
   ],
   "version": 1,

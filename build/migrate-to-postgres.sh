@@ -32,6 +32,7 @@ SET timezone='CET';
 SET ROLE ${POSTGRES_USER};
 DROP TABLE IF EXISTS zero_rows;
 DROP TABLE IF EXISTS one_rows;
+DROP TABLE IF EXISTS "funny column names";
 DROP TABLE IF EXISTS ingredient_recipe;
 DROP TABLE IF EXISTS inventory;
 DROP TABLE IF EXISTS ingredients;
@@ -52,7 +53,17 @@ CREATE TABLE IF NOT EXISTS one_rows (
 INSERT INTO one_rows (name)
   VALUES
   ('TESTNAME');
-
+CREATE TABLE IF NOT EXISTS "funny column names" (
+  id serial,
+  jack_bob text,
+  "cup smith" text,
+  "bent.ski;" text,
+  "utf8 string ڣ" text,
+  primary key (id)
+);
+INSERT INTO "funny column names" ("cup smith", "bent.ski;", "utf8 string ڣ")
+  VALUES
+  ('foo', 'bar', 'baz');
 CREATE TABLE IF NOT EXISTS equipment (
   id serial,
   name text,
@@ -65,7 +76,7 @@ CREATE TABLE IF NOT EXISTS equipment (
   id serial,
   name text,
   acquisition_cost decimal(10,5),
-  purchase_date timestamp(3),
+  purchase_date timestamp(3) null,
   primary key (id)
 );
 INSERT INTO equipment (name, acquisition_cost, purchase_date)

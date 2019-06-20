@@ -45,33 +45,33 @@ var (
 	EuroSymbolSupport characterSet = charmap.Windows1252
 	QueryTemplates                 = map[string]string{
 		`GetSingle`: `SELECT * ` +
-			`FROM {{.TableName}} "_{{.TableName}}"` +
+			`FROM "{{.TableName}}" "_{{.TableName}}"` +
 			`{{range .Relations}}` +
-			`   LEFT JOIN {{.Relationship.WithTable}}` +
-			`   ON {{.Relationship.WithTable}}."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
+			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
 			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"` +
 			`{{end}}` +
 			` WHERE "_{{$.TableName}}"."{{.UniqueIDColumn}}" = :1`,
 		`GetSingleAsOption`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM {{.TableName}} ` +
+			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.UniqueIDColumn}}" = :1`,
 		`GetCollection`: `SELECT * ` +
-			`FROM {{.TableName}}`,
+			`FROM "{{.TableName}}"`,
 		`GetCollectionFilterable`: `SELECT * ` +
-			`FROM {{.TableName}} ` +
+			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.FilterOnColumn}}" {{$.Operator}} {{(format -1 .FilterOnColumn)}}`,
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM {{.TableName}}`,
+			`FROM "{{.TableName}}"`,
 		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM {{.TableName}} ` +
+			`FROM "{{.TableName}}" ` +
 			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%'`,
 		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM {{.TableName}} ` +
+			`FROM "{{.TableName}}" ` +
 			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%' ` +
 			`{{range $index, $element := .ColumnNames}}` +
 			`AND "{{$element}}" = {{(format $index $element)}} ` +
 			`{{end}}`,
-		`UpdateSingle`: `UPDATE {{.TableName}} ` +
+		`UpdateSingle`: `UPDATE "{{.TableName}}" ` +
 			`{{with $firstColumn := .ColumnNames | head}}` +
 			`SET "{{$firstColumn}}" = {{(format -1 $firstColumn)}}` +
 			`{{end}}` +
@@ -81,7 +81,7 @@ var (
 			`WHERE "{{.UniqueIDColumn}}"= :{{(lenPlus1 .ColumnNames)}}`,
 		`CreateSingle`: `DECLARE "l_{{.UniqueIDColumn}}" nvarchar2(256); ` +
 			`BEGIN ` +
-			`INSERT INTO {{.TableName}}` +
+			`INSERT INTO "{{.TableName}}"` +
 			`("{{.ColumnNames | head}}"` +
 			`{{range .ColumnNames | tail}},` +
 			`  "{{.}}"` +
@@ -94,14 +94,14 @@ var (
 			`{{end}}) RETURNING "{{.UniqueIDColumn}}" INTO "l_{{.UniqueIDColumn}}"; ` +
 			`DBMS_OUTPUT.PUT_LINE("l_{{.UniqueIDColumn}}"); ` +
 			"END;",
-		`DeleteSingle`: `DELETE FROM {{.TableName}} WHERE "{{.UniqueIDColumn}}" = :1`,
+		`DeleteSingle`: `DELETE FROM "{{.TableName}}" WHERE "{{.UniqueIDColumn}}" = :1`,
 		`GetTableSchema`: `SELECT * ` +
-			`FROM {{.TableName}} ` +
+			`FROM "{{.TableName}}" ` +
 			`WHERE ROWNUM <= 1`,
-		`GetTableWithRelationshipsSchema`: `SELECT * FROM {{.TableName}} "_{{.TableName}}"` +
+		`GetTableWithRelationshipsSchema`: `SELECT * FROM "{{.TableName}}" "_{{.TableName}}"` +
 			`{{range .Relations}}` +
-			` LEFT JOIN {{.Relationship.WithTable}}` +
-			` ON {{.Relationship.WithTable}}."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
+			` LEFT JOIN "{{.Relationship.WithTable}}"` +
+			` ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
 			` = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"{{end}} WHERE ROWNUM <= 1`,
 	}
 	integer = []string{

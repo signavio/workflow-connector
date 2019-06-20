@@ -38,6 +38,17 @@ CREATE TABLE IF NOT EXISTS one_rows (
 INSERT INTO one_rows (name)
   VALUES
   ("TESTNAME");
+CREATE TABLE IF NOT EXISTS \`funny column names\` (
+  id INT NOT NULL AUTO_INCREMENT,
+  jack_bob text,
+  \`cup smith\` text,
+  \`bent.ski;\` text,
+  \`utf8 string ڣ\` text,
+  primary key (id)
+);
+INSERT INTO \`funny column names\` (\`cup smith\`, \`bent.ski;\`, \`utf8 string ڣ\`)
+  VALUES
+  ("foo", "bar", "baz");
 CREATE TABLE IF NOT EXISTS equipment (
   id INT NOT NULL AUTO_INCREMENT,
   name text,
