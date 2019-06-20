@@ -17,7 +17,6 @@ import (
 	"github.com/signavio/workflow-connector/internal/pkg/sql/mysql"
 	"github.com/signavio/workflow-connector/internal/pkg/sql/oracle"
 	"github.com/signavio/workflow-connector/internal/pkg/sql/postgres"
-	"github.com/signavio/workflow-connector/internal/pkg/sql/sqlite"
 	"github.com/signavio/workflow-connector/internal/pkg/sql/sqlserver"
 	"github.com/spf13/viper"
 )
@@ -91,18 +90,14 @@ func TestSqlBackends(t *testing.T) {
 		testUsingDB = viper.Get("db").(string)
 	}
 	switch {
-	case strings.Contains(testUsingDB, "sqlite"):
-		testSqlBackend(t, "sqlite", "sqlite3", sqlite.New)
 	case strings.Contains(testUsingDB, "mysql"):
 		testSqlBackend(t, "mysql", "mysql", mysql.New)
 	case strings.Contains(testUsingDB, "oracle"):
 		testSqlBackend(t, "oracle", "goracle", oracle.New)
 	case strings.Contains(testUsingDB, "sqlserver"):
 		testSqlBackend(t, "sqlserver", "sqlserver", sqlserver.New)
-	case strings.Contains(testUsingDB, "postgres"):
-		testSqlBackend(t, "postgres", "postgres", postgres.New)
 	default:
-		testSqlBackend(t, "sqlite", "sqlite3", sqlite.New)
+		testSqlBackend(t, "postgres", "postgres", postgres.New)
 	}
 }
 

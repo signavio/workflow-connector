@@ -5,8 +5,10 @@ description: >
   RESTful API on top of standard SQL Databases
 port: 443
 database:
-  driver: sqlite3
-  url: test.db 
+  driver: postgres
+  # You can find the list of supported parameters
+  # at https://godoc.org/github.com/lib/pq
+  url: postgres://bob:l120arSgHz@172.17.8.2/test?sslmode=verify-full
 tls:
   enabled: false
   publicKey: ./config/server.crt
