@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS "funny column names" (
 INSERT INTO "funny column names" ("cup smith", "bent.ski;", "utf8 string ڣ")
   VALUES
   ('foo', 'bar', 'baz');
-
 CREATE TABLE IF NOT EXISTS equipment (
   id integer primary key autoincrement,
   name text,
