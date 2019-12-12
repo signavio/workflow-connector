@@ -76,7 +76,7 @@ jobs:
       - run:
           name: Migrate coffee example to postgresql database
           environment:
-            POSTGRES_DATABASE: circle_test
+            DATABASE_URL: "postgres://signavio@localhost:5432/circle_test?sslmode=disable"
           command: build/migrate-to-postgres.sh
       - run:
           name: Run tests on a postgres database
