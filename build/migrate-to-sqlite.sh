@@ -26,12 +26,11 @@ INSERT INTO 'one_rows' ('name')
   ('TESTNAME');
 
 CREATE TABLE IF NOT EXISTS "funny column names" (
-  id serial,
+  id integer primary key autoincrement,
   jack_bob text,
   "cup smith" text,
   "bent.ski;" text,
-  "utf8 string ڣ" text,
-  primary key (id)
+  "utf8 string ڣ" text
 );
 INSERT INTO "funny column names" ("cup smith", "bent.ski;", "utf8 string ڣ")
   VALUES
@@ -40,12 +39,12 @@ CREATE TABLE IF NOT EXISTS equipment (
   id integer primary key autoincrement,
   name text,
   acquisition_cost decimal(10,5),
-  purchase_date date
+  purchase_date datetime
 );
 INSERT INTO 'equipment' ('name','acquisition_cost','purchase_date')
   VALUES
-  ('Bialetti Moka Express 6 cup', 25.95, '2017-12-11T12:00:00Z'),
-  ('Sanremo Café Racer', 8477.85,'2017-12-12T12:00:00Z'),
+  ('Bialetti Moka Express 6 cup', 25.95, '2017-12-11T12:00:00.123Z'),
+  ('Sanremo Café Racer', 8477.85,'2017-12-12T12:00:00.123Z'),
   ('Buntfink SteelKettle', 39.95,'2017-12-12T12:00:00Z'),
   ('Copper Coffee Pot Cezve', 49.95,'2017-12-12T12:00:00Z');
 
@@ -79,13 +78,16 @@ CREATE TABLE IF NOT EXISTS recipes (
   equipment_id integer,
   name text,
   instructions text,
+  creation_date date,
+  last_accessed datetime,
+  last_modified datetime,
   foreign key (equipment_id) references equipment(id)
 );
-INSERT INTO 'recipes' ('name', 'instructions', 'equipment_id')
+INSERT INTO 'recipes' ('name', 'instructions', 'equipment_id', 'creation_date', 'last_accessed', 'last_modified')
   VALUES
-  ('Espresso single shot','do this', 2),
-  ('Ibrik (turkish) coffee', 'do that', 4),
-  ('Filter coffee', 'do bar', 3);
+  ('Espresso single shot','do this', 2, '2017-12-13', '2017-01-13 00:00:01', '2017-12-14T01:00:00.123'),
+  ('Ibrik (turkish) coffee', 'do that', 4, '2017-12-13', '2017-01-13 00:00:02', '2017-12-14T01:00:00.123456'),
+  ('Filter coffee', 'do bar', 3, '2017-12-13', '2017-01-13 12:00:00', '2017-12-14T01:00:00');
 
 CREATE TABLE IF NOT EXISTS ingredient_recipe (
   id integer not null,

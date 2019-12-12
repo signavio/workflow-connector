@@ -55,7 +55,7 @@ var (
       "id": "1",
       "instructions": "do this",
       "lastAccessed": "%sT00:00:01.000Z",
-      "lastModified": "2017-12-14T00:00:00.123Z",
+      "lastModified": "2017-12-14T01:00:00.123Z",
       "name": "Espresso single shot"
     }
   ]
@@ -92,7 +92,7 @@ var (
   "id": "1",
   "instructions": "do this",
   "lastAccessed": "%sT00:00:01.000Z",
-  "lastModified": "2017-12-14T00:00:00.123Z",
+  "lastModified": "2017-12-14T01:00:00.123Z",
   "name": "Espresso single shot"
 }`, `.*`},
 			Request: func() *http.Request {
@@ -119,7 +119,7 @@ var (
   "id": "1",
   "instructions": "do this",
   "lastAccessed": "%sT00:00:01.000Z",
-  "lastModified": "2017-12-14T00:00:00.123Z",
+  "lastModified": "2017-12-14T01:00:00.123Z",
   "name": "Espresso single shot"
 }`, `.*`},
 			Request: func() *http.Request {

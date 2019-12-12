@@ -27,8 +27,13 @@ var (
 			`FROM "{{.TableName}}" ` +
 			`ORDER BY "{{.UniqueIDColumn}}" ASC`,
 		`GetCollectionFilterable`: `SELECT * ` +
-			`FROM "{{.TableName}}" ` +
-			`WHERE "{{.FilterOnColumn}}" {{.Operator}} ?`,
+			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
+			`{{range .Relations}}` +
+			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"` +
+			`{{end}}` +
+			` WHERE "_{{$.TableName}}"."{{.FilterOnColumn}}" {{.Operator}} ?`,
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`ORDER BY "{{.UniqueIDColumn}}" ASC`,
@@ -38,8 +43,8 @@ var (
 		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.ColumnAsOptionName}}" LIKE ? ` +
-			"{{range $key, $value := .ParamsWithValues}}" +
-			`AND {{$key}} = '{{$value}}'` +
+			"{{range $index, $element := .ColumnNames}}" +
+			`AND "{{$element}}" = ?` +
 			"{{end}}",
 		`UpdateSingle`: `UPDATE "{{.TableName}}" SET "{{.ColumnNames | head}}"` +
 			` = ?{{range .ColumnNames | tail}},`+
@@ -51,8 +56,7 @@ var (
 			` "{{.}}"`+
 			`{{end}}) ` +
 			`VALUES(?{{range .ColumnNames | tail}}, ?{{end}})`,
-		`DeleteSingle`: `DELETE FROM "{{.TableName}}" WHERE "{{.UniqueIDColumn}}" = ?`,
-		`GetTableSchema`: `SELECT * ` +
+		`DeleteSingle`: `DELETE FROM "{{.TableName}}" WHERE "{{.UniqueIDColumn}}" = ?`, `GetTableSchema`: `SELECT * ` +
 			`FROM "{{.TableName}}" ` +
 			`LIMIT 1`,
 		`GetTableWithRelationshipsSchema`: `SELECT * FROM "{{.TableName}}" AS "_{{.TableName}}" ` +

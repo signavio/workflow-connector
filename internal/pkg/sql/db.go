@@ -69,6 +69,8 @@ func (s *SqlBackend) queryContext(ctx context.Context, query string, args ...int
 		return s.queryContextForOptionRoutes(ctx, query, args...)
 	case "GetSingle":
 		return s.queryContextForGetSingleRoute(ctx, query, args...)
+	case "GetCollectionFilterable":
+		return s.queryContextForCollectionFilterable(ctx, query, args...)
 	default:
 		return s.queryContextForNonOptionRoutes(ctx, query, args...)
 	}
@@ -97,6 +99,50 @@ func (s *SqlBackend) queryContextForGetSingleRoute(ctx context.Context, query st
 			tableName,
 		),
 	)
+	return
+}
+func (s *SqlBackend) queryContextForCollectionFilterable(ctx context.Context, query string, args ...interface{}) (results []interface{}, err error) {
+	table := ctx.Value(util.ContextKey("table")).(string)
+	relationships := ctx.Value(util.ContextKey("relationships")).([]*descriptor.Field)
+	var columnNames []string
+	var dataTypes []interface{}
+	// Use the TableSchema containing columns of related tables if the
+	// current table contains 1..* relationship with other tables
+	if relationships != nil {
+		columnNames = s.GetSchemaMapping(fmt.Sprintf("%s\x00relationships", table)).FieldNames
+		dataTypes = s.GetSchemaMapping(fmt.Sprintf("%s\x00relationships", table)).GolangTypes
+	} else {
+		columnNames = s.GetSchemaMapping(table).FieldNames
+		dataTypes = s.GetSchemaMapping(table).GolangTypes
+	}
+	rows, err := s.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	results, err = rowsToResults(rows, columnNames, dataTypes)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		msg := &util.ResponseMessage{
+			Code: http.StatusNotFound,
+			Msg: fmt.Sprintf(
+				"Resource with uniqueID '%s' not found in %s table",
+				args[len(args)-1], table,
+			),
+		}
+		return nil, msg
+	}
+	// deduplicate the results fetched when querying the database
+	results = deduplicateSingleResource(
+		results,
+		util.GetTypeDescriptorUsingDBTableName(
+			config.Options.Descriptor.TypeDescriptors,
+			table,
+		),
+	)
+	log.When(config.Options.Logging).Infof("[db] result: %s\n", results)
 	return
 }
 func (s *SqlBackend) queryContextForNonOptionRoutes(ctx context.Context, query string, args ...interface{}) (results []interface{}, err error) {
@@ -150,7 +196,9 @@ func deduplicateSingleResource(data []interface{}, td *descriptor.TypeDescriptor
 	for _, field := range fields {
 		var fieldResultSet []map[string]interface{}
 		var relationshipTableContainsResults = false
-		for _, datum := range data {
+		log.When(config.Options.Logging).Infof("[db] DATA: %s\n", data)
+		for i, datum := range data {
+			log.When(config.Options.Logging).Infof("[db] DATUM: %s\n", datum)
 			if tableResults, ok := datum.(map[string]interface{})[field.Relationship.WithTable].(map[string]interface{}); ok {
 				// If the result set of a related table is empty, then all values
 				// will equal nil (or the empty string for oracle db) so do not
@@ -171,12 +219,12 @@ func deduplicateSingleResource(data []interface{}, td *descriptor.TypeDescriptor
 					fieldResultSet = util.AppendNoDuplicates(fieldResultSet, tableResults)
 				}
 			}
+			data[i].(map[string]interface{})[td.TableName].(map[string]interface{})[field.Key] = map[string]interface{}{
+				field.Relationship.WithTable: fieldResultSet,
+			}
 		}
-		data[0].(map[string]interface{})[td.TableName].(map[string]interface{})[field.Key] = map[string]interface{}{
-			field.Relationship.WithTable: fieldResultSet,
-		}
-	}
-	return append([]interface{}{}, data[0])
+	  }
+	return data
 }
 
 func (s *SqlBackend) createTx(timeout time.Duration) (txUUID uuid.UUID, err error) {

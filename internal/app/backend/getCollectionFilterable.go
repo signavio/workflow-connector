@@ -5,6 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
+	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
 	"github.com/signavio/workflow-connector/internal/pkg/filter"
 	"github.com/signavio/workflow-connector/internal/pkg/formatting"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
@@ -16,6 +17,7 @@ func (b *Backend) GetCollectionFilterable(rw http.ResponseWriter, req *http.Requ
 	routeName := mux.CurrentRoute(req).GetName()
 	table := req.Context().Value(util.ContextKey("table")).(string)
 	queryUninterpolated := b.GetQueryTemplate(routeName)
+	relations := req.Context().Value(util.ContextKey("relationships")).([]*descriptor.Field)
 	filterExpression, err := filter.New(req.Context(), mux.Vars(req)["filter"])
 	if err != nil {
 		msg := &util.ResponseMessage{
@@ -29,10 +31,12 @@ func (b *Backend) GetCollectionFilterable(rw http.ResponseWriter, req *http.Requ
 		Vars: []string{queryUninterpolated},
 		TemplateData: struct {
 			TableName      string
+			Relations      []*descriptor.Field
 			FilterOnColumn string
 			Operator       string
 		}{
 			TableName:      table,
+			Relations:      relations,
 			FilterOnColumn: string(filterExpression.Arguments[0]),
 			Operator:       b.GetFilterPredicateMapping(filterExpression.Predicate),
 		},

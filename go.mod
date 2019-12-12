@@ -6,6 +6,7 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/mux v1.6.2
 	github.com/kardianos/service v0.0.0-20181115005516-4c239ee84e7b
+	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
