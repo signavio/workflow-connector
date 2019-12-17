@@ -5,6 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
+	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
 	"github.com/signavio/workflow-connector/internal/pkg/formatting"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
 	"github.com/signavio/workflow-connector/internal/pkg/query"
@@ -15,14 +16,17 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 	routeName := mux.CurrentRoute(req).GetName()
 	table := req.Context().Value(util.ContextKey("table")).(string)
 	queryUninterpolated := b.GetQueryTemplate(routeName)
+	relations := req.Context().Value(util.ContextKey("relationships")).([]*descriptor.Field)
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
 	queryTemplate := &query.QueryTemplate{
 		Vars: []string{queryUninterpolated},
 		TemplateData: struct {
 			TableName      string
+			Relations      []*descriptor.Field
 			UniqueIdColumn string
 		}{
 			TableName:      table,
+			Relations:      relations,
 			UniqueIdColumn: uniqueIDColumn,
 		},
 		CoerceArgFuncs: b.GetCoerceArgFuncs(),
@@ -57,7 +61,7 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 	)
 
 	log.When(config.Options.Logging).Infoln("[handler -> Format] format results as json")
-	formattedResults, err := formatting.GetCollection.Format(req.Context(), results)
+	formattedResults, err := formatting.Standard.Format(req.Context(), results)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,

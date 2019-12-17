@@ -78,7 +78,7 @@ func (b *Backend) GetCollectionFilterable(rw http.ResponseWriter, req *http.Requ
 	)
 
 	log.When(config.Options.Logging).Infoln("[handler -> formatter] format results as json")
-	formattedResults, err := formatting.GetCollection.Format(req.Context(), results)
+	formattedResults, err := formatting.Standard.Format(req.Context(), results)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,
