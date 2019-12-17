@@ -24,8 +24,13 @@ var (
 			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.UniqueIdColumn}}" = ?`,
 		`GetCollection`: `SELECT * ` +
-			`FROM "{{.TableName}}" ` +
-			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
+			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
+			`{{range .Relations}}` +
+			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
+			`{{end}}` +
+			` ORDER BY "{{.UniqueIdColumn}}" ASC`,
 		`GetCollectionFilterable`: `SELECT * ` +
 			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
 			`{{range .Relations}}` +

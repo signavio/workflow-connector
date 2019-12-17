@@ -24,10 +24,20 @@ var (
 			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.UniqueIdColumn}}" = @p1`,
 		`GetCollection`: `SELECT * ` +
-			`FROM "{{.TableName}}"`,
+			`FROM "{{.TableName}}" AS "_{{.TableName}}" ` +
+			`{{range .Relations}}` +
+			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
+			`{{end}}`,
 		`GetCollectionFilterable`: `SELECT * ` +
-			`FROM "{{.TableName}} ` +
-			`WHERE "{{.FilterOnColumn}}" {{.Operator}} @p1`,
+			`FROM "{{.TableName}}" AS "_{{.TableName}}" ` +
+			`{{range .Relations}}` +
+			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
+			`{{end}}` +
+			` WHERE "{{.FilterOnColumn}}" {{.Operator}} @p1`,
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}"`,
 		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +

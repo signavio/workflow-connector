@@ -29,11 +29,21 @@ var (
 			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.UniqueIdColumn}}" = $1`,
 		`GetCollection`: `SELECT * ` +
-			`FROM "{{.TableName}}" ` +
-			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
+			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
+			`{{range .Relations}}` +
+			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
+			`{{end}}` +
+			` ORDER BY "{{.UniqueIdColumn}}" ASC`,
 		`GetCollectionFilterable`: `SELECT * ` +
-			`FROM "{{.TableName}}" ` +
-			`WHERE "{{.FilterOnColumn}}" {{.Operator}} $1`,
+			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
+			`{{range .Relations}}` +
+			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
+			`{{end}}` +
+			` WHERE "{{.FilterOnColumn}}" {{.Operator}} $1`,
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
