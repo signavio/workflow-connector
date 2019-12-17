@@ -196,9 +196,7 @@ func deduplicateSingleResource(data []interface{}, td *descriptor.TypeDescriptor
 	for _, field := range fields {
 		var fieldResultSet []map[string]interface{}
 		var relationshipTableContainsResults = false
-		log.When(config.Options.Logging).Infof("[db] DATA: %s\n", data)
 		for i, datum := range data {
-			log.When(config.Options.Logging).Infof("[db] DATUM: %s\n", datum)
 			if tableResults, ok := datum.(map[string]interface{})[field.Relationship.WithTable].(map[string]interface{}); ok {
 				// If the result set of a related table is empty, then all values
 				// will equal nil (or the empty string for oracle db) so do not
