@@ -24,11 +24,11 @@ func (b *Backend) GetCollectionAsOptionsFilterable(rw http.ResponseWriter, req *
 		Vars: []string{queryUninterpolated},
 		TemplateData: struct {
 			TableName          string
-			UniqueIDColumn     string
+			UniqueIdColumn     string
 			ColumnAsOptionName string
 		}{
 			TableName:          table,
-			UniqueIDColumn:     uniqueIDColumn,
+			UniqueIdColumn:     uniqueIDColumn,
 			ColumnAsOptionName: columnAsOptionName,
 		},
 		CoerceArgFuncs: b.GetCoerceArgFuncs(),

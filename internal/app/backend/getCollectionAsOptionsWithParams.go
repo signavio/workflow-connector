@@ -47,12 +47,12 @@ func (b *Backend) GetCollectionAsOptionsWithParams(rw http.ResponseWriter, req *
 		Vars: []string{queryUninterpolated},
 		TemplateData: struct {
 			TableName          string
-			UniqueIDColumn     string
+			UniqueIdColumn     string
 			ColumnAsOptionName string
 			ColumnNames        []string
 		}{
 			TableName:          table,
-			UniqueIDColumn:     uniqueIDColumn,
+			UniqueIdColumn:     uniqueIDColumn,
 			ColumnAsOptionName: columnAsOptionName,
 			ColumnNames:        columnNames,
 		},

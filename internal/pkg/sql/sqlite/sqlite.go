@@ -16,31 +16,31 @@ var (
 			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
 			`{{range .Relations}}` +
 			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
-			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
 			`{{end}}` +
-			` WHERE "_{{$.TableName}}"."{{.UniqueIDColumn}}" = ?`,
-		`GetSingleAsOption`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+			` WHERE "_{{$.TableName}}"."{{.UniqueIdColumn}}" = ?`,
+		`GetSingleAsOption`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
-			`WHERE "{{.UniqueIDColumn}}" = ?`,
+			`WHERE "{{.UniqueIdColumn}}" = ?`,
 		`GetCollection`: `SELECT * ` +
 			`FROM "{{.TableName}}" ` +
-			`ORDER BY "{{.UniqueIDColumn}}" ASC`,
+			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
 		`GetCollectionFilterable`: `SELECT * ` +
 			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
 			`{{range .Relations}}` +
 			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
-			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
 			`{{end}}` +
 			` WHERE "_{{$.TableName}}"."{{.FilterOnColumn}}" {{.Operator}} ?`,
-		`GetCollectionAsOptions`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
-			`ORDER BY "{{.UniqueIDColumn}}" ASC`,
-		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
+		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.ColumnAsOptionName}}" LIKE ?`,
-		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.ColumnAsOptionName}}" LIKE ? ` +
 			"{{range $index, $element := .ColumnNames}}" +
@@ -49,21 +49,21 @@ var (
 		`UpdateSingle`: `UPDATE "{{.TableName}}" SET "{{.ColumnNames | head}}"` +
 			` = ?{{range .ColumnNames | tail}},`+
 			` "{{.}}" = ?{{end}}`+
-			` WHERE "{{.UniqueIDColumn}}" = ?`,
+			` WHERE "{{.UniqueIdColumn}}" = ?`,
 		`CreateSingle`: `INSERT INTO "{{.TableName}}"`+
 			`("{{.ColumnNames | head}}"` +
 			`{{range .ColumnNames | tail}},`+
 			` "{{.}}"`+
 			`{{end}}) ` +
 			`VALUES(?{{range .ColumnNames | tail}}, ?{{end}})`,
-		`DeleteSingle`: `DELETE FROM "{{.TableName}}" WHERE "{{.UniqueIDColumn}}" = ?`, `GetTableSchema`: `SELECT * ` +
+		`DeleteSingle`: `DELETE FROM "{{.TableName}}" WHERE "{{.UniqueIdColumn}}" = ?`, `GetTableSchema`: `SELECT * ` +
 			`FROM "{{.TableName}}" ` +
 			`LIMIT 1`,
 		`GetTableWithRelationshipsSchema`: `SELECT * FROM "{{.TableName}}" AS "_{{.TableName}}" ` +
 			`{{range .Relations}}` +
 			` LEFT JOIN "{{.Relationship.WithTable}}"` +
-			` ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
-			` = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"{{end}} LIMIT 1`,
+			` ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			` = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"{{end}} LIMIT 1`,
 	}
 	integer = []string{
 		"BIGINT",

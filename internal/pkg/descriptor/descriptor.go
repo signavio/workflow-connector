@@ -73,8 +73,8 @@ type ElementType struct {
 type Relationship struct {
 	Kind                       string `json:"kind,omitempty"`
 	WithTable                  string `json:"withTable,omitempty"`
-	ForeignTableUniqueIDColumn string `json:"foreignTableUniqueIdColumn,omitempty"`
-	LocalTableUniqueIDColumn   string `json:"localTableUniqueIdColumn,omitempty"`
+	ForeignTableUniqueIdColumn string `json:"foreignTableUniqueIdColumn,omitempty"`
+	LocalTableUniqueIdColumn   string `json:"localTableUniqueIdColumn,omitempty"`
 }
 
 // SchemaMapping defines the schema of data retrieved from a particular backend

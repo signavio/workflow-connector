@@ -16,24 +16,24 @@ var (
 			`FROM "{{.TableName}}" AS "_{{.TableName}}" ` +
 			`{{range .Relations}}` +
 			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
-			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
 			`{{end}}` +
-			`WHERE "_{{$.TableName}}"."{{.UniqueIDColumn}}" = @p1`,
-		`GetSingleAsOption`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+			`WHERE "_{{$.TableName}}"."{{.UniqueIdColumn}}" = @p1`,
+		`GetSingleAsOption`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
-			`WHERE "{{.UniqueIDColumn}}" = @p1`,
+			`WHERE "{{.UniqueIdColumn}}" = @p1`,
 		`GetCollection`: `SELECT * ` +
 			`FROM "{{.TableName}}"`,
 		`GetCollectionFilterable`: `SELECT * ` +
 			`FROM "{{.TableName}} ` +
 			`WHERE "{{.FilterOnColumn}}" {{.Operator}} @p1`,
-		`GetCollectionAsOptions`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}"`,
-		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) LIKE @p1`,
-		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) LIKE @p1 ` +
 			`{{range $key, $value := .ParamsWithValues}}` +
@@ -44,7 +44,7 @@ var (
 			`{{range $index, $element := .ColumnNames | tail}},` +
 			`  "{{$element}}" = @p{{(add2 $index)}}` +
 			`{{end}} ` +
-			`WHERE "{{.UniqueIDColumn}}"= @p{{(lenPlus1 .ColumnNames)}}`,
+			`WHERE "{{.UniqueIdColumn}}"= @p{{(lenPlus1 .ColumnNames)}}`,
 		`CreateSingle`: `INSERT INTO "{{.TableName}}"` +
 			`("{{.ColumnNames | head}}"` +
 			`{{range .ColumnNames | tail}},` +
@@ -54,15 +54,15 @@ var (
 			`{{range $index, $element := .ColumnNames | tail}},` +
 			`  @p{{$index | add2}}` +
 			`{{end}}) ` +
-			`RETURNING "{{.UniqueIDColumn}}"`,
-		`DeleteSingle`: `DELETE FROM "{{.TableName}}" WHERE "{{.UniqueIDColumn}}" = ?`,
+			`RETURNING "{{.UniqueIdColumn}}"`,
+		`DeleteSingle`: `DELETE FROM "{{.TableName}}" WHERE "{{.UniqueIdColumn}}" = ?`,
 		`GetTableSchema`: `SELECT TOP 1 * ` +
 			`FROM "{{.TableName}}"`,
 		`GetTableWithRelationshipsSchema`: `SELECT TOP 1 * FROM "{{.TableName}}" AS "_{{.TableName}}"` +
 			`{{range .Relations}}` +
 			` LEFT JOIN "{{.Relationship.WithTable}}"` +
-			` ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
-			` = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"{{end}}`,
+			` ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			` = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"{{end}}`,
 	}
 	integer = []string{
 		"TINYINT",

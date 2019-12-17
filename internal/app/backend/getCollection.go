@@ -20,10 +20,10 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 		Vars: []string{queryUninterpolated},
 		TemplateData: struct {
 			TableName      string
-			UniqueIDColumn string
+			UniqueIdColumn string
 		}{
 			TableName:      table,
-			UniqueIDColumn: uniqueIDColumn,
+			UniqueIdColumn: uniqueIDColumn,
 		},
 		CoerceArgFuncs: b.GetCoerceArgFuncs(),
 	}

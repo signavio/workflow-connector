@@ -140,11 +140,11 @@ func (s *SqlBackend) SaveSchemaMapping() (err error) {
 				table.Name,
 			)
 			tdRelationships := util.TypeDescriptorRelationships(td)
-			tdUniqueIDColumn := td.UniqueIdColumn
+			tdUniqueIdColumn := td.UniqueIdColumn
 			err := s.addRelationshipsToBackendSchemaMapping(
 				table.Name,
 				"GetTableWithRelationshipsSchema",
-				tdUniqueIDColumn,
+				tdUniqueIdColumn,
 				tdRelationships,
 			)
 			if err != nil {
@@ -200,11 +200,11 @@ func (s *SqlBackend) addRelationshipsToBackendSchemaMapping(tableName, templateN
 		TemplateData: struct {
 			TableName      string
 			Relations      []*descriptor.Field
-			UniqueIDColumn string
+			UniqueIdColumn string
 		}{
 			TableName:      tableName,
 			Relations:      relationships,
-			UniqueIDColumn: uniqueIDColumn,
+			UniqueIdColumn: uniqueIDColumn,
 		},
 		CoerceArgFuncs: s.GetCoerceArgFuncs(),
 	}

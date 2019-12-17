@@ -58,13 +58,13 @@ func RequestInjector(next http.Handler) http.Handler {
 			util.ContextKey("columnAsOptionName"),
 			typeDescriptor.ColumnAsOptionName,
 		)
-		withUniqueIDColumn := context.WithValue(
+		withUniqueIdColumn := context.WithValue(
 			withColumnAsOptionName,
 			util.ContextKey("uniqueIDColumn"),
 			typeDescriptor.UniqueIdColumn,
 		)
 		withRelationships := context.WithValue(
-			withUniqueIDColumn,
+			withUniqueIdColumn,
 			util.ContextKey("relationships"),
 			util.TypeDescriptorRelationships(typeDescriptor),
 		)

@@ -19,11 +19,11 @@ func (b *Backend) GetCollectionAsOptions(rw http.ResponseWriter, req *http.Reque
 	queryUninterpolated := b.GetQueryTemplate(routeName)
 	queryTemplate := &query.QueryTemplate{Vars: []string{queryUninterpolated}, TemplateData: struct {
 		TableName          string
-		UniqueIDColumn     string
+		UniqueIdColumn     string
 		ColumnAsOptionName string
 	}{
 		TableName:          table,
-		UniqueIDColumn:     uniqueIDColumn,
+		UniqueIdColumn:     uniqueIDColumn,
 		ColumnAsOptionName: columnAsOptionName,
 	},
 		CoerceArgFuncs: b.GetCoerceArgFuncs(),
