@@ -9,7 +9,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
-	"github.com/signavio/workflow-connector/internal/pkg/filter"
 )
 
 var (
@@ -25,7 +24,6 @@ var (
 type Endpoint interface {
 	CRUD
 	DataConnectorOptions
-	CollectionFilterer
 	// GetHandler returns a http.Handler which include all the routes that implement
 	// the functionality required by the CRUD and WorkflowConnector interfaces
 	GetHandler() http.Handler
@@ -47,18 +45,10 @@ type CRUD interface {
 type DataConnectorOptions interface {
 	GetSingleAsOption(rw http.ResponseWriter, req *http.Request)
 	GetCollectionAsOptions(rw http.ResponseWriter, req *http.Request)
-	GetCollectionAsOptionsFilterable(rw http.ResponseWriter, req *http.Request)
-}
-
-// CollectionFilterer allows a user to select an operator and a field to filter
-// the result set upon
-type CollectionFilterer interface {
-	GetCollectionFilterable(rw http.ResponseWriter, req *http.Request)
 }
 
 type Backend interface {
 	GetSchemaMapping(string) *descriptor.SchemaMapping
-	GetFilterPredicateMapping(filter.Predicate) string
 	SaveSchemaMapping() error
 	GetQueryTemplate(string) string
 	QueryContext(context.Context, string, ...interface{}) ([]interface{}, error)

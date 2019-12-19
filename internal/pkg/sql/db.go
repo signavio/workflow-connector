@@ -96,14 +96,7 @@ func (s *SqlBackend) queryContextForNonOptionRoutes(ctx context.Context, query s
 		return nil, err
 	}
 	if len(results) == 0 {
-		msg := &util.ResponseMessage{
-			Code: http.StatusNotFound,
-			Msg: fmt.Sprintf(
-				"Resource with uniqueID '%s' not found in %s table",
-				args[len(args)-1], table,
-			),
-		}
-		return nil, msg
+		return []interface{}{}, nil
 	}
 	// deduplicate the results fetched when querying the database
 	results = deduplicateSingleResource(
@@ -122,7 +115,6 @@ func (s *SqlBackend) queryContextForOptionRoutes(ctx context.Context, query stri
 	columnAsOptionName := ctx.Value(util.ContextKey("columnAsOptionName")).(string)
 	uniqueIDColumn := ctx.Value(util.ContextKey("uniqueIDColumn")).(string)
 	columnNames, dataTypes := s.getColumnNamesAndDataTypesForOptionRoutes(table, columnAsOptionName, uniqueIDColumn)
-	log.When(config.Options.Logging).Infof("[db] column: %s\n datatypes: %+v\n", columnNames, dataTypes)
 	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

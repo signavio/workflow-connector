@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
-	"github.com/signavio/workflow-connector/internal/pkg/filter"
 )
 
 var (
@@ -23,7 +22,6 @@ var (
 
 type Backend struct {
 	GetSchemaMappingFunc          func(string) *descriptor.SchemaMapping
-	GetFilterPredicateMappingFunc func(filter.Predicate) string
 	GetQueryTemplateFunc          func(string) string
 	CoerceArgFuncs                map[string]func(map[string]interface{}, *descriptor.Field) (interface{}, bool, error)
 	QueryFormatFuncs              map[string]func() string
@@ -40,17 +38,6 @@ func appendHandlers(r *mux.Router, b *Backend) *mux.Router {
 	r.HandleFunc("/{table}/options/{id}", b.GetSingleAsOption).
 		Name("GetSingleAsOption").
 		Methods("GET")
-	r.HandleFunc("/{table}/options", b.GetCollectionAsOptionsWithParams).
-		Name("GetCollectionAsOptionsWithParams").
-		Methods("GET").
-		Queries("filter", "{filter}").
-		MatcherFunc(func(req *http.Request, rm *mux.RouteMatch) bool {
-			return len(req.URL.Query()) > 1
-		})
-	r.HandleFunc("/{table}/options", b.GetCollectionAsOptionsFilterable).
-		Name("GetCollectionAsOptionsFilterable").
-		Methods("GET").
-		Queries("filter", "{filter}")
 	r.HandleFunc("/{table}/options", b.GetCollectionAsOptions).
 		Name("GetCollectionAsOptions").
 		Methods("GET")
@@ -64,10 +51,6 @@ func appendHandlers(r *mux.Router, b *Backend) *mux.Router {
 		Name("UpdateSingle").
 		Methods("PATCH").
 		Queries("tx", "{tx}")
-	r.HandleFunc("/{table}", b.GetCollectionFilterable).
-		Name("GetCollectionFilterable").
-		Methods("GET").
-		Queries("filter", "{filter}")
 	r.HandleFunc("/{table}", b.GetCollection).
 		Name("GetCollection").
 		Methods("GET")
@@ -119,9 +102,6 @@ func (b *Backend) GetQueryTemplate(name string) string {
 	return b.GetQueryTemplateFunc(name)
 }
 
-func (b *Backend) GetFilterPredicateMapping(predicate filter.Predicate) string {
-	return b.GetFilterPredicateMappingFunc(predicate)
-}
 func (b *Backend) GetSchemaMapping(typeDescriptor string) *descriptor.SchemaMapping {
 	return b.GetSchemaMappingFunc(typeDescriptor)
 }

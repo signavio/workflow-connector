@@ -1,6 +1,7 @@
 package backend
 
 import (
+	//	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -18,23 +19,37 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 	queryUninterpolated := b.GetQueryTemplate(routeName)
 	relations := req.Context().Value(util.ContextKey("relationships")).([]*descriptor.Field)
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
+	requestData, err := util.ParseDataForm(req)
+	if err != nil {
+		msg := &util.ResponseMessage{
+			Code: http.StatusInternalServerError,
+			Msg:  err.Error(),
+		}
+		http.Error(rw, msg.Error(), http.StatusInternalServerError)
+		return
+	}
+	log.When(config.Options.Logging).Infof("[handler] requestData: \n%s", requestData)
+	columnNames := util.GetColumnNamesFromRequestData(table, requestData)
 	queryTemplate := &query.QueryTemplate{
 		Vars: []string{queryUninterpolated},
 		TemplateData: struct {
 			TableName      string
 			Relations      []*descriptor.Field
 			UniqueIdColumn string
+			ColumnNames []string
 		}{
 			TableName:      table,
 			Relations:      relations,
 			UniqueIdColumn: uniqueIDColumn,
+			ColumnNames: columnNames,
 		},
 		CoerceArgFuncs: b.GetCoerceArgFuncs(),
 	}
+
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
 	log.When(config.Options.Logging).Infoln("[handler] interpolate query string")
-	queryString, _, err := queryTemplate.Interpolate(req.Context(), nil)
+	queryString, args, err := queryTemplate.Interpolate(req.Context(), requestData)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusBadRequest,
@@ -47,7 +62,7 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 	log.When(config.Options.Logging).Infoln(queryString)
 
 	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
-	results, err := b.QueryContext(req.Context(), queryString)
+	results, err := b.QueryContext(req.Context(), queryString, args...)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,
