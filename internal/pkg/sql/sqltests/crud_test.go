@@ -61,7 +61,7 @@ var (
   ]
 }`, `.*`},
 			Request: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/equipment/2?denormalize=true", nil)
+				req, _ := http.NewRequest("GET", "/equipment/2?$denormalize=true", nil)
 				return req
 			},
 		},
@@ -123,7 +123,7 @@ var (
   "name": "Espresso single shot"
 }`, `.*`},
 			Request: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/recipes/1?denormalize=true", nil)
+				req, _ := http.NewRequest("GET", "/recipes/1?$denormalize=true", nil)
 				return req
 			},
 		},

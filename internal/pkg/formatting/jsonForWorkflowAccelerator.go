@@ -216,7 +216,7 @@ func resolveOneToManyRelationship(ctx context.Context, formatted, queryResults m
 	)
 	relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
 	var results []interface{}
-	if callerWantsDenormalizedResultSet(ctx.Value(util.ContextKey("denormalize")).(string)) {
+	if callerWantsDenormalizedResultSet(ctx.Value(util.ContextKey("$denormalize")).(string)) {
 		var results []map[string]interface{}
 		results = denormalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
 		formatted[field.Key] = results
@@ -233,7 +233,7 @@ func resolveOneToOneOrManyToOneRelationship(ctx context.Context, formatted, quer
 		field.Relationship.WithTable,
 	)
 	relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
-	if callerWantsDenormalizedResultSet(ctx.Value(util.ContextKey("denormalize")).(string)) {
+	if callerWantsDenormalizedResultSet(ctx.Value(util.ContextKey("$denormalize")).(string)) {
 		var results []map[string]interface{}
 		results = denormalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
 		for _, result := range results {
