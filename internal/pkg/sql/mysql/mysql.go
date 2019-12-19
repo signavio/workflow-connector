@@ -33,26 +33,21 @@ var (
 			"   LEFT JOIN `{{.Relationship.WithTable}}`" +
 			"   ON `{{.Relationship.WithTable}}`.`{{.Relationship.ForeignTableUniqueIdColumn}}`" +
 			"   = `_{{$.TableName}}`.`{{.Relationship.LocalTableUniqueIdColumn}}`" +
-			"{{end}}",
-		"GetCollectionFilterable": "SELECT * " +
-			"FROM `{{.TableName}}` AS `_{{.TableName}}`" +
-			"{{range .Relations}}" +
-			"   LEFT JOIN `{{.Relationship.WithTable}}`" +
-			"   ON `{{.Relationship.WithTable}}`.`{{.Relationship.ForeignTableUniqueIdColumn}}`" +
-			"   = `_{{$.TableName}}`.`{{.Relationship.LocalTableUniqueIdColumn}}`" +
 			"{{end}}" +
-			" WHERE `{{.FilterOnColumn}}` {{.Operator}} ?",
+			"{{with .ColumnNames}}" +
+			"   WHERE `_{{$.TableName}}`.`{{. | head}}` = ? " +
+			"   {{range $index, $element := . | tail}}" +
+			"      AND `_{{$.TableName}}`.`{{$element}}` = ? " +
+			"   {{end}}" +
+			"{{end}}" +
+			"ORDER BY `{{.UniqueIdColumn}}` ASC",
 		"GetCollectionAsOptions": "SELECT `{{.UniqueIdColumn}}`, `{{.ColumnAsOptionName}}` " +
-			"FROM `{{.TableName}}`",
-		"GetCollectionAsOptionsFilterable": "SELECT `{{.UniqueIdColumn}}`, `{{.ColumnAsOptionName}}` " +
-			"FROM `{{.TableName}}` " +
-			"WHERE `{{.ColumnAsOptionName}}` LIKE ?",
-		"GetCollectionAsOptionsWithParams": "SELECT `{{.UniqueIdColumn}}`, `{{.ColumnAsOptionName}}` " +
 			"FROM `{{.TableName}}` " +
 			"WHERE `{{.ColumnAsOptionName}}` LIKE ? " +
 			"{{range $index, $element := .ColumnNames}}" +
-			"AND `{{$element}}` = ? " +
-			"{{end}}",
+			"   AND `{{$.TableName}}`.`{{$element}}` = ? " +
+			"{{end}}" +
+			"ORDER BY `{{.UniqueIdColumn}}` ASC",
 		"UpdateSingle": "UPDATE `{{.TableName}}` SET `{{.ColumnNames | head}}`" +
 			" = ?{{range .ColumnNames | tail}}, `{{.}}` = ?{{end}} WHERE `{{.UniqueIdColumn}}` = ?",
 		"CreateSingle": "INSERT INTO `{{.TableName}}`(`{{.ColumnNames | head}}`" +

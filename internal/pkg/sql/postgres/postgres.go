@@ -35,26 +35,18 @@ var (
 			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
 			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
 			`{{end}}` +
-			` ORDER BY "{{.UniqueIdColumn}}" ASC`,
-		`GetCollectionFilterable`: `SELECT * ` +
-			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
-			`{{range .Relations}}` +
-			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
-			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
-			`{{end}}` +
-			` WHERE "{{.FilterOnColumn}}" {{.Operator}} $1`,
-		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}" ` +
+			"{{with .ColumnNames}}" +
+			"   WHERE `_{{$.TableName}}`.`{{. | head}}` = $1 " +
+			"   {{range $index, $element := . | tail}}" +
+			"      AND `_{{$.TableName}}`.`{{$element}}` = ${{(add2 $index)}} " +
+			"   {{end}}" +
+			"{{end}}" +
 			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
-		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}" ` +
-			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) ILIKE $1`,
-		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
+		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) ILIKE $1 ` +
 			`{{range $index, $element := .ColumnNames}}` +
-			`AND "{{$element}}" = ${{(add2 $index)}} ` +
+			`   AND "_{{$.TableName}}"."{{$element}}" = ${{(add2 $index)}} ` +
 			`{{end}} ` +
 			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
 		`UpdateSingle`: `UPDATE "{{.TableName}}" ` +

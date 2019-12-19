@@ -61,25 +61,18 @@ var (
 			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
 			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
 			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
-			`{{end}}`,
-		`GetCollectionFilterable`: `SELECT * ` +
-			`FROM "{{.TableName}}" "_{{.TableName}}"` +
-			`{{range .Relations}}` +
-			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
-			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
 			`{{end}}` +
-			` WHERE "{{.FilterOnColumn}}" {{$.Operator}} {{(format -1 .FilterOnColumn)}}`,
+			`{{with .ColumnNames}}` +
+			`   WHERE "_{{$.TableName}}"."{{. | head}} = :1 ` +
+			`   {{range $index, $element := . | tail}}` +
+			`      AND "_{{$.TableName}}"."{{$element}}" = {{(format $index $element)}} ` +
+			`   {{end}}` +
+			`{{end}}`,
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}"`,
-		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}" ` +
-			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%'`,
-		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE UPPER("{{.ColumnAsOptionName}}") LIKE '%'||UPPER(:1)||'%' ` +
 			`{{range $index, $element := .ColumnNames}}` +
-			`AND "{{$element}}" = {{(format $index $element)}} ` +
+			`   AND "_{{$.TableName}}"."{{$element}}" = {{(format $index $element)}} ` +
 			`{{end}}`,
 		`UpdateSingle`: `UPDATE "{{.TableName}}" ` +
 			`{{with $firstColumn := .ColumnNames | head}}` +

@@ -7,6 +7,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/signavio/workflow-connector/internal/app/endpoint"
 	sqlBackend "github.com/signavio/workflow-connector/internal/pkg/sql"
+	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
 )
 
@@ -30,27 +31,20 @@ var (
 			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
 			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
 			`{{end}}` +
-			` ORDER BY "{{.UniqueIdColumn}}" ASC`,
-		`GetCollectionFilterable`: `SELECT * ` +
-			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
-			`{{range .Relations}}` +
-			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
-			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
+			`{{with .ColumnNames}}` +
+			`   WHERE "_{{$.TableName}}"."{{. | head}}" = ? ` +
+			`   {{range $index, $element := . | tail}}` +
+			`      AND "_{{$.TableName}}"."{{$element}}" = ? ` +
+			`   {{end}}` +
 			`{{end}}` +
-			` WHERE "_{{$.TableName}}"."{{.FilterOnColumn}}" {{.Operator}} ?`,
-		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}" ` +
 			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
-		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}" ` +
-			`WHERE "{{.ColumnAsOptionName}}" LIKE ?`,
-		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
+		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.ColumnAsOptionName}}" LIKE ? ` +
 			"{{range $index, $element := .ColumnNames}}" +
-			`AND "{{$element}}" = ?` +
-			"{{end}}",
+			`   AND "{{$.TableName}}"."{{$element}}" = ? ` +
+			"{{end}}" +
+			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
 		`UpdateSingle`: `UPDATE "{{.TableName}}" SET "{{.ColumnNames | head}}"` +
 			` = ?{{range .ColumnNames | tail}},`+
 			` "{{.}}" = ?{{end}}`+
@@ -106,6 +100,12 @@ var (
 		"DATE",
 		"DATETIME",
 	}
+	sqliteDateTimeArgFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool, err error) {
+		if result, ok := requestData[field.Key]; ok {
+			return result, ok, nil
+		}
+		return
+	}
 )
 
 type Sqlite struct {
@@ -116,6 +116,11 @@ func New() endpoint.Endpoint {
 	s := &Sqlite{sqlBackend.New().(*sqlBackend.SqlBackend)}
 	s.Templates = QueryTemplates
 	s.CastBackendTypeToGolangType = convertFromSqliteDataType
+	sqliteSpecificArgFuncs := s.CoerceArgFuncs
+	sqliteSpecificArgFuncs["datetime"] = sqliteDateTimeArgFunc
+	sqliteSpecificArgFuncs["date"] = sqliteDateTimeArgFunc
+	sqliteSpecificArgFuncs["time"] = sqliteDateTimeArgFunc
+	s.CoerceArgFuncs = sqliteSpecificArgFuncs
 	return s
 }
 

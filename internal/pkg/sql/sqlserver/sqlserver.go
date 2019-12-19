@@ -29,25 +29,18 @@ var (
 			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
 			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
 			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
-			`{{end}}`,
-		`GetCollectionFilterable`: `SELECT * ` +
-			`FROM "{{.TableName}}" AS "_{{.TableName}}" ` +
-			`{{range .Relations}}` +
-			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
-			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
 			`{{end}}` +
-			` WHERE "{{.FilterOnColumn}}" {{.Operator}} @p1`,
+			"{{with .ColumnNames}}" +
+			"   WHERE `_{{$.TableName}}`.`{{. | head}}` = @p1 " +
+			"   {{range $index, $element := . | tail}}" +
+			"      AND `_{{$.TableName}}`.`{{$element}}` = @p{{(add2 $index)}} " +
+			"   {{end}}" +
+			"{{end}}",
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}"`,
-		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}" ` +
-			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) LIKE @p1`,
-		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) LIKE @p1 ` +
-			`{{range $key, $value := .ParamsWithValues}}` +
-			`AND "{{$key}}" = '{{$value}}'` +
+			`{{range $index, $element := .ColumnNames}}` +
+			`   AND "_{{$.TableName}}"."{{$element}}" = @p{{(add2 $index)}}` +
 			`{{end}}`,
 		`UpdateSingle`: `UPDATE "{{.TableName}}" ` +
 			`SET "{{.ColumnNames | head}}" = @p1` +
