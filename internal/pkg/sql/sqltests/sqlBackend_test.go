@@ -22,45 +22,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var queryTemplates = map[string]string{
-	"GetSingle": "SELECT * " +
-		"  FROM {{.TableName}} AS _{{.TableName}} " +
-		"  {{range .Relations}}" +
-		"     LEFT JOIN {{.Relationship.WithTable}}" +
-		"     ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIdColumn}}" +
-		"     = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIdColumn}}" +
-		"  {{end}}" +
-		"  WHERE _{{$.TableName}}.{{$.UniqueIdColumn}} = ?",
-	"GetSingleAsOption": "SELECT {{.UniqueIdColumn}}, {{.ColumnAsOptionName}} " +
-		"FROM {{.TableName}} " +
-		"WHERE {{.UniqueIdColumn}} = ?",
-	"GetCollection": "SELECT * " +
-		"FROM {{.TableName}}",
-	"GetCollectionFilterable": "SELECT * " +
-		"FROM {{.TableName}} " +
-		"WHERE {{.FilterOnColumn}} {{.Operator}} ?",
-	"GetCollectionAsOptions": "SELECT {{.UniqueIdColumn}}, {{.ColumnAsOptionName}} " +
-		"FROM {{.TableName}}",
-	"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIdColumn}}, {{.ColumnAsOptionName}} " +
-		"FROM {{.TableName}} " +
-		"WHERE {{.ColumnAsOptionName}} LIKE ?",
-	"UpdateSingle": "UPDATE {{.TableName}} SET {{.ColumnNames | head}}" +
-		" = ?{{range .ColumnNames | tail}}, {{.}} = ?{{end}} WHERE {{.UniqueIdColumn}} = ?",
-	"CreateSingle": "INSERT INTO {{.TableName}}({{.ColumnNames | head}}" +
-		"{{range .ColumnNames | tail}}, {{.}}{{end}}) " +
-		"VALUES(?{{range .ColumnNames | tail}}, ?{{end}})",
-	"DeleteSingle": "DELETE FROM {{.TableName}} WHERE {{.UniqueIdColumn}} = ?",
-	"GetTableSchema": "SELECT * " +
-		"FROM {{.TableName}} " +
-		"LIMIT 1",
-	"GetTableWithRelationshipsSchema": "SELECT * " +
-		"FROM {{.TableName}} AS _{{.TableName}}" +
-		"{{range .Relations}}" +
-		" LEFT JOIN {{.Relationship.WithTable}}" +
-		" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIdColumn}}" +
-		" = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIdColumn}}{{end}} LIMIT 1",
-}
-
 // TestCase for sql backend
 type testCase struct {
 	// A testCase should assert success cases or failure cases
@@ -126,9 +87,6 @@ func testSqlBackend(t *testing.T, name, driver string, newEndpointFunc func() en
 			runTestCases(t, testName, testCases, ts, endpoint)
 		}
 		for testName, testCases := range dataConnectorOptionsTests {
-			runTestCases(t, testName, testCases, ts, endpoint)
-		}
-		for testName, testCases := range collectionFiltererTests {
 			runTestCases(t, testName, testCases, ts, endpoint)
 		}
 

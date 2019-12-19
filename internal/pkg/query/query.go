@@ -101,6 +101,7 @@ func CoerceRequestDataToGolangNativeTypes(ctx context.Context, requestData map[s
 			if ok {
 				args = append(args, result)
 			}
+		// FIXME: is datetime here necessary?
 		case "datetime":
 			result, ok, err := coerceArgFuncs["datetime"](requestData, field)
 			if err != nil {

@@ -184,7 +184,8 @@ var (
     },
     "id": "1",
     "name": "Bialetti Moka Express 6 cup",
-    "purchaseDate": "2017-12-11T12:00:00.123Z"
+    "purchaseDate": "2017-12-11T12:00:00.123Z",
+    "recipes": []
   },
   {
     "acquisitionCost": {
@@ -193,7 +194,10 @@ var (
     },
     "id": "2",
     "name": "Sanremo Café Racer",
-    "purchaseDate": "2017-12-12T12:00:00.123Z"
+    "purchaseDate": "2017-12-12T12:00:00.123Z",
+    "recipes": [
+      "1"
+    ]
   },
   {
     "acquisitionCost": {
@@ -202,7 +206,11 @@ var (
     },
     "id": "3",
     "name": "Buntfink SteelKettle",
-    "purchaseDate": "2017-12-12T12:00:00.000Z"
+    "purchaseDate": "2017-12-12T12:00:00.000Z",
+    "recipes": [
+      "1",
+      "3"
+    ]
   },
   {
     "acquisitionCost": {
@@ -211,7 +219,12 @@ var (
     },
     "id": "4",
     "name": "Copper Coffee Pot Cezve",
-    "purchaseDate": "2017-12-12T12:00:00.000Z"
+    "purchaseDate": "2017-12-12T12:00:00.000Z",
+    "recipes": [
+      "1",
+      "3",
+      "2"
+    ]
   }
 ]`},
 			Request: func() *http.Request {

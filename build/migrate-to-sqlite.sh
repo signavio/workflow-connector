@@ -45,8 +45,8 @@ INSERT INTO 'equipment' ('name','acquisition_cost','purchase_date')
   VALUES
   ('Bialetti Moka Express 6 cup', 25.95, '2017-12-11T12:00:00.123Z'),
   ('Sanremo Café Racer', 8477.85,'2017-12-12T12:00:00.123Z'),
-  ('Buntfink SteelKettle', 39.95,'2017-12-12T12:00:00Z'),
-  ('Copper Coffee Pot Cezve', 49.95,'2017-12-12T12:00:00Z');
+  ('Buntfink SteelKettle', 39.95,'2017-12-12T12:00:00.000Z'),
+  ('Copper Coffee Pot Cezve', 49.95,'2017-12-12T12:00:00.000Z');
 
 CREATE TABLE IF NOT EXISTS ingredients (
   id integer primary key autoincrement,

@@ -13,6 +13,7 @@ import (
 )
 
 type standardFormatter struct{}
+type collectionFormatter struct{}
 // Special formatting for the options route like `/options`, `/options?filter=`
 // is required, since Workflow Accelerator expects the results returned
 // by these routes to be enclosed in an array, regardless of whether
@@ -22,6 +23,7 @@ type getCollectionAsOptionsFormatter struct{}
 
 var (
 	Standard                         = &standardFormatter{}
+	Collection                       = &collectionFormatter{}
 	GetSingleAsOption                = &getSingleAsOptionFormatter{}
 	GetCollectionAsOptions           = &getCollectionAsOptionsFormatter{}
 	GetCollectionAsOptionsFilterable = &getCollectionAsOptionsFormatter{}
@@ -53,6 +55,36 @@ func (f *standardFormatter) Format(ctx context.Context, results []interface{}) (
 		return
 	}
 	log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set > 1")
+	var formattedResults []interface{}
+	for _, result := range results {
+		formattedResult := formatAsAWorkflowType(
+			ctx, result.(map[string]interface{}), tableName, fields,
+		)
+		formattedResults = append(formattedResults, formattedResult)
+	}
+	log.When(config.Options.Logging).Infof(
+		"[formatter <- asWorkflowType] formattedResult (top 2): \n%+v ...\n",
+		formattedResults[0:1],
+	)
+	JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
+	return
+}
+
+func (f *collectionFormatter) Format(ctx context.Context, results []interface{}) (JSONResults []byte, err error) {
+	if len(results) == 0 {
+		return []byte("[]"), nil
+	}
+	tableName := ctx.Value(util.ContextKey("table")).(string)
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		tableName,
+	)
+	fields := typeDescriptor.Fields
+	log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set >= 1")
 	var formattedResults []interface{}
 	for _, result := range results {
 		formattedResult := formatAsAWorkflowType(
