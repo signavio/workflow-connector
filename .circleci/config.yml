@@ -81,7 +81,7 @@ jobs:
       - run:
           name: Run tests on a postgres database
           environment:
-            POSTGRES_DATABASE_URL: "postgres://signavio@localhost:5432/circle_test?sslmode=disable"
+            POSTGRES_DATABASE_URL: "postgres://postgres@localhost:5432/circle_test?sslmode=disable"
           command: go test -v ./... -args -db postgres
 
   postgres_10.6:
@@ -120,7 +120,7 @@ jobs:
       - run:
           name: Run tests on a postgres database
           environment:
-            POSTGRES_DATABASE_URL: "postgres://signavio@localhost:5432/circle_test?sslmode=disable"
+            POSTGRES_DATABASE_URL: "postgres://postgres@localhost:5432/circle_test?sslmode=disable"
           command: go test -v ./... -args -db postgres
 
   oracle_12c:
