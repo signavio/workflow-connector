@@ -55,11 +55,11 @@ var (
       "id": "1",
       "instructions": "do this",
       "lastAccessed": "%sT00:00:01.000Z",
-      "lastModified": "2017-12-14T01:00:00.123Z",
+      "lastModified": "2017-12-14T0%s:00:00.123Z",
       "name": "Espresso single shot"
     }
   ]
-}`, `.*`},
+}`, `.*`, `[01]`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment/2?$denormalize=true", nil)
 				return req
@@ -92,9 +92,9 @@ var (
   "id": "1",
   "instructions": "do this",
   "lastAccessed": "%sT00:00:01.000Z",
-  "lastModified": "2017-12-14T01:00:00.123Z",
+  "lastModified": "2017-12-14T0%s:00:00.123Z",
   "name": "Espresso single shot"
-}`, `.*`},
+}`, `.*`, `[01]`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/recipes/1", nil)
 				return req
@@ -119,9 +119,9 @@ var (
   "id": "1",
   "instructions": "do this",
   "lastAccessed": "%sT00:00:01.000Z",
-  "lastModified": "2017-12-14T01:00:00.123Z",
+  "lastModified": "2017-12-14T0%s:00:00.123Z",
   "name": "Espresso single shot"
-}`, `.*`},
+}`, `.*`, `[01]`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/recipes/1?$denormalize=true", nil)
 				return req
