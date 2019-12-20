@@ -282,11 +282,8 @@ func normalizeResultSet(ctx context.Context, relatedResults []map[string]interfa
 			field.Relationship.WithTable,
 			fields,
 		)
-		log.When(config.Options.Logging).Infof("[asWorkflowType] resolvedRelationship: \n%+v\n", resolvedRelationship)
 		results = append(results, resolvedRelationship[uniqueIdColumn])
 	}
-
-	log.When(config.Options.Logging).Infof("[asWorkflowType] results: \n%+v\n", results)
 	return
 }
 

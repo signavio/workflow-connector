@@ -28,14 +28,14 @@ var (
 			`{{range .Relations}}` +
 			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
 			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}" ` +
 			`{{end}}` +
-			"{{with .ColumnNames}}" +
-			"   WHERE `_{{$.TableName}}`.`{{. | head}}` = @p1 " +
-			"   {{range $index, $element := . | tail}}" +
-			"      AND `_{{$.TableName}}`.`{{$element}}` = @p{{(add2 $index)}} " +
-			"   {{end}}" +
-			"{{end}}",
+			`{{with .ColumnNames}}` +
+			`   WHERE "_{{$.TableName}}"."{{. | head}}" = @p1 ` +
+			`   {{range $index, $element := . | tail}}` +
+			`      AND "_{{$.TableName}}"."{{$element}}" = @p{{(add2 $index)}} ` +
+			`   {{end}}` +
+			`{{end}}`,
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) LIKE @p1 ` +

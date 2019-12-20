@@ -60,7 +60,7 @@ var (
 			`{{range .Relations}}` +
 			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
 			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}} "` +
 			`{{end}}` +
 			`{{with .ColumnNames}}` +
 			`   WHERE "_{{$.TableName}}"."{{. | head}} = :1 ` +

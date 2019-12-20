@@ -33,22 +33,22 @@ var (
 			`{{range .Relations}}` +
 			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
 			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}" ` +
 			`{{end}}` +
-			"{{with .ColumnNames}}" +
-			"   WHERE `_{{$.TableName}}`.`{{. | head}}` = $1 " +
-			"   {{range $index, $element := . | tail}}" +
-			"      AND `_{{$.TableName}}`.`{{$element}}` = ${{(add2 $index)}} " +
-			"   {{end}}" +
-			"{{end}}" +
-			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
+			`{{with .ColumnNames}}` +
+			`   WHERE "_{{$.TableName}}"."{{. | head}}" = $1 ` +
+			`   {{range $index, $element := . | tail}}` +
+			`      AND "_{{$.TableName}}"."{{$element}}" = ${{(add2 $index)}} ` +
+			`   {{end}}` +
+			`{{end}}` +
+			`ORDER BY "_{{.TableName}}"."{{.UniqueIdColumn}}" ASC`,
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) ILIKE $1 ` +
 			`{{range $index, $element := .ColumnNames}}` +
-			`   AND "_{{$.TableName}}"."{{$element}}" = ${{(add2 $index)}} ` +
+			`   AND "{{$.TableName}}"."{{$element}}" = ${{(add2 $index)}} ` +
 			`{{end}} ` +
-			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
+			`ORDER BY "{{.TableName}}"."{{.UniqueIdColumn}}" ASC`,
 		`UpdateSingle`: `UPDATE "{{.TableName}}" ` +
 			`SET "{{.ColumnNames | head}}" = $1` +
 			`{{range $index, $element := .ColumnNames | tail}},` +

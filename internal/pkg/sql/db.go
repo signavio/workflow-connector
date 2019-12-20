@@ -106,7 +106,6 @@ func (s *SqlBackend) queryContextForNonOptionRoutes(ctx context.Context, query s
 			table,
 		),
 	)
-	log.When(config.Options.Logging).Infof("[db] result: %s\n", results)
 	return
 }
 

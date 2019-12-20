@@ -37,14 +37,14 @@ var (
 			`      AND "_{{$.TableName}}"."{{$element}}" = ? ` +
 			`   {{end}}` +
 			`{{end}}` +
-			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
+			`ORDER BY "_{{.TableName}}"."{{.UniqueIdColumn}}" ASC`,
 		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE "{{.ColumnAsOptionName}}" LIKE ? ` +
 			"{{range $index, $element := .ColumnNames}}" +
 			`   AND "{{$.TableName}}"."{{$element}}" = ? ` +
 			"{{end}}" +
-			`ORDER BY "{{.UniqueIdColumn}}" ASC`,
+			`ORDER BY "{{.TableName}}"."{{.UniqueIdColumn}}" ASC`,
 		`UpdateSingle`: `UPDATE "{{.TableName}}" SET "{{.ColumnNames | head}}"` +
 			` = ?{{range .ColumnNames | tail}},`+
 			` "{{.}}" = ?{{end}}`+

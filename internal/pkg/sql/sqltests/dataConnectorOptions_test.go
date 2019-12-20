@@ -8,8 +8,6 @@ var (
 	dataConnectorOptionsTests = map[string][]testCase{
 		"GetSingleAsOption":                getSingleAsOptionTestCases,
 		"GetCollectionAsOptions":           getCollectionAsOptionsTestCases,
-		"GetCollectionAsOptionsFilterable": getCollectionAsOptionsFilterableTestCases,
-		"GetCollectionAsOptionsWithParams": getCollectionAsOptionsWithParamsTestCases,
 	}
 	getSingleAsOptionTestCases = []testCase{
 		{
@@ -70,8 +68,6 @@ var (
 				return req
 			},
 		},
-	}
-	getCollectionAsOptionsWithParamsTestCases = []testCase{
 		{
 			Kind: "success",
 			Name: "it succeeds when equipment table contains more than one column" +
@@ -109,8 +105,6 @@ var (
 				return req
 			},
 		},
-	}
-	getCollectionAsOptionsFilterableTestCases = []testCase{
 		{
 			Kind:                "success",
 			Name:                "it succeeds when equipment table contains more than one column",
