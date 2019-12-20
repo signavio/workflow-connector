@@ -5,7 +5,11 @@ if [ -f .env ]
 then
     . ./.env
 fi
-DATABASE_URL=${DATABASE_URL:=postgresql://test:test@localhost:5432/test}
+POSTGRES_HOST=${POSTGRES_HOST:=localhost}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD:=signavio}
+POSTGRES_USER=${POSTGRES_USER:=postgres}
+POSTGRES_DATABASE=${POSTGRES_DATABASE:=signavio_test}
+DATABASE_URL=${DATABASE_URL:=postgresql://${POSTGRES_USER}@${POSTGRES_HOST}:5432/${POSTGRES_DATABASE}}
 cat << __EOF__ | psql -a -d "${DATABASE_URL}"
 DROP USER IF EXISTS ${POSTGRES_USER};
 CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';
@@ -136,4 +140,5 @@ INSERT INTO ingredient_recipe (id, ingredient_id, recipe_id, quantity, unit_of_m
 
 COMMIT;
 __EOF__
+
 
