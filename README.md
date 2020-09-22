@@ -39,10 +39,10 @@ Resolving deltas: 100% (590/590), done.
 3. Compile the source code
 ```sh
 > cd workflow-connector
-> go build main.go
+> go build -o workflow-connector main.go
 ```
 
-The executable is called `workflow-connector` and is located in `~/workflow-connector/` directory.
+The executable is called `workflow-connector` and is located in the current directory.
 
 If you have TLS enabled and want to listen on port 443 without running the executable as root, you can set the proper permissions using the `setcap` command
 
