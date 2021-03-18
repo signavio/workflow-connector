@@ -1,3 +1,24 @@
+# Using a SQLite database
+---
+name: workflow-connector
+displayName: Signavio Workflow Connector
+description: >
+  A web service which provides a Workflow Accelerator conform
+  RESTful API on top of standard SQL Databases
+port: 443
+database:
+  driver: sqlite
+  url: test.db 
+tls:
+  enabled: false
+  publicKey: ./config/server.crt
+  privateKey: ./config/server.key
+auth:
+  username: wfauser
+  # password = Foobar
+  passwordHash: "$argon2i$v=19$m=512,t=2,p=2$SUxvdmVTYWx0Q2FrZXMhISE$UgSWnBB5OkdqMAu+OfvwNLVMUijMnnmVm0kRSfmS9E8"
+logging: true
+...
 # Using an Oracle database
 ---
 name: workflow-connector

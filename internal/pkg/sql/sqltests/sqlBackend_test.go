@@ -17,48 +17,10 @@ import (
 	"github.com/signavio/workflow-connector/internal/pkg/sql/mysql"
 	"github.com/signavio/workflow-connector/internal/pkg/sql/oracle"
 	"github.com/signavio/workflow-connector/internal/pkg/sql/postgres"
+	"github.com/signavio/workflow-connector/internal/pkg/sql/sqlite"
 	"github.com/signavio/workflow-connector/internal/pkg/sql/sqlserver"
 	"github.com/spf13/viper"
 )
-
-var queryTemplates = map[string]string{
-	"GetSingle": "SELECT * " +
-		"  FROM {{.TableName}} AS _{{.TableName}} " +
-		"  {{range .Relations}}" +
-		"     LEFT JOIN {{.Relationship.WithTable}}" +
-		"     ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-		"     = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}" +
-		"  {{end}}" +
-		"  WHERE _{{$.TableName}}.{{$.UniqueIDColumn}} = ?",
-	"GetSingleAsOption": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-		"FROM {{.TableName}} " +
-		"WHERE {{.UniqueIDColumn}} = ?",
-	"GetCollection": "SELECT * " +
-		"FROM {{.TableName}}",
-	"GetCollectionFilterable": "SELECT * " +
-		"FROM {{.TableName}} " +
-		"WHERE {{.FilterOnColumn}} {{.Operator}} ?",
-	"GetCollectionAsOptions": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-		"FROM {{.TableName}}",
-	"GetCollectionAsOptionsFilterable": "SELECT {{.UniqueIDColumn}}, {{.ColumnAsOptionName}} " +
-		"FROM {{.TableName}} " +
-		"WHERE {{.ColumnAsOptionName}} LIKE ?",
-	"UpdateSingle": "UPDATE {{.TableName}} SET {{.ColumnNames | head}}" +
-		" = ?{{range .ColumnNames | tail}}, {{.}} = ?{{end}} WHERE {{.UniqueIDColumn}} = ?",
-	"CreateSingle": "INSERT INTO {{.TableName}}({{.ColumnNames | head}}" +
-		"{{range .ColumnNames | tail}}, {{.}}{{end}}) " +
-		"VALUES(?{{range .ColumnNames | tail}}, ?{{end}})",
-	"DeleteSingle": "DELETE FROM {{.TableName}} WHERE {{.UniqueIDColumn}} = ?",
-	"GetTableSchema": "SELECT * " +
-		"FROM {{.TableName}} " +
-		"LIMIT 1",
-	"GetTableWithRelationshipsSchema": "SELECT * " +
-		"FROM {{.TableName}} AS _{{.TableName}}" +
-		"{{range .Relations}}" +
-		" LEFT JOIN {{.Relationship.WithTable}}" +
-		" ON {{.Relationship.WithTable}}.{{.Relationship.ForeignTableUniqueIDColumn}}" +
-		" = _{{$.TableName}}.{{.Relationship.LocalTableUniqueIDColumn}}{{end}} LIMIT 1",
-}
 
 // TestCase for sql backend
 type testCase struct {
@@ -90,14 +52,18 @@ func TestSqlBackends(t *testing.T) {
 		testUsingDB = viper.Get("db").(string)
 	}
 	switch {
+	case strings.Contains(testUsingDB, "sqlite"):
+		testSqlBackend(t, "sqlite", "sqlite3", sqlite.New)
 	case strings.Contains(testUsingDB, "mysql"):
 		testSqlBackend(t, "mysql", "mysql", mysql.New)
 	case strings.Contains(testUsingDB, "oracle"):
 		testSqlBackend(t, "oracle", "godror", oracle.New)
 	case strings.Contains(testUsingDB, "sqlserver"):
 		testSqlBackend(t, "sqlserver", "sqlserver", sqlserver.New)
-	default:
+	case strings.Contains(testUsingDB, "postgres"):
 		testSqlBackend(t, "postgres", "postgres", postgres.New)
+	default:
+		testSqlBackend(t, "sqlite", "sqlite3", sqlite.New)
 	}
 }
 
@@ -121,9 +87,6 @@ func testSqlBackend(t *testing.T, name, driver string, newEndpointFunc func() en
 			runTestCases(t, testName, testCases, ts, endpoint)
 		}
 		for testName, testCases := range dataConnectorOptionsTests {
-			runTestCases(t, testName, testCases, ts, endpoint)
-		}
-		for testName, testCases := range collectionFiltererTests {
 			runTestCases(t, testName, testCases, ts, endpoint)
 		}
 

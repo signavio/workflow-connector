@@ -13,8 +13,7 @@ import (
 )
 
 type standardFormatter struct{}
-type getCollectionFormatter struct{}
-
+type collectionFormatter struct{}
 // Special formatting for the options route like `/options`, `/options?filter=`
 // is required, since Workflow Accelerator expects the results returned
 // by these routes to be enclosed in an array, regardless of whether
@@ -24,7 +23,7 @@ type getCollectionAsOptionsFormatter struct{}
 
 var (
 	Standard                         = &standardFormatter{}
-	GetCollection                    = &getCollectionFormatter{}
+	Collection                       = &collectionFormatter{}
 	GetSingleAsOption                = &getSingleAsOptionFormatter{}
 	GetCollectionAsOptions           = &getCollectionAsOptionsFormatter{}
 	GetCollectionAsOptionsFilterable = &getCollectionAsOptionsFormatter{}
@@ -74,28 +73,19 @@ func (f *standardFormatter) Format(ctx context.Context, results []interface{}) (
 	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
 	return
 }
-func (f *getCollectionFormatter) Format(ctx context.Context, results []interface{}) (JSONResults []byte, err error) {
+
+func (f *collectionFormatter) Format(ctx context.Context, results []interface{}) (JSONResults []byte, err error) {
 	if len(results) == 0 {
 		return []byte("[]"), nil
 	}
 	tableName := ctx.Value(util.ContextKey("table")).(string)
-	fields := withRelationshipFieldsOmitted(tableName)
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		tableName,
+	)
+	fields := typeDescriptor.Fields
+	log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set >= 1")
 	var formattedResults []interface{}
-	if len(results) == 1 {
-		log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set == 1")
-		formattedResult := formatAsAWorkflowType(
-			ctx, results[0].(map[string]interface{}), tableName, fields,
-		)
-		formattedResults = append(formattedResults, formattedResult)
-		log.When(config.Options.Logging).Infof("[formatter <- asWorkflowType] formattedResult: \n%+v\n", formattedResult)
-		JSONResults, err = json.MarshalIndent(&formattedResults, "", "  ")
-		if err != nil {
-			return nil, err
-		}
-		log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
-		return
-	}
-	log.When(config.Options.Logging).Infoln("[formatter -> asWorkflowType] Format with result set > 1")
 	for _, result := range results {
 		formattedResult := formatAsAWorkflowType(
 			ctx, result.(map[string]interface{}), tableName, fields,
@@ -113,6 +103,7 @@ func (f *getCollectionFormatter) Format(ctx context.Context, results []interface
 	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
 	return
 }
+
 func (f *getSingleAsOptionFormatter) Format(ctx context.Context, results []interface{}) (JSONResults []byte, err error) {
 	tableName := ctx.Value(util.ContextKey("table")).(string)
 	if len(results) == 0 {
@@ -130,6 +121,7 @@ func (f *getSingleAsOptionFormatter) Format(ctx context.Context, results []inter
 	log.When(config.Options.Logging).Infoln("[routeHandler <- formatter]")
 	return
 }
+
 func (f *getCollectionAsOptionsFormatter) Format(ctx context.Context, results []interface{}) (JSONResults []byte, err error) {
 	tableName := ctx.Value(util.ContextKey("table")).(string)
 	var formattedResults []interface{}
@@ -157,26 +149,31 @@ func (f *getCollectionAsOptionsFormatter) Format(ctx context.Context, results []
 
 func formatAsAWorkflowType(ctx context.Context, queryResults map[string]interface{}, table string, fields []*descriptor.Field) (formatted map[string]interface{}) {
 	formatted = make(map[string]interface{})
-	for _, field := range fields {
-		if ctx.Value(util.ContextKey("currentRoute")).(string) == "GetCollection" {
-			formatted = buildResultFromQueryResultsWithoutRelationships(
-				ctx, formatted, queryResults, table, field,
-			)
-		} else {
-			formatted = buildResultFromQueryResultsUsingField(
-				ctx, formatted, queryResults, table, field,
-			)
+	fieldsRepresentingRelationships, fieldsNotRelationships := segregateFields(fields)
+	if len(fieldsRepresentingRelationships) > 0 {
+		for _, field := range fieldsRepresentingRelationships {
+			formatted = buildAndRecursivelyResolveRelationships(ctx, formatted, queryResults, table, field)
 		}
+	}
+	for _, field := range fieldsNotRelationships {
+		formatted = buildResultFromQueryResultsWithoutRelationships(ctx, formatted, queryResults, table, field)
 	}
 	return
 }
 
-func buildResultFromQueryResultsUsingField(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
-	if tableHasRelationships(queryResults, table, field) {
-		formatted = buildAndRecursivelyResolveRelationships(ctx, formatted, queryResults, table, field)
-		return formatted
+func buildAndRecursivelyResolveRelationships(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
+	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
+		switch field.Relationship.Kind {
+		case "oneToOne", "manyToOne":
+			return resolveOneToOneOrManyToOneRelationship(ctx, formatted, queryResults, table, field)
+		case "oneToMany":
+			return resolveOneToManyRelationship(ctx, formatted, queryResults, table, field)
+		default:
+			return resolveOneToOneOrManyToOneRelationship(ctx, formatted, queryResults, table, field)
+		}
 	}
-	return buildResultFromQueryResultsWithoutRelationships(ctx, formatted, queryResults, table, field)
+	formatted[field.Key] = []interface{}{}
+	return formatted
 }
 
 func buildResultFromQueryResultsWithoutRelationships(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
@@ -211,61 +208,54 @@ func buildResultFromQueryResultsWithoutRelationships(ctx context.Context, format
 	}
 	return formatted
 }
-func buildAndRecursivelyResolveRelationships(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
-	switch field.Relationship.Kind {
-	case "oneToMany":
-		return relationshipKindIsOneToMany(ctx, formatted, queryResults, table, field)
-	case "manyToOne", "oneToOne":
-		return relationshipKindIsXToOne(ctx, formatted, queryResults, table, field)
-	default:
-		return make(map[string]interface{})
-	}
-}
 
-func relationshipKindIsOneToMany(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
+func resolveOneToManyRelationship(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
 		config.Options.Descriptor.TypeDescriptors,
 		field.Relationship.WithTable,
 	)
-	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
-		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
-		if clientWantsDenormalizedResultSet(
-			ctx.Value(util.ContextKey("denormalize")).(string),
-		) {
-			var results []map[string]interface{}
-			results = denormalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
-			formatted[field.Key] = results
-			return formatted
-		}
-		var results []interface{}
-		results = normalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
+	relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
+	var results []interface{}
+	if callerWantsDenormalizedResultSet(ctx.Value(util.ContextKey("$denormalize")).(string)) {
+		var results []map[string]interface{}
+		results = denormalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
 		formatted[field.Key] = results
 		return formatted
 	}
-	formatted[field.Key] = []interface{}{}
+	results = normalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
+	formatted[field.Key] = results
 	return formatted
 }
-func relationshipKindIsXToOne(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
+
+func resolveOneToOneOrManyToOneRelationship(ctx context.Context, formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
 		config.Options.Descriptor.TypeDescriptors,
 		field.Relationship.WithTable,
 	)
-	if relatedTablesResultSetNotEmpty(queryResults, table, field) {
-		relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
-		if clientWantsDenormalizedResultSet(
-			ctx.Value(util.ContextKey("denormalize")).(string),
-		) {
-			var results map[string]interface{}
-			results = denormalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)[0]
-			formatted[field.Key] = results
-			return formatted
+	relatedResults := queryResults[table].(map[string]interface{})[field.Key].(map[string]interface{})[field.Relationship.WithTable].([]map[string]interface{})
+	if callerWantsDenormalizedResultSet(ctx.Value(util.ContextKey("$denormalize")).(string)) {
+		var results []map[string]interface{}
+		results = denormalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
+		for _, result := range results {
+			if isQueryResultUniqueIdColumnEqualToRelationshipUniqueIdColumn(
+				queryResults[table].(map[string]interface{})[field.Relationship.LocalTableUniqueIdColumn],
+				result[field.Relationship.ForeignTableUniqueIdColumn],
+			) {
+				formatted[field.Key] = result
+			}
 		}
-		var results interface{}
-		results = normalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)[0]
-		formatted[field.Key] = results
 		return formatted
 	}
-	formatted[field.Key] = nil
+	var results []interface{}
+	results = normalizeResultSet(ctx, relatedResults, field, typeDescriptor.UniqueIdColumn)
+	for _, result := range results {
+		if isQueryResultUniqueIdColumnEqualToRelationshipUniqueIdColumn(
+			queryResults[table].(map[string]interface{})[field.Relationship.LocalTableUniqueIdColumn],
+			result,
+		) {
+			formatted[field.Key] = result
+		}
+	}
 	return formatted
 }
 
@@ -275,14 +265,13 @@ func denormalizeResultSet(ctx context.Context, relatedResults []map[string]inter
 		fields := withRelationshipFieldsOmitted(field.Relationship.WithTable)
 		resolvedRelationship := formatAsAWorkflowType(
 			ctx,
-			map[string]interface{}{field.Relationship.WithTable: r},
-			field.Relationship.WithTable,
-			fields,
+			map[string]interface{}{field.Relationship.WithTable: r}, field.Relationship.WithTable, fields,
 		)
 		results = append(results, resolvedRelationship)
 	}
 	return results
 }
+
 func normalizeResultSet(ctx context.Context, relatedResults []map[string]interface{}, field *descriptor.Field, uniqueIdColumn string) (results []interface{}) {
 	for _, r := range relatedResults {
 		// remove relationships keys from recursively resolved subset
@@ -333,6 +322,7 @@ func buildForFieldTypeDateOrTime(formatted, queryResults map[string]interface{},
 	formatted[field.Key] = nil
 	return formatted
 }
+
 func buildForFieldTypeDateTime(formatted, queryResults map[string]interface{}, table string, field *descriptor.Field) map[string]interface{} {
 	if queryResults[table].(map[string]interface{})[field.FromColumn] != nil {
 		dateTime := queryResults[table].(map[string]interface{})[field.FromColumn].(time.Time)
@@ -380,6 +370,22 @@ func relatedTablesResultSetNotEmpty(queryResults map[string]interface{}, table s
 	fieldKeyRelationshipWithTable := fieldKey[field.Relationship.WithTable].([]map[string]interface{})
 	return len(fieldKeyRelationshipWithTable) > 0
 }
+
+func segregateFields(fields []*descriptor.Field) (relationships, notRelationships []*descriptor.Field) {
+	for _, field := range fields {
+		if field.Relationship != nil {
+			relationships = append(relationships, field)
+		} else {
+			notRelationships = append(notRelationships, field)
+		}
+	}
+	return
+}
+
+func isQueryResultUniqueIdColumnEqualToRelationshipUniqueIdColumn(queryResultUniqueIdColumn, foreignTableUniqueIdColumn interface{}) bool {
+	return stringify(queryResultUniqueIdColumn) == stringify(foreignTableUniqueIdColumn)
+}
+
 func stringify(value interface{}) (stringified interface{}) {
 	if value == nil {
 		return nil
@@ -407,9 +413,18 @@ func tableHasRelationships(queryResults map[string]interface{}, table string, fi
 	return field.Relationship != nil && queryResults[table].(map[string]interface{})[field.Key] != nil
 }
 
-func clientWantsDenormalizedResultSet(queryValue string) bool {
+func typeDescriptorContainsRelationships(table string) bool {
+	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		table,
+	)
+	return len(util.TypeDescriptorRelationships(typeDescriptor)) > 0
+}
+
+func callerWantsDenormalizedResultSet(queryValue string) bool {
 	return queryValue != ""
 }
+
 func subsetForPerformance(in []interface{}) []interface{} {
 	// To avoid performance issues, return only the first
 	// 42 results when querying the /options route
@@ -418,6 +433,7 @@ func subsetForPerformance(in []interface{}) []interface{} {
 	}
 	return in
 }
+
 func withRelationshipFieldsOmitted(table string) (fields []*descriptor.Field) {
 	typeDescriptor := util.GetTypeDescriptorUsingDBTableName(
 		config.Options.Descriptor.TypeDescriptors,

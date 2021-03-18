@@ -58,6 +58,29 @@ func (rm *ResponseMessage) Error() string {
 	return rm.String()
 }
 
+// GetColumnNamesFromRequestData will, for every parameter in the request data,
+// retrieve the corresponding table column name
+func GetColumnNamesFromRequestData(tableName string, requestData map[string]interface{}) (columnNames []string) {
+	td := GetTypeDescriptorUsingDBTableName(
+		config.Options.Descriptor.TypeDescriptors,
+		tableName,
+	)
+	for _, field := range td.Fields {
+		if field.Type.Name == "money" {
+			if _, ok := requestData[field.Type.Amount.Key]; ok {
+				columnNames = append(columnNames, field.Type.Amount.FromColumn)
+			}
+			if _, ok := requestData[field.Type.Currency.Key]; ok {
+				columnNames = append(columnNames, field.Type.Currency.FromColumn)
+			}
+		} else {
+			if _, ok := requestData[field.Key]; ok {
+				columnNames = append(columnNames, field.FromColumn)
+			}
+		}
+	}
+	return
+}
 // GetTypeDescriptorUsingDBTableName will return the typeDescriptor from the descriptor.json
 // file defined for the table provided in the function's second parameter
 func GetTypeDescriptorUsingDBTableName(typeDescriptors []*descriptor.TypeDescriptor, tableName string) (td *descriptor.TypeDescriptor) {

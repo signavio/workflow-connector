@@ -15,7 +15,6 @@ import (
 	"github.com/signavio/workflow-connector/internal/app/endpoint"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
 	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
-	"github.com/signavio/workflow-connector/internal/pkg/filter"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
 	"github.com/signavio/workflow-connector/internal/pkg/query"
 	"github.com/signavio/workflow-connector/internal/pkg/util"
@@ -25,11 +24,6 @@ var (
 	ErrUnexpectedJSON         = errors.New("Received JSON data that we are unable to parse")
 	ErrMismatchedAffectedRows = errors.New("The amount of rows affected should be sane")
 	ErrNoLastInsertID         = errors.New("Database does not support getting the last inserted ID")
-	filterPredicateMapping    = func() map[filter.Predicate]string {
-		return map[filter.Predicate]string{
-			filter.Equal: "=",
-		}
-	}
 	coerceArgDateTimeFunc = func(requestData map[string]interface{}, field *descriptor.Field) (result interface{}, ok bool, err error) {
 		dateTimeWorkflowFormat := `2006-01-02T15:04:05.000Z`
 		if result, ok := requestData[field.Key]; ok {
@@ -72,7 +66,6 @@ type SqlBackend struct {
 	DB                     *sql.DB
 	Templates              map[string]string
 	SchemaMapping          map[string]*descriptor.SchemaMapping
-	FilterPredicateMapping map[filter.Predicate]string
 	NewSchemaMapping       func([]string, []*sql.ColumnType) (*descriptor.SchemaMapping, error)
 	Transactions           sync.Map
 }
@@ -89,8 +82,6 @@ func New() endpoint.Endpoint {
 	s.QueryContextFunc = s.queryContext
 	s.ExecContextFunc = s.execContext
 	s.SchemaMapping = make(map[string]*descriptor.SchemaMapping)
-	s.FilterPredicateMapping = filterPredicateMapping()
-	s.GetFilterPredicateMappingFunc = s.getFilterPredicateMapping
 	s.NewSchemaMapping = s.newSchemaMapping
 	return s
 }
@@ -140,11 +131,11 @@ func (s *SqlBackend) SaveSchemaMapping() (err error) {
 				table.Name,
 			)
 			tdRelationships := util.TypeDescriptorRelationships(td)
-			tdUniqueIDColumn := td.UniqueIdColumn
+			tdUniqueIdColumn := td.UniqueIdColumn
 			err := s.addRelationshipsToBackendSchemaMapping(
 				table.Name,
 				"GetTableWithRelationshipsSchema",
-				tdUniqueIDColumn,
+				tdUniqueIdColumn,
 				tdRelationships,
 			)
 			if err != nil {
@@ -163,9 +154,6 @@ func (s *SqlBackend) getQueryTemplate(name string) string {
 }
 func (s *SqlBackend) getSchemaMapping(typeDescriptor string) *descriptor.SchemaMapping {
 	return s.SchemaMapping[typeDescriptor]
-}
-func (s *SqlBackend) getFilterPredicateMapping(predicate filter.Predicate) string {
-	return s.FilterPredicateMapping[predicate]
 }
 func (s *SqlBackend) populateBackendSchemaMapping(tableName, templateName string) error {
 	template := s.getQueryTemplate(templateName)
@@ -200,11 +188,11 @@ func (s *SqlBackend) addRelationshipsToBackendSchemaMapping(tableName, templateN
 		TemplateData: struct {
 			TableName      string
 			Relations      []*descriptor.Field
-			UniqueIDColumn string
+			UniqueIdColumn string
 		}{
 			TableName:      tableName,
 			Relations:      relationships,
-			UniqueIDColumn: uniqueIDColumn,
+			UniqueIdColumn: uniqueIDColumn,
 		},
 		CoerceArgFuncs: s.GetCoerceArgFuncs(),
 	}

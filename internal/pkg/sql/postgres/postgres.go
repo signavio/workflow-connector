@@ -21,39 +21,41 @@ var (
 			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
 			`{{range .Relations}}` +
 			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
-			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
-			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"` +
 			`{{end}}` +
-			` WHERE "_{{$.TableName}}"."{{.UniqueIDColumn}}" = $1`,
-		`GetSingleAsOption`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+			` WHERE "_{{$.TableName}}"."{{.UniqueIdColumn}}" = $1`,
+		`GetSingleAsOption`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
-			`WHERE "{{.UniqueIDColumn}}" = $1`,
+			`WHERE "{{.UniqueIdColumn}}" = $1`,
 		`GetCollection`: `SELECT * ` +
-			`FROM "{{.TableName}}" ` +
-			`ORDER BY "{{.UniqueIDColumn}}" ASC`,
-		`GetCollectionFilterable`: `SELECT * ` +
-			`FROM "{{.TableName}}" ` +
-			`WHERE "{{.FilterOnColumn}}" {{.Operator}} $1`,
-		`GetCollectionAsOptions`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}" ` +
-			`ORDER BY "{{.UniqueIDColumn}}" ASC`,
-		`GetCollectionAsOptionsFilterable`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
-			`FROM "{{.TableName}}" ` +
-			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) ILIKE $1`,
-		`GetCollectionAsOptionsWithParams`: `SELECT "{{.UniqueIDColumn}}", "{{.ColumnAsOptionName}}" ` +
+			`FROM "{{.TableName}}" AS "_{{.TableName}}"` +
+			`{{range .Relations}}` +
+			`   LEFT JOIN "{{.Relationship.WithTable}}"` +
+			`   ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			`   = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}" ` +
+			`{{end}}` +
+			`{{with .ColumnNames}}` +
+			`   WHERE "_{{$.TableName}}"."{{. | head}}" = $1 ` +
+			`   {{range $index, $element := . | tail}}` +
+			`      AND "_{{$.TableName}}"."{{$element}}" = ${{(add2 $index)}} ` +
+			`   {{end}}` +
+			`{{end}}` +
+			`ORDER BY "_{{.TableName}}"."{{.UniqueIdColumn}}" ASC`,
+		`GetCollectionAsOptions`: `SELECT "{{.UniqueIdColumn}}", "{{.ColumnAsOptionName}}" ` +
 			`FROM "{{.TableName}}" ` +
 			`WHERE CAST ("{{.ColumnAsOptionName}}" AS TEXT) ILIKE $1 ` +
 			`{{range $index, $element := .ColumnNames}}` +
-			`AND "{{$element}}" = ${{(add2 $index)}} ` +
+			`   AND "{{$.TableName}}"."{{$element}}" = ${{(add2 $index)}} ` +
 			`{{end}} ` +
-			`ORDER BY "{{.UniqueIDColumn}}" ASC`,
+			`ORDER BY "{{.TableName}}"."{{.UniqueIdColumn}}" ASC`,
 		`UpdateSingle`: `UPDATE "{{.TableName}}" ` +
 			`SET "{{.ColumnNames | head}}" = $1` +
 			`{{range $index, $element := .ColumnNames | tail}},` +
 			`  "{{$element}}" = ${{(add2 $index)}}` +
 			`{{end}} ` +
-			`WHERE "{{.UniqueIDColumn}}" = ${{(lenPlus1 .ColumnNames)}} ` +
-			`RETURNING "{{.UniqueIDColumn}}"`,
+			`WHERE "{{.UniqueIdColumn}}" = ${{(lenPlus1 .ColumnNames)}} ` +
+			`RETURNING "{{.UniqueIdColumn}}"`,
 		`CreateSingle`: `INSERT INTO "{{.TableName}}"` +
 			`("{{.ColumnNames | head}}"` +
 			`{{range .ColumnNames | tail}},` +
@@ -63,16 +65,16 @@ var (
 			`{{range $index, $element := .ColumnNames | tail}},` +
 			`  ${{$index | add2}}` +
 			`{{end}}) ` +
-			`RETURNING "{{.UniqueIDColumn}}"`,
-		`DeleteSingle`: `DELETE FROM "{{.TableName}}" WHERE "{{.UniqueIDColumn}}" = $1`,
+			`RETURNING "{{.UniqueIdColumn}}"`,
+		`DeleteSingle`: `DELETE FROM "{{.TableName}}" WHERE "{{.UniqueIdColumn}}" = $1`,
 		`GetTableSchema`: `SELECT * ` +
 			`FROM "{{.TableName}}" ` +
 			`LIMIT 1`,
 		`GetTableWithRelationshipsSchema`: `SELECT * FROM "{{.TableName}}" AS "_{{.TableName}}"` +
 			`{{range .Relations}}` +
 			` LEFT JOIN "{{.Relationship.WithTable}}"` +
-			` ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIDColumn}}"` +
-			` = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIDColumn}}"{{end}} LIMIT 1`,
+			` ON "{{.Relationship.WithTable}}"."{{.Relationship.ForeignTableUniqueIdColumn}}"` +
+			` = "_{{$.TableName}}"."{{.Relationship.LocalTableUniqueIdColumn}}"{{end}} LIMIT 1`,
 	}
 	integer = []string{
 		"INT2",

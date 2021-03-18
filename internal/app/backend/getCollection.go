@@ -1,10 +1,12 @@
 package backend
 
 import (
+	//	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/signavio/workflow-connector/internal/pkg/config"
+	"github.com/signavio/workflow-connector/internal/pkg/descriptor"
 	"github.com/signavio/workflow-connector/internal/pkg/formatting"
 	"github.com/signavio/workflow-connector/internal/pkg/log"
 	"github.com/signavio/workflow-connector/internal/pkg/query"
@@ -15,22 +17,39 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 	routeName := mux.CurrentRoute(req).GetName()
 	table := req.Context().Value(util.ContextKey("table")).(string)
 	queryUninterpolated := b.GetQueryTemplate(routeName)
+	relations := req.Context().Value(util.ContextKey("relationships")).([]*descriptor.Field)
 	uniqueIDColumn := req.Context().Value(util.ContextKey("uniqueIDColumn")).(string)
+	requestData, err := util.ParseDataForm(req)
+	if err != nil {
+		msg := &util.ResponseMessage{
+			Code: http.StatusInternalServerError,
+			Msg:  err.Error(),
+		}
+		http.Error(rw, msg.Error(), http.StatusInternalServerError)
+		return
+	}
+	log.When(config.Options.Logging).Infof("[handler] requestData: \n%s", requestData)
+	columnNames := util.GetColumnNamesFromRequestData(table, requestData)
 	queryTemplate := &query.QueryTemplate{
 		Vars: []string{queryUninterpolated},
 		TemplateData: struct {
 			TableName      string
-			UniqueIDColumn string
+			Relations      []*descriptor.Field
+			UniqueIdColumn string
+			ColumnNames []string
 		}{
 			TableName:      table,
-			UniqueIDColumn: uniqueIDColumn,
+			Relations:      relations,
+			UniqueIdColumn: uniqueIDColumn,
+			ColumnNames: columnNames,
 		},
 		CoerceArgFuncs: b.GetCoerceArgFuncs(),
 	}
+
 	log.When(config.Options.Logging).Infof("[handler] %s\n", routeName)
 
 	log.When(config.Options.Logging).Infoln("[handler] interpolate query string")
-	queryString, _, err := queryTemplate.Interpolate(req.Context(), nil)
+	queryString, args, err := queryTemplate.Interpolate(req.Context(), requestData)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusBadRequest,
@@ -43,7 +62,7 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 	log.When(config.Options.Logging).Infoln(queryString)
 
 	log.When(config.Options.Logging).Infoln("[handler -> db] get query results")
-	results, err := b.QueryContext(req.Context(), queryString)
+	results, err := b.QueryContext(req.Context(), queryString, args...)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,
@@ -57,7 +76,7 @@ func (b *Backend) GetCollection(rw http.ResponseWriter, req *http.Request) {
 	)
 
 	log.When(config.Options.Logging).Infoln("[handler -> Format] format results as json")
-	formattedResults, err := formatting.GetCollection.Format(req.Context(), results)
+	formattedResults, err := formatting.Collection.Format(req.Context(), results)
 	if err != nil {
 		msg := &util.ResponseMessage{
 			Code: http.StatusInternalServerError,

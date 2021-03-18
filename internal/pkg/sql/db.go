@@ -67,48 +67,19 @@ func (s *SqlBackend) queryContext(ctx context.Context, query string, args ...int
 		return s.queryContextForOptionRoutes(ctx, query, args...)
 	case "GetCollectionAsOptionsFilterable", "GetCollectionAsOptionsWithParams":
 		return s.queryContextForOptionRoutes(ctx, query, args...)
-	case "GetSingle":
-		return s.queryContextForGetSingleRoute(ctx, query, args...)
 	default:
 		return s.queryContextForNonOptionRoutes(ctx, query, args...)
 	}
 }
-func (s *SqlBackend) queryContextForGetSingleRoute(ctx context.Context, query string, args ...interface{}) (results []interface{}, err error) {
-	tableName := ctx.Value(util.ContextKey("table")).(string)
-	results, err = s.queryContextForNonOptionRoutes(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	if len(results) == 0 {
-		msg := &util.ResponseMessage{
-			Code: http.StatusNotFound,
-			Msg: fmt.Sprintf(
-				"Resource with uniqueID '%s' not found in %s table",
-				args[len(args)-1], tableName,
-			),
-		}
-		return nil, msg
-	}
-	// deduplicate the results fetched when querying the database
-	results = deduplicateSingleResource(
-		results,
-		util.GetTypeDescriptorUsingDBTableName(
-			config.Options.Descriptor.TypeDescriptors,
-			tableName,
-		),
-	)
-	return
-}
+
 func (s *SqlBackend) queryContextForNonOptionRoutes(ctx context.Context, query string, args ...interface{}) (results []interface{}, err error) {
 	table := ctx.Value(util.ContextKey("table")).(string)
 	relationships := ctx.Value(util.ContextKey("relationships")).([]*descriptor.Field)
-	currentRoute := ctx.Value(util.ContextKey("currentRoute")).(string)
 	var columnNames []string
 	var dataTypes []interface{}
 	// Use the TableSchema containing columns of related tables if the
 	// current table contains 1..* relationship with other tables
-	// and the current route is GetSingle
-	if relationships != nil && currentRoute == "GetSingle" {
+	if relationships != nil {
 		columnNames = s.GetSchemaMapping(fmt.Sprintf("%s\x00relationships", table)).FieldNames
 		dataTypes = s.GetSchemaMapping(fmt.Sprintf("%s\x00relationships", table)).GolangTypes
 	} else {
@@ -124,6 +95,17 @@ func (s *SqlBackend) queryContextForNonOptionRoutes(ctx context.Context, query s
 	if err != nil {
 		return nil, err
 	}
+	if len(results) == 0 {
+		return []interface{}{}, nil
+	}
+	// deduplicate the results fetched when querying the database
+	results = deduplicateSingleResource(
+		results,
+		util.GetTypeDescriptorUsingDBTableName(
+			config.Options.Descriptor.TypeDescriptors,
+			table,
+		),
+	)
 	return
 }
 
@@ -132,7 +114,6 @@ func (s *SqlBackend) queryContextForOptionRoutes(ctx context.Context, query stri
 	columnAsOptionName := ctx.Value(util.ContextKey("columnAsOptionName")).(string)
 	uniqueIDColumn := ctx.Value(util.ContextKey("uniqueIDColumn")).(string)
 	columnNames, dataTypes := s.getColumnNamesAndDataTypesForOptionRoutes(table, columnAsOptionName, uniqueIDColumn)
-	log.When(config.Options.Logging).Infof("[db] column: %s\n datatypes: %+v\n", columnNames, dataTypes)
 	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -143,40 +124,6 @@ func (s *SqlBackend) queryContextForOptionRoutes(ctx context.Context, query stri
 		return nil, err
 	}
 	return
-}
-
-func deduplicateSingleResource(data []interface{}, td *descriptor.TypeDescriptor) []interface{} {
-	fields := util.TypeDescriptorRelationships(td)
-	for _, field := range fields {
-		var fieldResultSet []map[string]interface{}
-		var relationshipTableContainsResults = false
-		for _, datum := range data {
-			if tableResults, ok := datum.(map[string]interface{})[field.Relationship.WithTable].(map[string]interface{}); ok {
-				// If the result set of a related table is empty, then all values
-				// will equal nil (or the empty string for oracle db) so do not
-				// append it to the fieldResultSet
-				for _, value := range tableResults {
-					var isEmptyValue bool
-					valueString, ok := value.(string)
-					if ok {
-						isEmptyValue = valueString != ""
-					} else {
-						isEmptyValue = value != nil
-					}
-					if isEmptyValue {
-						relationshipTableContainsResults = true
-					}
-				}
-				if relationshipTableContainsResults {
-					fieldResultSet = util.AppendNoDuplicates(fieldResultSet, tableResults)
-				}
-			}
-		}
-		data[0].(map[string]interface{})[td.TableName].(map[string]interface{})[field.Key] = map[string]interface{}{
-			field.Relationship.WithTable: fieldResultSet,
-		}
-	}
-	return append([]interface{}{}, data[0])
 }
 
 func (s *SqlBackend) createTx(timeout time.Duration) (txUUID uuid.UUID, err error) {
@@ -258,6 +205,41 @@ func processRow(rows *sql.Rows, columns []string, values []interface{}) (result 
 	}
 	return result, nil
 }
+
+func deduplicateSingleResource(data []interface{}, td *descriptor.TypeDescriptor) []interface{} {
+	fields := util.TypeDescriptorRelationships(td)
+	for _, field := range fields {
+		var fieldResultSet []map[string]interface{}
+		var relationshipTableContainsResults = false
+		for i, datum := range data {
+			if tableResults, ok := datum.(map[string]interface{})[field.Relationship.WithTable].(map[string]interface{}); ok {
+				// If the result set of a related table is empty, then all values
+				// will equal nil (or the empty string for oracle db) so do not
+				// append it to the fieldResultSet
+				for _, value := range tableResults {
+					var isEmptyValue bool
+					valueString, ok := value.(string)
+					if ok {
+						isEmptyValue = valueString != ""
+					} else {
+						isEmptyValue = value != nil
+					}
+					if isEmptyValue {
+						relationshipTableContainsResults = true
+					}
+				}
+				if relationshipTableContainsResults {
+					fieldResultSet = util.AppendNoDuplicates(fieldResultSet, tableResults)
+				}
+			}
+			data[i].(map[string]interface{})[td.TableName].(map[string]interface{})[field.Key] = map[string]interface{}{
+				field.Relationship.WithTable: fieldResultSet,
+			}
+		}
+	  }
+	return data
+}
+
 func switchOnValueType(tableName, columnName string, value interface{}, tableResult, result map[string]interface{}) (map[string]interface{}, string) {
 	switch v := value.(type) {
 	case *sql.NullBool:

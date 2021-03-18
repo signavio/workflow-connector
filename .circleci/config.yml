@@ -20,7 +20,7 @@ jobs:
           name: Resolve mysql prerequisites
           command: |
             sudo apt-get update
-            sudo apt-get install mysql-client
+            sudo apt-get install mariadb-client
       - run:
           name: Waiting for mysql to be ready
           command: |

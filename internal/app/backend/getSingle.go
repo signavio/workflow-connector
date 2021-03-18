@@ -24,11 +24,11 @@ func (b *Backend) GetSingle(rw http.ResponseWriter, req *http.Request) {
 		TemplateData: struct {
 			TableName      string
 			Relations      []*descriptor.Field
-			UniqueIDColumn string
+			UniqueIdColumn string
 		}{
 			TableName:      table,
 			Relations:      relations,
-			UniqueIDColumn: uniqueIDColumn,
+			UniqueIdColumn: uniqueIDColumn,
 		},
 		CoerceArgFuncs: b.GetCoerceArgFuncs(),
 	}

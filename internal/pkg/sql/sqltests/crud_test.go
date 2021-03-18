@@ -55,13 +55,13 @@ var (
       "id": "1",
       "instructions": "do this",
       "lastAccessed": "%sT00:00:01.000Z",
-      "lastModified": "2017-12-14T00:00:00.123Z",
+      "lastModified": "2017-12-14T0%s:00:00.123Z",
       "name": "Espresso single shot"
     }
   ]
-}`, `.*`},
+}`, `.*`, `[01]`},
 			Request: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/equipment/2?denormalize=true", nil)
+				req, _ := http.NewRequest("GET", "/equipment/2?$denormalize=true", nil)
 				return req
 			},
 		},
@@ -92,9 +92,9 @@ var (
   "id": "1",
   "instructions": "do this",
   "lastAccessed": "%sT00:00:01.000Z",
-  "lastModified": "2017-12-14T00:00:00.123Z",
+  "lastModified": "2017-12-14T0%s:00:00.123Z",
   "name": "Espresso single shot"
-}`, `.*`},
+}`, `.*`, `[01]`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/recipes/1", nil)
 				return req
@@ -119,11 +119,11 @@ var (
   "id": "1",
   "instructions": "do this",
   "lastAccessed": "%sT00:00:01.000Z",
-  "lastModified": "2017-12-14T00:00:00.123Z",
+  "lastModified": "2017-12-14T0%s:00:00.123Z",
   "name": "Espresso single shot"
-}`, `.*`},
+}`, `.*`, `[01]`},
 			Request: func() *http.Request {
-				req, _ := http.NewRequest("GET", "/recipes/1?denormalize=true", nil)
+				req, _ := http.NewRequest("GET", "/recipes/1?$denormalize=true", nil)
 				return req
 			},
 		},
@@ -184,7 +184,8 @@ var (
     },
     "id": "1",
     "name": "Bialetti Moka Express 6 cup",
-    "purchaseDate": "2017-12-11T12:00:00.123Z"
+    "purchaseDate": "2017-12-11T12:00:00.123Z",
+    "recipes": []
   },
   {
     "acquisitionCost": {
@@ -193,7 +194,10 @@ var (
     },
     "id": "2",
     "name": "Sanremo Café Racer",
-    "purchaseDate": "2017-12-12T12:00:00.123Z"
+    "purchaseDate": "2017-12-12T12:00:00.123Z",
+    "recipes": [
+      "1"
+    ]
   },
   {
     "acquisitionCost": {
@@ -202,7 +206,11 @@ var (
     },
     "id": "3",
     "name": "Buntfink SteelKettle",
-    "purchaseDate": "2017-12-12T12:00:00.000Z"
+    "purchaseDate": "2017-12-12T12:00:00.000Z",
+    "recipes": [
+      "1",
+      "3"
+    ]
   },
   {
     "acquisitionCost": {
@@ -211,11 +219,60 @@ var (
     },
     "id": "4",
     "name": "Copper Coffee Pot Cezve",
-    "purchaseDate": "2017-12-12T12:00:00.000Z"
+    "purchaseDate": "2017-12-12T12:00:00.000Z",
+    "recipes": [
+      "1",
+      "3",
+      "2"
+    ]
   }
 ]`},
 			Request: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/equipment", nil)
+				return req
+			},
+		},
+{
+			Kind:                "success",
+			Name:                "it succeeds when filtering equipment table using column name",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`[
+  {
+    "acquisitionCost": {
+      "amount": 39.95,
+      "currency": "EUR"
+    },
+    "id": "3",
+    "name": "Buntfink SteelKettle",
+    "purchaseDate": "2017-12-12T12:00:00.000Z",
+    "recipes": [
+      "3"
+    ]
+  }
+]`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/equipment?name=Buntfink+SteelKettle", nil)
+				return req
+			},
+		},
+		{
+			Kind:                "success",
+			Name:                "it succeeds when filtering equipment table using purchase date",
+			ExpectedStatusCodes: []int{http.StatusOK},
+			ExpectedResults: []string{`[
+  {
+    "acquisitionCost": {
+      "amount": 25.95,
+      "currency": "EUR"
+    },
+    "id": "1",
+    "name": "Bialetti Moka Express 6 cup",
+    "purchaseDate": "2017-12-11T12:00:00.123Z",
+    "recipes": []
+  }
+]`},
+			Request: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/equipment?purchaseDate=2017-12-11T12:00:00.123Z", nil)
 				return req
 			},
 		},

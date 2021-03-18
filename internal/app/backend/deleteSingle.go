@@ -19,10 +19,10 @@ func (b *Backend) DeleteSingle(rw http.ResponseWriter, req *http.Request) {
 	queryUninterpolated := b.GetQueryTemplate(routeName)
 	queryTemplate := &query.QueryTemplate{Vars: []string{queryUninterpolated}, TemplateData: struct {
 		TableName      string
-		UniqueIDColumn string
+		UniqueIdColumn string
 	}{
 		TableName:      table,
-		UniqueIDColumn: uniqueIDColumn,
+		UniqueIdColumn: uniqueIDColumn,
 	},
 		CoerceArgFuncs: b.GetCoerceArgFuncs(),
 	}

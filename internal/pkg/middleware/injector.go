@@ -20,7 +20,7 @@ func RequestInjector(next http.Handler) http.Handler {
 		tx := mux.Vars(r)["tx"]
 		id := mux.Vars(r)["id"]
 		routeName := mux.CurrentRoute(r).GetName()
-		denormalize := r.URL.Query().Get("denormalize")
+		denormalize := r.URL.Query().Get("$denormalize")
 		// The value stored in the {table} variable is acutally the "key"
 		// property of the type descriptor in the descriptor.json file
 		// and *not* the name of the table in the database
@@ -58,19 +58,19 @@ func RequestInjector(next http.Handler) http.Handler {
 			util.ContextKey("columnAsOptionName"),
 			typeDescriptor.ColumnAsOptionName,
 		)
-		withUniqueIDColumn := context.WithValue(
+		withUniqueIdColumn := context.WithValue(
 			withColumnAsOptionName,
 			util.ContextKey("uniqueIDColumn"),
 			typeDescriptor.UniqueIdColumn,
 		)
 		withRelationships := context.WithValue(
-			withUniqueIDColumn,
+			withUniqueIdColumn,
 			util.ContextKey("relationships"),
 			util.TypeDescriptorRelationships(typeDescriptor),
 		)
 		withDenormalize := context.WithValue(
 			withRelationships,
-			util.ContextKey("denormalize"),
+			util.ContextKey("$denormalize"),
 			denormalize,
 		)
 		newReq := r.WithContext(withDenormalize)

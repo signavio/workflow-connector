@@ -47,11 +47,11 @@ func (b *Backend) UpdateSingle(rw http.ResponseWriter, req *http.Request) {
 		TemplateData: struct {
 			TableName      string
 			ColumnNames    []string
-			UniqueIDColumn string
+			UniqueIdColumn string
 		}{
 			TableName:      table,
 			ColumnNames:    columnNames,
-			UniqueIDColumn: uniqueIDColumn,
+			UniqueIdColumn: uniqueIDColumn,
 		},
 		ColumnNames:      columnNames,
 		CoerceArgFuncs:   b.GetCoerceArgFuncs(),
