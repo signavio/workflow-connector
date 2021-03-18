@@ -19,7 +19,7 @@ func NewEndpoint(cfg config.Config) (endpoint.Endpoint, error) {
 		return mysql.New(), nil
 	case "postgres":
 		return postgres.New(), nil
-	case "goracle":
+	case "godror":
 		return oracle.New(), nil
 	default:
 		return nil, fmt.Errorf("Database driver: %s, not supported", cfg.Database.Driver)

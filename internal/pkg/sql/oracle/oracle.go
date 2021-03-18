@@ -16,7 +16,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/unicode"
-	"gopkg.in/goracle.v2"
+	"github.com/godror/godror"
 )
 
 const (
@@ -324,7 +324,7 @@ func (o *Oracle) setCharacterSet() (err error) {
 }
 func driverSpecificInitialization(ctx context.Context, o *Oracle) error {
 	log.When(config.Options.Logging).Infoln("[oracle] performing driver specific initialization")
-	if err := goracle.EnableDbmsOutput(ctx, o.DB); err != nil {
+	if err := godror.EnableDbmsOutput(ctx, o.DB); err != nil {
 		return err
 	}
 	if err := o.setCharacterSet(); err != nil {
@@ -376,7 +376,7 @@ func wrapExecContext(o *Oracle, execContext func(context.Context, string, ...int
 			return nil, err
 		}
 		rowsAffected, _ := result.RowsAffected()
-		//	if err := goracle.ReadDbmsOutput(ctx, lastInserted, db); err != nil {
+		//	if err := godror.ReadDbmsOutput(ctx, lastInserted, db); err != nil {
 		//		return nil, err
 		//	}
 		//	if lastInserted.String() != "" {

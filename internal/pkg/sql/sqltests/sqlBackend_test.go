@@ -93,7 +93,7 @@ func TestSqlBackends(t *testing.T) {
 	case strings.Contains(testUsingDB, "mysql"):
 		testSqlBackend(t, "mysql", "mysql", mysql.New)
 	case strings.Contains(testUsingDB, "oracle"):
-		testSqlBackend(t, "oracle", "goracle", oracle.New)
+		testSqlBackend(t, "oracle", "godror", oracle.New)
 	case strings.Contains(testUsingDB, "sqlserver"):
 		testSqlBackend(t, "sqlserver", "sqlserver", sqlserver.New)
 	default:
