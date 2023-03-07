@@ -11,8 +11,8 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/viper v1.7.1
 	github.com/urfave/negroni v1.0.0
-	golang.org/x/crypto v0.0.0-20210317152858-513c2a44f670
-	golang.org/x/text v0.3.5
+	golang.org/x/crypto v0.1.0
+	golang.org/x/text v0.4.0
 )
 
 go 1.15
